@@ -1,4 +1,3 @@
-
 /* Vexa 7.6 — full responsive stylesheet */
 :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark;--bg:#0d1410;--panel:#15221a;--panel2:#1c2d22;--line:#304637;--text:#eaf5ed;--muted:#a0b8a6;--accent:#83d99a;--accentText:#112318}
 *{box-sizing:border-box}html,body,#root{width:100%;height:100%;margin:0;min-height:0}html,body{overflow:hidden}body{background:var(--bg);color:var(--text);font-size:14px}button,input,textarea{font:inherit}button{border:0;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}svg{flex-shrink:0}a{color:var(--accent)}
@@ -22,310 +21,38 @@
 .nav,.mobile-nav{grid-template-columns:repeat(6,minmax(0,1fr))}
 .vexa-status-panel{padding:8px 2px 30px}.vexa-status-title{display:flex;align-items:center;justify-content:space-between}.vexa-status-title button,.vexa-status-meta button{background:transparent;color:var(--muted);padding:8px}.vexa-status-compose{display:grid;gap:9px;margin-bottom:18px}.vexa-status-compose textarea,.vexa-status-compose input{width:100%;background:#223529;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:11px}.vexa-status-compose button{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;background:var(--accent);color:var(--accentText);border-radius:11px;font-weight:700}.vexa-status-card{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px;margin:11px 0;overflow:hidden}.vexa-status-card p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}.vexa-status-card img{display:block;max-width:100%;max-height:350px;object-fit:contain;border-radius:10px}.vexa-status-meta{display:flex;align-items:center;gap:8px}.vexa-status-meta strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.vexa-status-meta small{color:var(--muted);font-size:10px}@media(max-width:700px){.mobile-nav small{font-size:8px}.mobile-nav button{padding-left:0;padding-right:0}}
 
-/* VEXA - TAM EKRAN GRUP SOHBETLERI */
 
-.vexa-groups-layout {
-  display: grid;
-  grid-template-columns: 350px minmax(0, 1fr);
-  width: 100%;
-  height: 100dvh;
-  min-height: 0;
-  overflow: hidden;
-  background: var(--bg);
-}
+/* Vexa: WhatsApp benzeri tam ekran grup sohbetleri */
+.vexa-group-overlay{position:fixed;inset:0;z-index:45;background:var(--bg)}
+.vexa-groups-layout{display:grid;grid-template-columns:350px minmax(0,1fr);width:100%;height:100dvh;overflow:hidden;background:var(--bg)}
+.vexa-groups-sidebar{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--panel);border-right:1px solid var(--line)}
+.vexa-groups-list-header{display:flex;align-items:center;gap:12px;flex:none;height:70px;padding:0 16px;border-bottom:1px solid var(--line)}
+.vexa-groups-list-header h2{flex:1;margin:0;font-size:20px}.vexa-groups-list-header button,.vexa-groups-chat-header button:not(.vexa-group-chat-title){display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:11px;background:transparent;color:var(--text)}
+.vexa-groups-list-header button:hover,.vexa-groups-chat-header button:hover{background:#294031}
+.vexa-groups-list{flex:1;min-height:0;overflow-y:auto;padding:10px}
+.vexa-group-row{background:transparent;margin:3px 0;padding:11px 12px;min-height:66px}.vexa-group-row:hover,.vexa-group-row.active{background:#294031}
+.vexa-group-avatar{display:grid;place-items:center;width:45px;height:45px;flex:none;border-radius:50%;object-fit:cover}.vexa-group-avatar-fallback{background:#355c42;color:#d8f8e0}
+.vexa-group-row-text{display:flex;flex-direction:column;gap:5px;min-width:0}.vexa-group-row-text strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vexa-group-row-text small{font-size:11px;color:var(--muted)}
+.vexa-groups-conversation{display:flex;flex-direction:column;position:relative;min-width:0;min-height:0;overflow:hidden;background:#101913}
+.vexa-groups-chat-header{display:flex;align-items:center;gap:12px;flex:none;height:70px;padding:0 18px;background:#17251c;border-bottom:1px solid var(--line)}
+.vexa-group-chat-title{display:flex;flex:1;flex-direction:column;gap:5px;min-width:0;text-align:left;padding:6px 0;background:transparent;color:var(--text)}.vexa-group-chat-title strong,.vexa-group-chat-title small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vexa-group-chat-title small{color:var(--muted);font-size:11px}
+.vexa-group-back{display:none!important}.vexa-group-full-messages{flex:1;min-height:0;overflow-y:auto;padding:24px clamp(15px,4vw,55px);gap:12px}
+.vexa-group-full-messages .vexa-group-message{width:fit-content;max-width:min(75%,570px);padding:11px 15px;border:1px solid #3a5741;border-radius:18px 18px 18px 5px;background:#25392b;font-size:14px;line-height:1.5}
+.vexa-group-full-messages .vexa-group-message.mine{margin-left:auto;background:#365d42;border-color:#4b7c59;border-radius:18px 18px 5px 18px}
+.vexa-group-full-messages .vexa-group-message small{color:#a4e6b7;margin-bottom:6px}.vexa-group-full-messages .vexa-group-message.mine small{color:#c4f5d0}
+.vexa-group-full-compose{padding:12px 18px;background:#17251c;border-top:1px solid var(--line)}.vexa-group-full-compose input{height:46px;border-radius:13px}.vexa-group-full-compose button{height:44px;width:44px;border-radius:12px}
+.vexa-groups-settings{display:grid;align-content:start;gap:13px;flex:1;min-height:0;overflow-y:auto;padding:24px clamp(18px,4vw,52px)}.vexa-groups-settings label{display:grid;gap:8px;color:var(--muted)}.vexa-group-member{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)}.vexa-groups-welcome{margin:auto;text-align:center;color:var(--muted);padding:20px}.vexa-groups-welcome h2{color:var(--text)}.vexa-group-alert{position:absolute;bottom:80px;left:18px;right:18px;z-index:5;padding:10px 12px;border-radius:10px;background:#263a2c}
+.vexa-groups-sidebar .vexa-group-create{padding:14px;margin:0;border-bottom:1px solid var(--line)}
+@media(min-width:701px) and (max-width:1000px){.vexa-groups-layout{grid-template-columns:290px minmax(0,1fr)}}
+@media(max-width:700px){.vexa-groups-layout{display:block}.vexa-groups-sidebar{height:100dvh;width:100%}.vexa-groups-layout.group-open .vexa-groups-sidebar{display:none}.vexa-groups-conversation{display:none;height:100dvh;width:100%}.vexa-groups-layout.group-open .vexa-groups-conversation{display:flex}.vexa-group-back{display:grid!important}.vexa-groups-list-header,.vexa-groups-chat-header{height:63px;padding:0 10px}.vexa-group-full-messages{padding:14px 10px}.vexa-group-full-messages .vexa-group-message{max-width:88%;padding:10px 12px;font-size:13px}.vexa-group-full-compose{padding:8px 8px calc(8px + env(safe-area-inset-bottom))}.vexa-group-full-compose input{height:43px}.vexa-groups-settings{padding:16px}}
 
-.vexa-groups-sidebar {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-  background: var(--panel);
-  border-right: 1px solid var(--line);
-}
-
-.vexa-groups-list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 70px;
-  flex: none;
-  padding: 0 18px;
-  border-bottom: 1px solid var(--line);
-}
-
-.vexa-groups-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 12px;
-}
-
-.vexa-group-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-width: 0;
-  padding: 12px;
-  text-align: left;
-  border-radius: 13px;
-  background: transparent;
-  color: var(--text);
-}
-
-.vexa-group-row:hover,
-.vexa-group-row.active {
-  background: #294031;
-}
-
-.vexa-group-avatar {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.vexa-group-avatar-fallback {
-  background: #355c42;
-  color: #d8f8e0;
-}
-
-.vexa-group-row-text {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-}
-
-.vexa-group-row-text strong,
-.vexa-group-row-text small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.vexa-group-row-text small {
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.vexa-groups-conversation {
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-  background: #101913;
-}
-
-.vexa-groups-chat-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: none;
-  height: 70px;
-  padding: 0 18px;
-  background: #17251c;
-  border-bottom: 1px solid var(--line);
-}
-
-.vexa-group-chat-title {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-  text-align: left;
-  padding: 6px 0;
-  background: transparent;
-  color: var(--text);
-}
-
-.vexa-group-chat-title strong,
-.vexa-group-chat-title small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.vexa-group-chat-title small {
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.vexa-group-back {
-  display: none !important;
-}
-
-.vexa-group-full-messages {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 24px clamp(15px, 4vw, 55px);
-  gap: 12px;
-}
-
-.vexa-group-full-messages .vexa-group-message {
-  width: fit-content;
-  max-width: min(75%, 570px);
-  padding: 11px 15px;
-  border: 1px solid #3a5741;
-  border-radius: 18px 18px 18px 5px;
-  background: #25392b;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.vexa-group-full-messages .vexa-group-message.mine {
-  margin-left: auto;
-  background: #365d42;
-  border-color: #4b7c59;
-  border-radius: 18px 18px 5px 18px;
-}
-
-.vexa-group-full-messages .vexa-group-message small {
-  color: #a4e6b7;
-  margin-bottom: 6px;
-}
-
-.vexa-group-full-messages .vexa-group-message.mine small {
-  color: #c4f5d0;
-}
-
-.vexa-group-full-compose {
-  padding: 12px 18px;
-  background: #17251c;
-  border-top: 1px solid var(--line);
-}
-
-.vexa-group-full-compose input {
-  height: 46px;
-  border-radius: 13px;
-}
-
-.vexa-group-full-compose button {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-}
-
-.vexa-groups-settings {
-  display: grid;
-  align-content: start;
-  gap: 13px;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 24px clamp(18px, 4vw, 52px);
-}
-
-.vexa-groups-settings label {
-  display: grid;
-  gap: 8px;
-  color: var(--muted);
-}
-
-.vexa-group-member {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.vexa-groups-welcome {
-  margin: auto;
-  text-align: center;
-  color: var(--muted);
-  padding: 20px;
-}
-
-.vexa-groups-welcome h2 {
-  color: var(--text);
-}
-
-.vexa-group-alert {
-  position: absolute;
-  bottom: 80px;
-  left: 18px;
-  right: 18px;
-  z-index: 5;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: #263a2c;
-}
-
-.vexa-groups-sidebar .vexa-group-create {
-  padding: 14px;
-  margin: 0;
-  border-bottom: 1px solid var(--line);
-}
-
-@media (min-width: 701px) and (max-width: 1000px) {
-  .vexa-groups-layout {
-    grid-template-columns: 290px minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 700px) {
-  .vexa-groups-layout {
-    display: block;
-  }
-
-  .vexa-groups-sidebar {
-    height: 100dvh;
-    width: 100%;
-  }
-
-  .vexa-groups-layout.group-open .vexa-groups-sidebar {
-    display: none;
-  }
-
-  .vexa-groups-conversation {
-    display: none;
-    height: 100dvh;
-    width: 100%;
-  }
-
-  .vexa-groups-layout.group-open .vexa-groups-conversation {
-    display: flex;
-  }
-
-  .vexa-group-back {
-    display: grid !important;
-  }
-
-  .vexa-groups-list-header,
-  .vexa-groups-chat-header {
-    height: 63px;
-    padding: 0 10px;
-  }
-
-  .vexa-group-full-messages {
-    padding: 14px 10px;
-  }
-
-  .vexa-group-full-messages .vexa-group-message {
-    max-width: 88%;
-    padding: 10px 12px;
-    font-size: 13px;
-  }
-
-  .vexa-group-full-compose {
-    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-  }
-
-  .vexa-group-full-compose input {
-    height: 43px;
-  }
-
-  .vexa-groups-settings {
-    padding: 16px;
-  }
-}
+/* Vexa 9.0 */
+.vexa9-settings{display:grid;gap:12px;margin-top:24px;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--panel2)}
+.vexa9-settings h3{display:flex;align-items:center;gap:9px;margin:10px 0 0}
+.vexa9-settings input,.vexa9-settings select{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;background:#223529;color:var(--text)}
+.vexa9-settings input:disabled,.vexa9-settings select:disabled{opacity:.5}
+.vexa9-premium-badge{display:inline-flex;align-items:center;gap:5px;width:fit-content;padding:5px 10px;border-radius:20px;background:#38563e;color:#d5f7c9;font-size:11px;font-weight:800}
+.vexa9-avatar-preview,.vexa9-public-avatar{width:90px;height:90px;object-fit:cover;border-radius:50%;border:2px solid var(--accent)}
+.vexa9-public-profile{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}.vexa9-public-profile p{overflow-wrap:anywhere;white-space:pre-wrap}.vexa9-tag{color:var(--accent);font-weight:700}
+.vexa9-ad-area{margin:20px 0}.vexa9-ad{display:flex;flex-direction:column;gap:9px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#1d3023}.vexa9-ad small{color:var(--muted);font-size:10px}.vexa9-ad img{max-width:100%;max-height:180px;object-fit:cover;border-radius:10px}.vexa9-ad p{color:var(--muted);margin:0}.vexa9-ad a{display:flex;align-items:center;gap:5px;color:var(--accent);text-decoration:none}
+.call-controls button[title="Ekranı paylaş"],.call-controls button[title="Paylaşımı durdur"]{background:#315840;color:#e3fbe9}
