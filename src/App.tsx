@@ -1,15 +1,15 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import type {CSSProperties} from 'react';
 import type {Session} from '@supabase/supabase-js';
-import {MessageCircle,Users,Search,UserRound,ArrowLeft,LogOut,Settings,Pin,Archive,ArchiveRestore,MoreVertical,X,Camera,RefreshCw} from 'lucide-react';
+import {MessageCircle,Users,Search,UserRound,ArrowLeft,LogOut,Settings,Pin,Archive,ArchiveRestore,MoreVertical,Camera,RefreshCw} from 'lucide-react';
 import {supabase,configured} from './supabase';
 import Calls from './Calls';
 import EnhancedChat from './EnhancedChat';
 import Groups from './Groups';
 import Statuses from './Statuses';
-import {VexaSettings,VexaAds,VexaPublicProfile} from './VexaFeatures';
+import {VexaSettings,VexaAds} from './VexaFeatures';
 import {VexaIdentity,VexaJoined,VexaAvatarEditor,VexaTagEditor} from './Vexa92_Profile';
-import {VexaPrivacySettings,VexaPublicPresence,VexaProfileQR,VexaQRFind,useVexaPresenceHeartbeat} from './Vexa102_Privacy';
+import {VexaPrivacySettings,VexaProfileQR,VexaQRFind,useVexaPresenceHeartbeat} from './Vexa102_Privacy';
 import {Vexa102ProfileCard} from './Vexa102_ProfileCard';
 import type {Profile,FriendRequest} from './supabase';
 
@@ -76,7 +76,7 @@ export default function App(){
   return()=>{cancelled=true};
  },[uid,selected?.id,tab,loadMessages]);
  async function auth(){setError('');setBusy(true);try{const r=register?await supabase.auth.signUp({email,password}):await supabase.auth.signInWithPassword({email,password});if(r.error)throw r.error;if(register&&!r.data.session)setError('Doğrulama e-postanı kontrol et.')}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
- async function findUsers(){if(search.trim().replace(/^#/,'').length<2)return;setBusy(true);setError('');const {data:tags,error:e}=await supabase.from('vexa91_identity').select('user_id,handle,tag_number').ilike('handle',`%${search.trim().replace(/^#/,'').split('#')[0].replace(/[%_]/g,'')}%`).limit(30);if(e)setError(e.message);else{const ids=(tags||[]).filter(t=>!search.includes('#')||String(t.tag_number).padStart(4,'0')===search.split('#')[1]).map(t=>t.user_id).filter(id=>id!==uid);const {data,error:profileError}=ids.length?await supabase.from('profiles').select('id,display_name,bio,avatar_path,username').in('id',ids):{data:[],error:null};if(profileError)setError(profileError.message);setResults(data||[])}setBusy(false)}
+ async function findUsers(){if(search.trim().replace(/^#/,'').length<2)return;setBusy(true);setError('');const {data:tags,error:e}=await supabase.from('vexa91_identity').select('user_id,handle,tag_number').ilike('handle',`%${search.trim().replace(/^#/,'').split('#')[0].replace(/[%_]/g,'')}%`).limit(30);if(e)setError(e.message);else{const ids=(tags||[]).filter(t=>!search.includes('#')||String(t.tag_number).padStart(4,'0')===search.split('#')[1]).map(t=>t.user_id as string).filter((id:string)=>id!==uid);const {data,error:profileError}=ids.length?await supabase.from('profiles').select('id,display_name,bio,avatar_path,username').in('id',ids):{data:[],error:null};if(profileError)setError(profileError.message);setResults(data||[])}setBusy(false)}
  async function addFriend(id:string){const {error:e}=await supabase.rpc('vexa_send_friend_request',{p_recipient_id:id});if(e)setError(e.message);else await load()}
  async function updateRequest(id:string,accept:boolean){const {error:e}=await supabase.from('friend_requests').update({status:accept?'accepted':'rejected'}).eq('id',id).eq('recipient_id',uid);if(e)setError(e.message);else await load()}
  async function saveProfile(){if(!uid||busy)return;setBusy(true);setError('');setSaveNotice('');try{const {data,error:e}=await supabase.from('profiles').update({display_name:displayName.trim(),bio}).eq('id',uid).select('id').maybeSingle();if(e)throw e;if(!data)throw new Error('Profil kaydı bulunamadı veya düzenleme iznin yok. Supabase profiles RLS kurallarını kontrol et.');setSaveNotice('Profil değişiklikleri kaydedildi.');await load()}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
@@ -108,5 +108,4 @@ const subtleBtn:CSSProperties={padding:'10px 12px',borderRadius:11,background:'v
 const unreadStyle:CSSProperties={display:'inline-grid',placeItems:'center',minWidth:21,height:21,padding:'0 5px',borderRadius:20,background:'var(--accent)',color:'var(--accentText)',fontSize:11,fontWeight:800};
 const popupStyle:CSSProperties={position:'absolute',right:8,top:48,zIndex:30,minWidth:205,padding:6,border:'1px solid var(--line)',borderRadius:13,background:'#213429',boxShadow:'0 12px 35px #0008'};
 const popupButton:CSSProperties={display:'flex',alignItems:'center',gap:10,width:'100%',padding:'11px 10px',textAlign:'left',background:'transparent',color:'var(--text)',borderRadius:8};
-const overlayStyle:CSSProperties={position:'fixed',inset:0,zIndex:9999,display:'grid',placeItems:'center',padding:15,background:'#000a'};
-const modalStyle:CSSProperties={position:'relative',width:'min(420px,100%)',maxHeight:'90dvh',overflowY:'auto',textAlign:'center',padding:'28px 22px',borderRadius:20,border:'1px solid var(--line)',background:'var(--panel)',color:'var(--text)',display:'flex',flexDirection:'column',alignItems:'center'};
+
