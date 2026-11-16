@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 
 type Msg = {
   id: number; sender_id: string; recipient_id: string; body: string | null;
-  created_at: string; deleted_at: string | null; edited_at: string | null;
+  created_at: string; read_at: string | null; deleted_at: string | null; edited_at: string | null;
   media_path: string | null; media_type: string | null;
 };
 type Reaction = { message_id: number; user_id: string; emoji: string };
@@ -37,7 +37,7 @@ export default function EnhancedChat({ userId, peerId }: { userId: string; peerI
     const chatKey = `${userId}:${peerId}`;
     const { data, error: loadError } = await supabase
       .from('messages')
-      .select('id,sender_id,recipient_id,body,created_at,deleted_at,edited_at,media_path,media_type')
+      .select('id,sender_id,recipient_id,body,created_at,read_at,deleted_at,edited_at,media_path,media_type')
       .or(`and(sender_id.eq.${userId},recipient_id.eq.${peerId}),and(sender_id.eq.${peerId},recipient_id.eq.${userId})`)
       .order('created_at', { ascending: true })
       .limit(250);
@@ -45,14 +45,18 @@ export default function EnhancedChat({ userId, peerId }: { userId: string; peerI
     if (loadError) { setError(loadError.message); return; }
     const rows = (data || []) as Msg[];
     setMessages(rows);
-    const unread = rows.some(m => m.sender_id===peerId && m.recipient_id===userId);
-    if (unread && document.visibilityState === 'visible') {
-      const {data:privacy}=await supabase.from('vexa101_privacy').select('read_receipts').eq('user_id',userId).maybeSingle();
-      if(privacy?.read_receipts!==false){
-      const {error: readError} = await supabase.from('messages')
-        .update({read_at:new Date().toISOString()})
-        .eq('sender_id',peerId).eq('recipient_id',userId).is('read_at',null);
-      if(readError) console.warn('Okundu işareti:',readError.message);
+    // Yalnızca gerçekten okunmamış gelen mesajları işaretle.
+    // Gizli okundu bilgisi tercihi açık olsa da yerel okunmamış sayacı
+    // App.tsx içindeki sohbet-açıldı işaretiyle ayrıca sıfırlanır.
+    if (document.visibilityState === 'visible' &&
+        rows.some(m => m.sender_id === peerId && m.recipient_id === userId && !m.read_at)) {
+      const { data: privacy } = await supabase.from('vexa101_privacy')
+        .select('read_receipts').eq('user_id', userId).maybeSingle();
+      if (privacy?.read_receipts !== false && currentChat.current === chatKey) {
+        const { error: readError } = await supabase.from('messages')
+          .update({ read_at: new Date().toISOString() })
+          .eq('sender_id', peerId).eq('recipient_id', userId).is('read_at', null);
+        if (readError) console.warn('Okundu işareti:', readError.message);
       }
     }
 
@@ -81,6 +85,17 @@ export default function EnhancedChat({ userId, peerId }: { userId: string; peerI
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [load, userId, peerId]);
+
+  // Kullanıcı sekmeye geri döndüğünde açık sohbeti tekrar okundu say.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') void load(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
+  }, [load]);
 
   useEffect(() => {
     let active = true;
