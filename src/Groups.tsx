@@ -11,7 +11,7 @@ const clock=(v:string)=>new Date(v).toLocaleTimeString('tr-TR',{hour:'2-digit',m
 const display=(p?:Profile)=>p?.display_name?.trim()||'Vexa kullanıcısı';
 const mutedKey=(id:string)=>`vexa-group-muted-${id}`;
 
-export default function Groups({userId,profiles,onClose,mode='full',activeGroupId,onSelectGroup}:{userId:string;profiles:Profile[];onClose?:()=>void;mode?:'full'|'list'|'chat';activeGroupId?:string|null;onSelectGroup?:(id:string|null)=>void}){
+export default function Groups({userId,profiles,onClose,mode='full',activeGroupId,onSelectGroup,activeGroup,onSelectGroupData}:{userId:string;profiles:Profile[];onClose?:()=>void;mode?:'full'|'list'|'chat';activeGroupId?:string|null;onSelectGroup?:(id:string|null)=>void;activeGroup?:Group|null;onSelectGroupData?:(group:Group|null)=>void}){
  const [groups,setGroups]=useState<Group[]>([]);
  const [groupLoading,setGroupLoading]=useState(true);
  const [groupLoadError,setGroupLoadError]=useState('');
@@ -33,7 +33,7 @@ export default function Groups({userId,profiles,onClose,mode='full',activeGroupI
  const [confirmRemove,setConfirmRemove]=useState<string|null>(null);
  const bottomRef=useRef<HTMLDivElement|null>(null);
  const selectedId=mode==='full'?selected?.id:(activeGroupId||undefined);
- const currentGroup=mode==='full'?selected:(groups.find(g=>g.id===activeGroupId)||null);
+ const currentGroup=mode==='full'?selected:(groups.find(g=>g.id===activeGroupId)||((activeGroup?.id===activeGroupId)?activeGroup:null));
  const me=members.find(m=>m.user_id===userId);
  const admin=!!currentGroup&&(currentGroup.created_by===userId||me?.role==='admin');
  const owner=currentGroup?.created_by===userId;
@@ -121,7 +121,7 @@ export default function Groups({userId,profiles,onClose,mode='full',activeGroupI
  async function leaveGroup(){
   if(!selectedId)return;
   const ok=await rpc('vexa8_group_leave',{p_group_id:selectedId},'Gruptan ayrıldın.');
-  if(ok){setSelected(null);onSelectGroup?.(null);setSettings(false);await loadGroups()}
+  if(ok){setSelected(null);onSelectGroupData?.(null);onSelectGroup?.(null);setSettings(false);await loadGroups()}
  }
  const btnStyle:CSSProperties={background:'#304939',color:'#eaf5ed',borderRadius:9,padding:'8px 11px',display:'inline-flex',alignItems:'center',gap:6};
  const inputStyle:CSSProperties={width:'100%',padding:'11px',borderRadius:10,background:'#223529',color:'#eaf5ed',border:'1px solid #3b5944'};
@@ -129,7 +129,7 @@ export default function Groups({userId,profiles,onClose,mode='full',activeGroupI
   {mode!=='chat'&&<aside className="vexa-groups-sidebar">
    <header className="vexa-groups-list-header">{mode==='full'&&<button aria-label="Sohbetlere dön" onClick={onClose}><ArrowLeft size={20}/></button>}<h2>Gruplar</h2><button title="Yeni grup" onClick={()=>setCreating(v=>!v)}><Plus size={20}/></button></header>
    {creating&&<div className="vexa-group-create"><input value={title} maxLength={50} onChange={e=>setTitle(e.target.value)} placeholder="Grup adı"/><button disabled={busy||title.trim().length<3} onClick={()=>void create()}>Grubu oluştur</button></div>}
-   <div className="vexa-groups-list">{groups.map(g=><button key={g.id} className={'vexa-group-row '+(selectedId===g.id?'active':'')} onClick={()=>{clearMessages();setSelected(g);onSelectGroup?.(g.id);setSettings(false)}}>
+   <div className="vexa-groups-list">{groups.map(g=><button key={g.id} className={'vexa-group-row '+(selectedId===g.id?'active':'')} onClick={()=>{clearMessages();setSelected(g);onSelectGroupData?.(g);onSelectGroup?.(g.id);setSettings(false)}}>
     {g.avatar_url?.startsWith('https://')?<img src={g.avatar_url} alt="" className="vexa-group-avatar"/>:<span className="vexa-group-avatar vexa-group-avatar-fallback"><Users size={22}/></span>}
     <span className="vexa-group-row-text"><strong>{g.title}</strong><small>Grup sohbetini aç</small></span>
    </button>)}{!groups.length&&<p className="hint" style={{padding:16}}>Henüz grubun yok. + ile oluşturabilirsin.</p>}</div>
@@ -137,7 +137,7 @@ export default function Groups({userId,profiles,onClose,mode='full',activeGroupI
    {mode!=='list'&&<main className="vexa-groups-conversation">
    {currentGroup ? <>
    <header className="vexa-groups-chat-header">
-    <button className="vexa-group-back" aria-label="Grup listesine dön" onClick={()=>{setSelected(null);onSelectGroup?.(null);setSettings(false)}}><ArrowLeft size={22}/></button>
+    <button className="vexa-group-back" aria-label="Grup listesine dön" onClick={()=>{setSelected(null);onSelectGroupData?.(null);onSelectGroup?.(null);setSettings(false)}}><ArrowLeft size={22}/></button>
     {currentGroup.avatar_url?.startsWith('https://')?<img src={currentGroup.avatar_url} alt="" className="vexa-group-avatar"/>:<span className="vexa-group-avatar vexa-group-avatar-fallback"><Users size={21}/></span>}
     <button className="vexa-group-chat-title" onClick={()=>setSettings(v=>!v)}><strong>{currentGroup.title}</strong><small>{members.length} üye · {currentGroup.description||'Grup sohbeti'}</small></button>
     <button title="Grup bilgileri" onClick={()=>setSettings(v=>!v)}><Settings size={20}/></button>
