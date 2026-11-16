@@ -94,5 +94,3 @@
 .vexa92-groups-in-chats .vexa-group-row{width:100%;border-radius:12px}
 .vexa92-groups-in-chats .vexa-group-create{padding:10px 0}
 .vexa91-mode-chat{height:100%!important;min-height:0!important}
-.vexa91-mode-chat .vexa-groups-conversation{height:100%!important;min-height:0!important}
-@media(max-width:700px){.vexa91-mode-chat .vexa-groups-conversation{height:100dvh!important}}
