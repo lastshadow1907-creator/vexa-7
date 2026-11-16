@@ -1,15 +1,96 @@
-import {useCallback,useEffect,useState} from 'react';
-import {Send,Plus,ArrowLeft} from 'lucide-react';
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
+import type {CSSProperties} from 'react';
+import {ArrowLeft,Plus,Send,Users,Settings,UserPlus,LogOut,Shield,ShieldOff,UserMinus,Save,X,Search,Bell,BellOff} from 'lucide-react';
 import {supabase} from './supabase';
-type Group={id:string;title:string;created_by:string;avatar_url?:string|null};
+
+type Profile={id:string;display_name?:string|null};
+type Group={id:string;title:string;created_by:string;avatar_url?:string|null;description?:string|null};
+type Member={user_id:string;role:'admin'|'member'};
 type GroupMessage={id:string;group_id:string;sender_id:string;body:string;created_at:string};
-export default function Groups({userId,profiles}:{userId:string;profiles:{id:string;display_name?:string|null}[]}){
- const [groups,setGroups]=useState<Group[]>([]),[selected,setSelected]=useState<Group|null>(null),[messages,setMessages]=useState<GroupMessage[]>([]),[draft,setDraft]=useState(''),[title,setTitle]=useState(''),[creating,setCreating]=useState(false),[error,setError]=useState('');
- const loadGroups=useCallback(async()=>{const {data,error:e}=await supabase.from('vexa_group_members').select('group_id,group:vexa_groups(id,title,created_by,avatar_url)').eq('user_id',userId);if(e){setError(e.message);return}setGroups((data||[]).flatMap((r:any)=>r.group?[r.group as Group]:[]))},[userId]);
- const loadMessages=useCallback(async()=>{if(!selected)return;const {data,error:e}=await supabase.from('vexa_group_messages').select('id,group_id,sender_id,body,created_at').eq('group_id',selected.id).order('created_at',{ascending:true}).limit(200);if(e)setError(e.message);else setMessages((data||[]) as GroupMessage[])},[selected?.id]);
+const clock=(v:string)=>new Date(v).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+const display=(p?:Profile)=>p?.display_name?.trim()||'Vexa kullanıcısı';
+const mutedKey=(id:string)=>`vexa-group-muted-${id}`;
+
+export default function Groups({userId,profiles}:{userId:string;profiles:Profile[]}){
+ const [groups,setGroups]=useState<Group[]>([]);
+ const [selected,setSelected]=useState<Group|null>(null);
+ const [messages,setMessages]=useState<GroupMessage[]>([]);
+ const [members,setMembers]=useState<Member[]>([]);
+ const [draft,setDraft]=useState('');
+ const [title,setTitle]=useState('');
+ const [description,setDescription]=useState('');
+ const [avatarUrl,setAvatarUrl]=useState('');
+ const [creating,setCreating]=useState(false);
+ const [busy,setBusy]=useState(false);
+ const [error,setError]=useState('');
+ const [notice,setNotice]=useState('');
+ const [settings,setSettings]=useState(false);
+ const [addOpen,setAddOpen]=useState(false);
+ const [find,setFind]=useState('');
+ const [muted,setMuted]=useState(false);
+ const [confirmRemove,setConfirmRemove]=useState<string|null>(null);
+ const bottomRef=useRef<HTMLDivElement|null>(null);
+ const selectedId=selected?.id;
+ const me=members.find(m=>m.user_id===userId);
+ const admin=!!selected&&(selected.created_by===userId||me?.role==='admin');
+ const owner=selected?.created_by===userId;
+ const people=useMemo(()=>profiles.filter(p=>p.id!==userId&&!members.some(m=>m.user_id===p.id)&&display(p).toLocaleLowerCase('tr-TR').includes(find.toLocaleLowerCase('tr-TR'))).slice(0,50),[profiles,members,find,userId]);
+ const person=(id:string)=>display(profiles.find(p=>p.id===id));
+ const clearMessages=()=>{setError('');setNotice('')};
+
+ const loadGroups=useCallback(async()=>{
+  const {data,error:e}=await supabase.from('vexa_group_members').select('group_id,group:vexa_groups(id,title,created_by,avatar_url,description)').eq('user_id',userId);
+  if(e){setError(e.message);return}
+  const list=(data||[]).flatMap((r:any)=>r.group?[r.group as Group]:[]);
+  setGroups(list);
+  setSelected(prev=>prev?list.find(g=>g.id===prev.id)||null:null);
+ },[userId]);
+ const loadMessages=useCallback(async()=>{
+  if(!selectedId)return;
+  const {data,error:e}=await supabase.from('vexa_group_messages').select('id,group_id,sender_id,body,created_at').eq('group_id',selectedId).order('created_at',{ascending:true}).limit(250);
+  if(e)setError(e.message);else setMessages((data||[]) as GroupMessage[]);
+ },[selectedId]);
+ const loadMembers=useCallback(async()=>{
+  if(!selectedId)return;
+  const {data,error:e}=await supabase.from('vexa_group_members').select('user_id,role').eq('group_id',selectedId);
+  if(e)setError(e.message);else setMembers((data||[]) as Member[]);
+ },[selectedId]);
  useEffect(()=>{void loadGroups()},[loadGroups]);
- useEffect(()=>{void loadMessages();if(!selected)return;const c=supabase.channel(`vexa7-group-${selected.id}`).on('postgres_changes',{event:'*',schema:'public',table:'vexa_group_messages',filter:`group_id=eq.${selected.id}`},()=>void loadMessages()).subscribe();return()=>{void supabase.removeChannel(c)}},[selected?.id,loadMessages]);
- async function create(){if(title.trim().length<3)return;setCreating(true);setError('');try{const {data,error:e}=await supabase.from('vexa_groups').insert({title:title.trim(),created_by:userId}).select('id,title,created_by,avatar_url').single();if(e)throw e;const {error:m}=await supabase.from('vexa_group_members').insert({group_id:data.id,user_id:userId});if(m)throw m;setTitle('');await loadGroups();setSelected(data as Group)}catch(e){setError((e as Error).message+' — Eski Vexa grup oluşturma RPC yetkisi gerekiyorsa SQL uyarlaması yapılmalı.')}finally{setCreating(false)}}
- async function send(){if(!selected||!draft.trim())return;const body=draft.trim();setDraft('');const {error:e}=await supabase.from('vexa_group_messages').insert({group_id:selected.id,sender_id:userId,body});if(e){setDraft(body);setError(e.message)}else await loadMessages()}
- return <div className="vexa-groups-panel">{selected?<><div className="vexa-group-heading"><button onClick={()=>setSelected(null)}><ArrowLeft size={18}/></button><strong>{selected.title}</strong></div><div className="vexa-group-messages">{messages.map(m=><div key={m.id} className={'vexa-group-message '+(m.sender_id===userId?'mine':'')}><small>{profiles.find(p=>p.id===m.sender_id)?.display_name||'Üye'}</small><div>{m.body}</div><time>{new Date(m.created_at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</time></div>)}</div><form className="vexa-group-compose" onSubmit={e=>{e.preventDefault();void send()}}><input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Gruba mesaj yaz…"/><button disabled={!draft.trim()}><Send size={18}/></button></form></>:<><h2>Gruplarım</h2>{groups.map(g=><button className="vexa-group-row" key={g.id} onClick={()=>setSelected(g)}><span>👥</span><strong>{g.title}</strong></button>)}{!groups.length&&<p className="hint">Henüz grubun yok.</p>}<div className="vexa-group-create"><h3>Yeni grup</h3><input value={title} maxLength={50} onChange={e=>setTitle(e.target.value)} placeholder="Grup adı"/><button disabled={creating||title.trim().length<3} onClick={()=>void create()}><Plus size={17}/> Oluştur</button></div></>}{error&&<p className="error">{error}</p>}</div>
-}
+ useEffect(()=>{
+  if(!selectedId){setMembers([]);setMessages([]);return}
+  setMuted(localStorage.getItem(mutedKey(selectedId))==='1');
+  void loadMessages();void loadMembers();
+  const c=supabase.channel(`vexa8-group-${selectedId}`)
+   .on('postgres_changes',{event:'*',schema:'public',table:'vexa_group_messages',filter:`group_id=eq.${selectedId}`},()=>void loadMessages())
+   .on('postgres_changes',{event:'*',schema:'public',table:'vexa_group_members',filter:`group_id=eq.${selectedId}`},()=>{void loadMembers();void loadGroups()})
+   .on('postgres_changes',{event:'*',schema:'public',table:'vexa_groups',filter:`id=eq.${selectedId}`},()=>void loadGroups())
+   .subscribe();
+  return()=>{void supabase.removeChannel(c)};
+ },[selectedId,loadGroups,loadMessages,loadMembers]);
+ useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:'smooth',block:'end'})},[messages.length,selectedId]);
+ useEffect(()=>{if(selected){setTitle(selected.title);setDescription(selected.description||'');setAvatarUrl(selected.avatar_url||'')}},[selectedId]);
+
+ async function rpc(name:string,args:Record<string,unknown>,success:string){
+  setBusy(true);clearMessages();
+  try{
+   const {error:e}=await supabase.rpc(name,args);if(e)throw e;
+   setNotice(success);await Promise.all([loadGroups(),loadMembers()]);return true;
+  }catch(e){setError((e as Error).message);return false}
+  finally{setBusy(false)}
+ }
+ async function create(){
+  if(title.trim().length<3)return;
+  const newTitle=title.trim();
+  const ok=await rpc('vexa8_group_create',{p_title:newTitle},'Grup oluşturuldu.');
+  if(ok){setCreating(false);setTitle('');const {data}=await supabase.from('vexa_group_members').select('group:vexa_groups(id,title,created_by,avatar_url,description)').eq('user_id',userId);const match=(data||[]).map((r:any)=>r.group as Group).find(g=>g?.title===newTitle&&g.created_by===userId);if(match){setSelected(match);setSettings(false)}await loadGroups()}
+ }
+ async function send(){
+  if(!selectedId||!draft.trim()||busy)return;
+  const body=draft.trim();setDraft('');setError('');
+  const {error:e}=await supabase.from('vexa_group_messages').insert({group_id:selectedId,sender_id:userId,body});
+  if(e){setDraft(body);setError(e.message)}else await loadMessages();
+ }
+ async function saveGroup(){
+  if(!selectedId||title.trim().length<3)return;
+  const ok=await rpc('vexa8_group_edit',{p_group_id:selectedId,p_title:title.trim(),p_description:description.trim(),p_avatar_url:avatarUrl.trim()||null},'Grup bilgileri kaydedildi.');
+  if(ok)await loadGroups();
