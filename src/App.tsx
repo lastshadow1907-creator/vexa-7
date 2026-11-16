@@ -1,7 +1,7 @@
-
-import {useEffect,useState} from 'react';
+import {useCallback,useEffect,useMemo,useState} from 'react';
+import type {CSSProperties} from 'react';
 import type {Session} from '@supabase/supabase-js';
-import {MessageCircle,Users,Search,UserRound,ArrowLeft,LogOut,Settings} from 'lucide-react';
+import {MessageCircle,Users,Search,UserRound,ArrowLeft,LogOut,Settings,Pin,Archive,ArchiveRestore,MoreVertical,X,CheckCheck,Camera,RefreshCw} from 'lucide-react';
 import {supabase,configured} from './supabase';
 import Calls from './Calls';
 import EnhancedChat from './EnhancedChat';
@@ -9,228 +9,60 @@ import Groups from './Groups';
 import type {Profile,FriendRequest} from './supabase';
 
 type Tab='chats'|'find'|'requests'|'profile'|'groups';
-const name=(p?:Profile)=>p?.display_name?.trim()||'Vexa kullanıcısı';
-
+type ChatRow={id:number;sender_id:string;recipient_id:string;body:string|null;created_at:string;read_at?:string|null;deleted_at?:string|null;media_type?:string|null};
+const name=(p?:Profile|null)=>p?.display_name?.trim()||p?.username||'Vexa kullanıcısı';
+const time=(date:string)=>new Date(date).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+const day=(date:string)=>new Date(date).toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit'});
+const short=(s:string,n=55)=>s.length>n?s.slice(0,n-1)+'…':s;
+const photo=(p?:Profile|null)=>{const v=p?.avatar_path||'';return /^https:\/\//i.test(v)?v:null};
+function Avatar({p,size=43}:{p?:Profile|null;size?:number}){const src=photo(p);return <span className="avatar" style={{width:size,height:size,flexBasis:size,borderRadius:'50%',overflow:'hidden'}}>{src?<img src={src} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>:name(p).slice(0,1).toUpperCase()}</span>}
+function storageGet(key:string):string[]{try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return []}}
 export default function App(){
  const [session,setSession]=useState<Session|null>(null),[ready,setReady]=useState(false);
  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[register,setRegister]=useState(false);
  const [tab,setTab]=useState<Tab>('chats'),[friends,setFriends]=useState<FriendRequest[]>([]),[profiles,setProfiles]=useState<Profile[]>([]);
- const [selected,setSelected]=useState<Profile|null>(null);
- const [search,setSearch]=useState(''),[results,setResults]=useState<Profile[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(false);
- const [displayName,setDisplayName]=useState(''),[bio,setBio]=useState('');
+ const [selected,setSelected]=useState<Profile|null>(null),[inspect,setInspect]=useState<Profile|null>(null);
+ const [search,setSearch]=useState(''),[results,setResults]=useState<Profile[]>([]),[chatSearch,setChatSearch]=useState('');
+ const [error,setError]=useState(''),[busy,setBusy]=useState(false),[chatRows,setChatRows]=useState<ChatRow[]>([]);
+ const [displayName,setDisplayName]=useState(''),[bio,setBio]=useState(''),[avatarUrl,setAvatarUrl]=useState('');
+ const [archived,setArchived]=useState<string[]>([]),[pinned,setPinned]=useState<string[]>([]),[showArchived,setShowArchived]=useState(false),[menuId,setMenuId]=useState<string|null>(null);
  const uid=session?.user.id;
-
- useEffect(()=>{supabase.auth.getSession().then(({data})=>{setSession(data.session);setReady(true)});const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));return()=>subscription.unsubscribe()},[]);
-
- async function load(){
-  if(!uid)return;
-  const [f,p]=await Promise.all([
-   supabase.from('friend_requests').select('id,sender_id,recipient_id,status').or(`sender_id.eq.${uid},recipient_id.eq.${uid}`),
-   supabase.from('profiles').select('id,display_name,bio,avatar_path,username').limit(500)
-  ]);
-  if(f.error||p.error){setError(f.error?.message||p.error?.message||'Yüklenemedi');return}
-  setFriends(f.data||[]);
-  setProfiles(p.data||[]);
-  const me=(p.data||[]).find(x=>x.id===uid);
-  setDisplayName(me?.display_name||'');
-  setBio(me?.bio||'');
- }
-
- useEffect(()=>{void load()},[uid]);
- useEffect(()=>{
-  if(!uid)return;
-  const channel=supabase.channel(`vexa7-friends-${uid}`)
-   .on('postgres_changes',{event:'*',schema:'public',table:'friend_requests'},()=>{void load()})
-   .subscribe();
-  return()=>{void supabase.removeChannel(channel)};
- },[uid]);
-
- async function auth(){
-  setError('');
-  setBusy(true);
-  try{
-   const r=register
-    ?await supabase.auth.signUp({email,password})
-    :await supabase.auth.signInWithPassword({email,password});
-   if(r.error)throw r.error;
-   if(register&&!r.data.session)setError('Doğrulama e-postanı kontrol et.');
-  }catch(e){setError((e as Error).message)}
-  finally{setBusy(false)}
- }
-
- async function findUsers(){
-  if(search.trim().length<2)return;
-  setBusy(true);
-  setError('');
-  const {data:tags,error:e}=await supabase.from('vexa_user_tags')
-   .select('user_id,tag')
-   .ilike('tag',`%${search.trim().replace(/^#/,'').replace(/[%_]/g,'')}%`)
-   .limit(30);
-  if(e)setError(e.message);
-  else{
-   const ids=(tags||[]).map(t=>t.user_id).filter(id=>id!==uid);
-   const {data}=ids.length
-    ?await supabase.from('profiles').select('id,display_name,bio,avatar_path,username').in('id',ids)
-    :{data:[]};
-   setResults(data||[]);
-  }
-  setBusy(false);
- }
-
- async function addFriend(id:string){
-  const {error:e}=await supabase.rpc('vexa_send_friend_request',{p_recipient_id:id});
-  if(e)setError(e.message);
-  else await load();
- }
-
- async function updateRequest(id:string,accept:boolean){
-  const {error:e}=await supabase.from('friend_requests')
-   .update({status:accept?'accepted':'rejected'})
-   .eq('id',id).eq('recipient_id',uid);
-  if(e)setError(e.message);
-  else await load();
- }
-
- async function saveProfile(){
-  if(!uid)return;
-  const {error:e}=await supabase.from('profiles')
-   .update({display_name:displayName,bio}).eq('id',uid);
-  if(e)setError(e.message);
-  else await load();
- }
-
- const accepted=friends.filter(f=>f.status==='accepted')
-  .map(f=>profiles.find(p=>p.id===(f.sender_id===uid?f.recipient_id:f.sender_id)))
-  .filter((p):p is Profile=>!!p);
-
- if(!configured)return <main className="auth"><h1>Vexa 7</h1><p>Önce <code>.env</code> dosyasına Supabase URL ve anon anahtarını ekle.</p></main>;
+ useEffect(()=>{let active=true;void supabase.auth.getSession().then(({data})=>{if(active){setSession(data.session);setReady(true)}});const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));return()=>{active=false;subscription.unsubscribe()}},[]);
+ useEffect(()=>{setSelected(null);setChatRows([]);setArchived(uid?storageGet('vexa-archive-'+uid):[]);setPinned(uid?storageGet('vexa-pin-'+uid):[])},[uid]);
+ const load=useCallback(async()=>{if(!uid)return;const [f,p]=await Promise.all([supabase.from('friend_requests').select('id,sender_id,recipient_id,status').or(`sender_id.eq.${uid},recipient_id.eq.${uid}`),supabase.from('profiles').select('id,display_name,bio,avatar_path,username').limit(500)]);if(f.error||p.error){setError(f.error?.message||p.error?.message||'Yüklenemedi');return}setFriends(f.data||[]);setProfiles(p.data||[]);const me=(p.data||[]).find(x=>x.id===uid);setDisplayName(me?.display_name||'');setBio(me?.bio||'');setAvatarUrl(photo(me)||'')},[uid]);
+ const loadMessages=useCallback(async()=>{if(!uid)return;const {data,error:e}=await supabase.from('messages').select('id,sender_id,recipient_id,body,created_at,read_at,deleted_at,media_type').or(`sender_id.eq.${uid},recipient_id.eq.${uid}`).order('created_at',{ascending:false}).limit(500);if(!e)setChatRows((data||[]) as ChatRow[]);else console.warn('Sohbet özetleri:',e.message)},[uid]);
+ useEffect(()=>{void load();void loadMessages()},[load,loadMessages]);
+ useEffect(()=>{if(!uid)return;const ch=supabase.channel('vexa-app-'+uid).on('postgres_changes',{event:'*',schema:'public',table:'friend_requests'},()=>{void load()}).on('postgres_changes',{event:'*',schema:'public',table:'messages'},()=>{void loadMessages()}).subscribe();const onFocus=()=>{void loadMessages()};window.addEventListener('focus',onFocus);return()=>{window.removeEventListener('focus',onFocus);void supabase.removeChannel(ch)}},[uid,load,loadMessages]);
+ async function auth(){setError('');setBusy(true);try{const r=register?await supabase.auth.signUp({email,password}):await supabase.auth.signInWithPassword({email,password});if(r.error)throw r.error;if(register&&!r.data.session)setError('Doğrulama e-postanı kontrol et.')}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
+ async function findUsers(){if(search.trim().replace(/^#/,'').length<2)return;setBusy(true);setError('');const {data:tags,error:e}=await supabase.from('vexa_user_tags').select('user_id,tag').ilike('tag',`%${search.trim().replace(/^#/,'').replace(/[%_]/g,'')}%`).limit(30);if(e)setError(e.message);else{const ids=(tags||[]).map(t=>t.user_id).filter(id=>id!==uid);const {data}=ids.length?await supabase.from('profiles').select('id,display_name,bio,avatar_path,username').in('id',ids):{data:[]};setResults(data||[])}setBusy(false)}
+ async function addFriend(id:string){const {error:e}=await supabase.rpc('vexa_send_friend_request',{p_recipient_id:id});if(e)setError(e.message);else await load()}
+ async function updateRequest(id:string,accept:boolean){const {error:e}=await supabase.from('friend_requests').update({status:accept?'accepted':'rejected'}).eq('id',id).eq('recipient_id',uid);if(e)setError(e.message);else await load()}
+ async function saveProfile(){if(!uid)return;setBusy(true);const {error:e}=await supabase.from('profiles').update({display_name:displayName.trim(),bio,avatar_path:avatarUrl.trim()||null}).eq('id',uid);setBusy(false);if(e)setError(e.message);else await load()}
+ function toggle(kind:'pin'|'archive',id:string){if(!uid)return;const prev=kind==='pin'?pinned:archived;const next=prev.includes(id)?prev.filter(x=>x!==id):[...prev,id];localStorage.setItem('vexa-'+kind+'-'+uid,JSON.stringify(next));if(kind==='pin')setPinned(next);else setArchived(next);setMenuId(null)}
+ const accepted=useMemo(()=>friends.filter(f=>f.status==='accepted').map(f=>profiles.find(p=>p.id===(f.sender_id===uid?f.recipient_id:f.sender_id))).filter((p):p is Profile=>!!p),[friends,profiles,uid]);
+ const summaries=useMemo(()=>{const map=new Map<string,{last:ChatRow|null;unread:number}>();accepted.forEach(p=>map.set(p.id,{last:null,unread:0}));for(const m of chatRows){const id=m.sender_id===uid?m.recipient_id:m.sender_id;const row=map.get(id);if(!row)continue;if(!row.last)row.last=m;if(m.recipient_id===uid&&!m.read_at&&!m.deleted_at)row.unread++}return map},[accepted,chatRows,uid]);
+ const ordered=useMemo(()=>accepted.filter(p=>(showArchived?archived.includes(p.id):!archived.includes(p.id))&&name(p).toLocaleLowerCase('tr').includes(chatSearch.toLocaleLowerCase('tr'))).sort((a,b)=>Number(pinned.includes(b.id))-Number(pinned.includes(a.id))||(new Date(summaries.get(b.id)?.last?.created_at||0).getTime()-new Date(summaries.get(a.id)?.last?.created_at||0).getTime())),[accepted,showArchived,archived,chatSearch,pinned,summaries]);
+ if(!configured)return <main className="auth"><h1>Vexa</h1><p>Önce .env dosyasına Supabase URL ve anon anahtarını ekle.</p></main>;
  if(!ready)return <main className="auth">Yükleniyor…</main>;
-
- if(!session)return <main className="auth">
-  <div className="logo">Vexa<span>●</span></div>
-  <h1>{register?'Hesap oluştur':'Tekrar hoş geldin'}</h1>
-  <p>Vexa hesabınla devam et.</p>
-  <form onSubmit={e=>{e.preventDefault();void auth()}}>
-   <input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/>
-   <input type="password" placeholder="Şifre" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}/>
-   <button disabled={busy}>{register?'Kaydol':'Giriş yap'}</button>
-  </form>
-  <button className="link" onClick={()=>setRegister(!register)}>
-   {register?'Giriş yap':'Yeni hesap oluştur'}
-  </button>
-  {error&&<p className="error">{error}</p>}
- </main>;
-
- const nav=[
-  {id:'chats',icon:MessageCircle,label:'Sohbetler'},
-  {id:'groups',icon:Users,label:'Gruplar'},
-  {id:'find',icon:Search,label:'Kişi Ara'},
-  {id:'requests',icon:Users,label:'İstekler'},
-  {id:'profile',icon:UserRound,label:'Profilim'}
- ] as const;
-
- return <div className="shell">
-  <aside className={'sidebar '+(selected?'chat-open':'')}>
-   <div className="sidebar-header">
-    <div className="logo">Vexa<span>●</span></div>
-    <span className="edition">7.5</span>
-   </div>
-
-   <nav className="nav">
-    {nav.map(n=><button key={n.id} className={tab===n.id?'active':''}
-     onClick={()=>{setTab(n.id);setSelected(null);setError('')}}>
-     <n.icon size={20}/><span>{n.label}</span>
-    </button>)}
-   </nav>
-
-   <section className="panel-scroll">
-    {tab==='chats'&&<>
-     <h2>Sohbetler</h2>
-     {accepted.length?accepted.map(p=>
-      <button className={'contact '+(selected?.id===p.id?'selected':'')}
-       key={p.id} onClick={()=>setSelected(p)}>
-       <span className="avatar">{name(p).slice(0,1).toUpperCase()}</span>
-       <span><strong>{name(p)}</strong><small>Mesajlaşmak için dokun</small></span>
-      </button>
-     ):<p className="hint">Henüz arkadaşın yok. Kişi Ara bölümünden ekleyebilirsin.</p>}
-    </>}
-
-    {tab==='groups'&&<Groups userId={uid!} profiles={profiles}/>}
-
-    {tab==='find'&&<>
-     <h2>Kişi Ara</h2>
-     <form className="search-form" onSubmit={e=>{e.preventDefault();void findUsers()}}>
-      <input placeholder="#etiket ara" value={search} onChange={e=>setSearch(e.target.value)}/>
-      <button disabled={busy}>Ara</button>
-     </form>
-     {results.map(p=><div className="contact" key={p.id}>
-      <span className="avatar">{name(p)[0]}</span>
-      <span className="grow"><strong>{name(p)}</strong></span>
-      <button className="small" onClick={()=>void addFriend(p.id)}>Ekle</button>
-     </div>)}
-    </>}
-
-    {tab==='requests'&&<>
-     <h2>Arkadaşlık istekleri</h2>
-     {friends.filter(f=>f.status==='pending').map(f=>
-      <div className="request" key={f.id}>
-       <strong>{name(profiles.find(p=>p.id===(f.sender_id===uid?f.recipient_id:f.sender_id)))}</strong>
-       {f.recipient_id===uid
-        ?<div className="request-actions">
-          <button onClick={()=>void updateRequest(f.id,true)}>Kabul et</button>
-          <button className="ghost" onClick={()=>void updateRequest(f.id,false)}>Reddet</button>
-         </div>
-        :<small>Yanıt bekleniyor</small>}
-      </div>)}
-    </>}
-
-    {tab==='profile'&&<>
-     <div className="profile-cover"/>
-     <div className="profile-avatar">{(displayName||'V')[0].toUpperCase()}</div>
-     <h2>Profilim</h2>
-     <label>Görünen ad</label>
-     <input value={displayName} onChange={e=>setDisplayName(e.target.value)}/>
-     <label>Hakkımda</label>
-     <textarea value={bio} onChange={e=>setBio(e.target.value)} rows={4}/>
-     <button className="full" onClick={()=>void saveProfile()}>Profili kaydet</button>
-     <button className="logout" onClick={()=>void supabase.auth.signOut()}>
-      <LogOut size={17}/> Çıkış yap
-     </button>
-    </>}
-
-    {error&&<p className="error">{error}</p>}
-   </section>
-
-   <div className="mobile-nav">
-    {nav.map(n=><button key={n.id} className={tab===n.id?'active':''}
-     onClick={()=>{setTab(n.id);setSelected(null)}}>
-     <n.icon size={22}/><small>{n.label}</small>
-    </button>)}
-   </div>
-  </aside>
-
-  <main className={'conversation '+(selected?'show':'')}>
-   {selected?<>
-    <header className="chat-header">
-     <button className="back" onClick={()=>setSelected(null)} aria-label="Geri">
-      <ArrowLeft size={22}/>
-     </button>
-     <span className="avatar">{name(selected)[0]}</span>
-     <div><strong>{name(selected)}</strong><small>Özel sohbet</small></div>
-     <Settings size={18} className="muted-icon"/>
-    </header>
-    <EnhancedChat key={selected.id} userId={uid!} peerId={selected.id}/>
-   </>:<div className="welcome">
-    <div className="welcome-icon"><MessageCircle size={44}/></div>
-    <h1>Vexa'ya hoş geldin</h1>
-    <p>Bir sohbet seçerek mesajlaşmaya başla.</p>
-   </div>}
-  </main>
-
-  {uid&&<div className={'call-inbox '+(selected?'call-visible':'')}>
-   <Calls userId={uid} peer={selected?.id||null}
-    peerName={selected?name(selected):""}
-    lookupName={id=>name(profiles.find(p=>p.id===id))}/>
-  </div>}
+ if(!session)return <main className="auth"><div className="logo">Vexa<span>●</span></div><h1>{register?'Hesap oluştur':'Tekrar hoş geldin'}</h1><p>Vexa hesabınla devam et.</p><form onSubmit={e=>{e.preventDefault();void auth()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/><input type="password" placeholder="Şifre" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}/><button disabled={busy}>{register?'Kaydol':'Giriş yap'}</button></form><button className="link" onClick={()=>setRegister(!register)}>{register?'Giriş yap':'Yeni hesap oluştur'}</button>{error&&<p className="error">{error}</p>}</main>;
+ const nav=[{id:'chats',icon:MessageCircle,label:'Sohbetler'},{id:'groups',icon:Users,label:'Gruplar'},{id:'find',icon:Search,label:'Kişi Ara'},{id:'requests',icon:Users,label:'İstekler'},{id:'profile',icon:UserRound,label:'Profilim'}] as const;
+ const go=(t:Tab)=>{setTab(t);setSelected(null);setError('');setMenuId(null)};
+ return <div className="shell"><aside className={'sidebar '+(selected?'chat-open':'')}><div className="sidebar-header"><div className="logo">Vexa<span>●</span></div><span className="edition">8.0 · 1/3</span></div><nav className="nav">{nav.map(n=><button key={n.id} className={tab===n.id?'active':''} onClick={()=>go(n.id)}><n.icon size={20}/><span>{n.label}</span></button>)}</nav><section className="panel-scroll">
+ {tab==='chats'&&<><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}><h2>{showArchived?'Arşivlenenler':'Sohbetler'}</h2><button title="Sohbet listesini yenile" onClick={()=>void loadMessages()} style={iconBtn}><RefreshCw size={17}/></button></div><div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}><Search size={18} color="var(--muted)"/><input aria-label="Sohbetlerde ara" placeholder="Sohbet ara…" value={chatSearch} onChange={e=>setChatSearch(e.target.value)}/></div><button onClick={()=>setShowArchived(!showArchived)} style={{...subtleBtn,width:'100%',display:'flex',alignItems:'center',gap:8,marginBottom:12}}>{showArchived?<ArchiveRestore size={17}/>:<Archive size={17}/>} {showArchived?'Tüm sohbetlere dön':'Arşivlenen sohbetler'} {!showArchived&&archived.length>0&&`(${archived.length})`}</button>{ordered.length?ordered.map(p=>{const summary=summaries.get(p.id),last=summary?.last;return <div key={p.id} style={{position:'relative'}}><button className={'contact '+(selected?.id===p.id?'selected':'')} onClick={()=>{setSelected(p);setMenuId(null)}} style={{paddingRight:44}}><Avatar p={p} size={46}/><span style={{flex:1,minWidth:0}}><span style={{display:'flex',justifyContent:'space-between',gap:5,alignItems:'center'}}><strong>{name(p)}</strong><small style={{flexShrink:0,margin:0}}>{last?(Date.now()-new Date(last.created_at).getTime()<86400000?time(last.created_at):day(last.created_at)):''}</small></span><span style={{display:'flex',alignItems:'center',gap:6,marginTop:5}}><small style={{flex:1,minWidth:0,margin:0}}>{last?(last.deleted_at?'Silinen mesaj':last.body?short(last.body.replace(/\n/g,' ')):last.media_type?'📎 Medya':'Mesaj'):p.bio||'Mesajlaşmak için dokun'}</small>{!!summary?.unread&&<span style={unreadStyle}>{summary.unread>99?'99+':summary.unread}</span>}{pinned.includes(p.id)&&<Pin size={13} color="var(--accent)"/>}</span></span></button><button aria-label={`${name(p)} sohbet seçenekleri`} title="Sohbet seçenekleri" onClick={()=>setMenuId(menuId===p.id?null:p.id)} style={{...iconBtn,position:'absolute',right:4,top:14}}><MoreVertical size={19}/></button>{menuId===p.id&&<div style={popupStyle}><button style={popupButton} onClick={()=>toggle('pin',p.id)}><Pin size={16}/>{pinned.includes(p.id)?'Sabitlemeyi kaldır':'Sohbeti sabitle'}</button><button style={popupButton} onClick={()=>toggle('archive',p.id)}><Archive size={16}/>{archived.includes(p.id)?'Arşivden çıkar':'Arşivle'}</button><button style={popupButton} onClick={()=>{setInspect(p);setMenuId(null)}}><UserRound size={16}/>Profili görüntüle</button></div>}</div>}):<p className="hint">{showArchived?'Arşivlenmiş sohbet yok.':chatSearch?'Aramana uygun sohbet yok.':'Henüz arkadaşın yok. Kişi Ara bölümünden ekleyebilirsin.'}</p>}</>}
+ {tab==='groups'&&<Groups userId={uid!} profiles={profiles}/>}
+ {tab==='find'&&<><h2>Kişi Ara</h2><form className="search-form" onSubmit={e=>{e.preventDefault();void findUsers()}}><input placeholder="#etiket ara" value={search} onChange={e=>setSearch(e.target.value)}/><button disabled={busy}>Ara</button></form>{results.map(p=><div className="contact" key={p.id}><Avatar p={p}/><span className="grow"><strong>{name(p)}</strong><small>{p.bio||p.username||''}</small></span><button className="small" onClick={()=>void addFriend(p.id)}>Ekle</button></div>)}</>}
+ {tab==='requests'&&<><h2>Arkadaşlık istekleri</h2>{friends.filter(f=>f.status==='pending').length===0&&<p className="hint">Bekleyen arkadaşlık isteği yok.</p>}{friends.filter(f=>f.status==='pending').map(f=><div className="request" key={f.id}><strong>{name(profiles.find(p=>p.id===(f.sender_id===uid?f.recipient_id:f.sender_id)))}</strong>{f.recipient_id===uid?<div className="request-actions"><button onClick={()=>void updateRequest(f.id,true)}>Kabul et</button><button className="ghost" onClick={()=>void updateRequest(f.id,false)}>Reddet</button></div>:<small>Yanıt bekleniyor</small>}</div>)}</>}
+ {tab==='profile'&&<><div className="profile-cover"/><div style={{marginTop:-32,marginLeft:14,position:'relative',width:78}}><Avatar p={{id:uid!,display_name:displayName,avatar_path:avatarUrl}} size={76}/></div><h2>Profilim</h2><label>Görünen ad</label><input value={displayName} maxLength={60} onChange={e=>setDisplayName(e.target.value)}/><label>Hakkımda</label><textarea value={bio} maxLength={300} onChange={e=>setBio(e.target.value)} rows={3}/><label><Camera size={14} style={{verticalAlign:'middle'}}/> Profil fotoğrafı URL'si (HTTPS)</label><input type="url" placeholder="https://…" value={avatarUrl} onChange={e=>setAvatarUrl(e.target.value)}/><p className="hint">Bu sürümde profil fotoğrafı için herkese açık HTTPS görsel bağlantısı kullanılır. Dosya yükleme sonraki aşamada eklenebilir.</p><button className="full" disabled={busy} onClick={()=>void saveProfile()}>Profili kaydet</button><button className="logout" onClick={()=>void supabase.auth.signOut()}><LogOut size={17}/> Çıkış yap</button></>}
+ {error&&<p className="error">{error}</p>}</section><div className="mobile-nav">{nav.map(n=><button key={n.id} className={tab===n.id?'active':''} onClick={()=>go(n.id)}><n.icon size={22}/><small>{n.label}</small></button>)}</div></aside>
+ <main className={'conversation '+(selected?'show':'')}>{selected?<><header className="chat-header"><button className="back" onClick={()=>{setSelected(null);void loadMessages()}} aria-label="Geri"><ArrowLeft size={22}/></button><button onClick={()=>setInspect(selected)} style={{display:'flex',alignItems:'center',gap:10,minWidth:0,flex:1,textAlign:'left',background:'transparent',color:'inherit',padding:0}}><Avatar p={selected}/><span style={{minWidth:0}}><strong>{name(selected)}</strong><small>{selected.bio||'Özel sohbet'}</small></span></button><button onClick={()=>setInspect(selected)} title="Sohbet profili" style={iconBtn}><Settings size={19}/></button></header><EnhancedChat key={selected.id} userId={uid!} peerId={selected.id}/></>:<div className="welcome"><div className="welcome-icon"><MessageCircle size={44}/></div><h1>Vexa'ya hoş geldin</h1><p>Bir sohbet seçerek mesajlaşmaya başla.</p></div>}</main>
+ {uid&&<div className="call-inbox"><Calls userId={uid} peer={selected?.id||null} peerName={selected?name(selected):''} lookupName={id=>name(profiles.find(p=>p.id===id))}/></div>}
+ {inspect&&<div role="presentation" onClick={()=>setInspect(null)} style={overlayStyle}><div role="dialog" aria-modal="true" aria-label="Kişi profili" onClick={e=>e.stopPropagation()} style={modalStyle}><button onClick={()=>setInspect(null)} aria-label="Kapat" style={{...iconBtn,position:'absolute',right:12,top:12}}><X size={20}/></button><Avatar p={inspect} size={82}/><h2 style={{margin:'12px 0 3px'}}>{name(inspect)}</h2><p style={{color:'var(--muted)',margin:'4px 0 16px'}}>{inspect.username?'@'+inspect.username:''}</p><p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{inspect.bio||'Hakkımda bilgisi yok.'}</p><div style={{display:'flex',gap:8,justifyContent:'center',marginTop:20}}><button className="small" onClick={()=>{setSelected(inspect);setTab('chats');setInspect(null)}}><MessageCircle size={15} style={{verticalAlign:'middle'}}/> Mesaj gönder</button><button className="small" style={{background:'#304638',color:'var(--text)'}} onClick={()=>setInspect(null)}>Kapat</button></div></div></div>}
  </div>;
 }
+const iconBtn:CSSProperties={display:'grid',placeItems:'center',width:36,height:36,borderRadius:10,background:'transparent',color:'var(--muted)',flexShrink:0};
+const subtleBtn:CSSProperties={padding:'10px 12px',borderRadius:11,background:'var(--panel2)',color:'var(--text)',textAlign:'left'};
+const unreadStyle:CSSProperties={display:'inline-grid',placeItems:'center',minWidth:21,height:21,padding:'0 5px',borderRadius:20,background:'var(--accent)',color:'var(--accentText)',fontSize:11,fontWeight:800};
+const popupStyle:CSSProperties={position:'absolute',right:8,top:48,zIndex:30,minWidth:205,padding:6,border:'1px solid var(--line)',borderRadius:13,background:'#213429',boxShadow:'0 12px 35px #0008'};
+const popupButton:CSSProperties={display:'flex',alignItems:'center',gap:10,width:'100%',padding:'11px 10px',textAlign:'left',background:'transparent',color:'var(--text)',borderRadius:8};
+const overlayStyle:CSSProperties={position:'fixed',inset:0,zIndex:9999,display:'grid',placeItems:'center',padding:15,background:'#000a'};
+const modalStyle:CSSProperties={position:'relative',width:'min(420px,100%)',maxHeight:'90dvh',overflowY:'auto',textAlign:'center',padding:'28px 22px',borderRadius:20,border:'1px solid var(--line)',background:'var(--panel)',color:'var(--text)',display:'flex',flexDirection:'column',alignItems:'center'};
