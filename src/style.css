@@ -452,5 +452,16 @@
 @keyframes vexa-profile-enter{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 @keyframes vexa-panel-open{from{opacity:0;transform:translateY(-12px) scaleY(.94)}to{opacity:1;transform:translateY(0) scaleY(1)}}
 @media(prefers-reduced-motion:reduce){.sidebar-header .logo,.auth .logo,.sidebar-header .logo span,.auth .logo span,.sidebar-header .logo::before,.auth .logo::before,.vexa13-profile,.vexa13-category[open] .vexa13-category-body{animation:none!important}}
+/* Vexa 13 - arama düğmeleri ve çevrimiçi durumunu geri getir */
+.call-inbox{display:none!important}
+.call-inbox.call-visible{display:block!important;position:fixed;z-index:90;top:14px;right:24px;pointer-events:none}
+.call-inbox.call-visible .call-actions{display:flex!important;gap:8px;pointer-events:auto;margin:0}
+.call-inbox .incoming-call,.call-inbox .call-overlay,.call-inbox .call-error{pointer-events:auto}
+.call-inbox.call-visible .call-actions button{display:grid;place-items:center;min-width:38px;min-height:38px;transition:transform .2s,box-shadow .2s}
+.call-inbox.call-visible .call-actions button:hover{transform:translateY(-2px);box-shadow:0 4px 16px #0005}
+.chat-header .vexa101-presence{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.chat-header .vexa101-presence p{margin:0}
+.chat-header .vexa101-presence .hint{font-size:11px}
+@media(max-width:700px){.call-inbox.call-visible{top:56px;right:9px}.call-inbox.call-visible .call-actions button{min-width:32px;min-height:32px;padding:6px}}
 
 
