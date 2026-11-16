@@ -222,4 +222,9 @@
 .enhanced-list .message .enhanced-actions-menu .enhanced-emoji button{padding:5px;background:transparent;font-size:16px}
 @media (hover:none){.enhanced-list .message .enhanced-actions-trigger{opacity:.7}}
 @media (max-width:700px){.enhanced-list .message{max-width:calc(88% - 30px)}.enhanced-list .message .message-body{font-size:14px}.enhanced-list .message .enhanced-actions-trigger{opacity:.65}}
+/* Vexa 10: sadece yazıyor göstergesi; mesaj baloncuklarına dokunmaz */
+.vexa-typing-indicator{display:flex;align-items:center;gap:8px;padding:7px 15px;color:var(--muted,#a6b7ac);font-size:12px;min-height:30px}
+.vexa-typing-dots{letter-spacing:3px;animation:vexa-typing-pulse 1.1s ease-in-out infinite}
+@keyframes vexa-typing-pulse{0%,100%{opacity:.3}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.vexa-typing-dots{animation:none}}
 
