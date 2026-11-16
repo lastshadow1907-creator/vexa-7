@@ -373,5 +373,40 @@
 .vexa12-result{border-top:1px solid var(--line);padding-top:10px;overflow-wrap:anywhere}.vexa12-result p{white-space:pre-wrap}
 .vexa12-notice{padding:12px;border-radius:12px;border:1px solid var(--line)}
 @media(max-width:650px){.vexa12-settings{padding:12px}.vexa12-panel{padding:13px}}
+/* Vexa 13 - katlanabilir profil, hareket ve animasyonlu logo */
+.vexa13-profile{padding-bottom:28px;animation:vexa13-appear .4s ease both}
+.vexa13-profile-head{display:flex;gap:13px;align-items:center;margin:-26px 12px 18px;position:relative}
+.vexa13-profile-head .avatar{box-shadow:0 0 0 4px var(--panel),0 9px 22px #0003}
+.vexa13-profile-head h2{margin:0;font-size:20px;overflow-wrap:anywhere}
+.vexa13-profile-head p{font-size:12px;color:var(--muted);margin:4px 0 0}
+.vexa13-category{border:1px solid var(--line);border-radius:15px;background:var(--panel2);margin:9px 5px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.vexa13-category[open]{border-color:var(--accent);box-shadow:0 6px 24px #00000010}
+.vexa13-category>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:23px 1fr 16px;column-gap:10px;align-items:center;padding:15px 13px;font-weight:650;font-size:14px;transition:background .2s}
+.vexa13-category>summary::-webkit-details-marker{display:none}
+.vexa13-category>summary:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.vexa13-category>summary svg{color:var(--accent)}
+.vexa13-category>summary span{grid-column:2;font-weight:400;font-size:11px;color:var(--muted);margin-top:3px}
+.vexa13-category>summary:after{content:'⌄';grid-column:3;grid-row:1/3;font-size:19px;color:var(--muted);transition:transform .24s}
+.vexa13-category[open]>summary:after{transform:rotate(180deg)}
+.vexa13-category-body{padding:4px 13px 16px;animation:vexa13-slide .26s ease both;min-width:0}
+.vexa13-category-body input,.vexa13-category-body textarea{max-width:100%}
+.vexa13-category-body .vexa12-settings{padding:0;max-width:100%;gap:10px}
+.vexa13-category-body .vexa12-heading{display:none}
+.vexa13-category-body .vexa12-panel{padding:12px;border-radius:12px}
+.vexa13-logout{margin:16px 5px;width:calc(100% - 10px)}
+/* Vexa. yazısının yumuşak parıltısı ve noktanın nabzı */
+.logo{display:inline-flex;align-items:baseline;gap:2px;animation:vexa13-logo-in .75s cubic-bezier(.18,.75,.2,1) both;position:relative;isolation:isolate}
+.logo:before{content:'';position:absolute;inset:-7px -10px;background:radial-gradient(ellipse at 45% 55%,color-mix(in srgb,var(--accent) 19%,transparent),transparent 72%);z-index:-1;animation:vexa13-glow 4s ease-in-out infinite;pointer-events:none}
+.logo span{display:inline-block;transform-origin:center;animation:vexa13-pulse 2.4s ease-in-out infinite;color:var(--accent)}
+.nav button,.contact,.vexa12-panel,.vexa13-category{transition:transform .2s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease}
+.nav button:hover,.contact:hover{transform:translateX(3px)}
+.vexa12-swatches button:hover{transform:translateY(-2px)}
+.vexa12-swatches button[aria-pressed=true] span{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+@keyframes vexa13-logo-in{from{opacity:0;transform:translateY(-9px) scale(.94);filter:blur(4px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes vexa13-glow{0%,100%{opacity:.3;transform:scale(.95)}50%{opacity:1;transform:scale(1.08)}}
+@keyframes vexa13-pulse{0%,100%{transform:scale(.9);opacity:.7}50%{transform:scale(1.25);opacity:1}}
+@keyframes vexa13-appear{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes vexa13-slide{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.logo,.logo:before,.logo span,.vexa13-profile,.vexa13-category-body{animation:none!important}.nav button,.contact,.vexa12-swatches button{transition:none!important}}
 
 
