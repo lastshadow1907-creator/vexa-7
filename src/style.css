@@ -240,5 +240,27 @@
 .vexa101-qr{width:220px;max-width:100%;height:auto;align-self:center;border-radius:12px;background:#fff}
 .vexa101-presence p{display:flex;align-items:center;justify-content:center;gap:6px}
 @media(prefers-reduced-motion:no-preference){.vexa101-section{animation:vexa101-in .25s ease-out}@keyframes vexa101-in{from{opacity:.4;transform:translateY(5px)}to{opacity:1;transform:none}}}
+/* Vexa 10.2: yalnızca profil ve QR ekranları */
+.vexa102-backdrop{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(5px)}
+.vexa102-dialog{width:min(480px,100%);max-height:92dvh;overflow:auto;background:#14241b;border:1px solid #365341;border-radius:22px;box-shadow:0 25px 90px #000a;color:#f0f8f1}
+.vexa102-card{position:relative;text-align:center;overflow:hidden}
+.vexa102-cover{height:125px;background:linear-gradient(130deg,#254d38,#162d21 55%,#397353);display:flex;align-items:flex-start;justify-content:space-between;padding:18px}
+.vexa102-brand{font-size:13px;letter-spacing:.05em;font-weight:700;color:#c5e5ce}
+.vexa102-close{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:#0d1c15b8;color:#fff}
+.vexa102-avatar{position:relative;margin:-58px auto 0;width:112px;height:112px;border-radius:50%;border:5px solid #14241b;background:#326b4d;display:grid;place-items:center;font-size:38px;font-weight:800;overflow:hidden}
+.vexa102-avatar img{width:100%;height:100%;object-fit:cover}
+.vexa102-body{padding:8px 25px 28px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.vexa102-body h2{font-size:25px;line-height:1.2;margin:6px 0 0;overflow-wrap:anywhere}
+.vexa102-body .vexa9-tag{margin:0;font-size:15px;color:#85e2a4;font-weight:700}
+.vexa102-body .vexa101-presence{font-size:13px;color:#bdd8c6}
+.vexa102-body .vexa101-presence p{margin:4px 0}
+.vexa102-bio{background:#1e3427;padding:13px 15px;border-radius:12px;width:100%;white-space:pre-wrap;overflow-wrap:anywhere;margin:5px 0;text-align:left}
+.vexa102-details{width:100%;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid #34513f;padding:15px 0;color:#aac5b3;font-size:12px}
+.vexa102-details span{display:flex;align-items:center;gap:6px}.vexa102-details .hint{margin:0;font-size:12px}
+.vexa102-buttons{display:flex;gap:9px;width:100%;flex-wrap:wrap}.vexa102-buttons button{flex:1 1 145px;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:11px;background:#294433;color:#e7f5ea;font-weight:700}
+.vexa102-buttons .vexa102-primary{background:#7bdc9a;color:#092217}
+.vexa102-file-btn{display:inline-flex!important;align-items:center;justify-content:center;background:#365541;color:#fff;border-radius:10px;padding:9px 12px;cursor:pointer;font-size:14px!important}
+.vexa102-file-btn input{display:none}.vexa102-qr-video{display:block;width:100%;max-height:270px;object-fit:cover;border-radius:13px;background:#101b15}
+@media(max-width:600px){.vexa102-backdrop{padding:8px}.vexa102-dialog{max-height:94dvh}.vexa102-body{padding:8px 16px 22px}}
 
 
