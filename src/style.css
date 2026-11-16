@@ -464,4 +464,105 @@
 .chat-header .vexa101-presence .hint{font-size:11px}
 @media(max-width:700px){.call-inbox.call-visible{top:56px;right:9px}.call-inbox.call-visible .call-actions button{min-width:32px;min-height:32px;padding:6px}}
 
+/* =====================================
+   VEXA 14 - ARAMA GEÇMİŞİ
+===================================== */
+
+.vexa14-history {
+  padding: 24px;
+  max-width: 850px;
+  margin: auto;
+  width: 100%;
+  color: var(--text);
+}
+
+.vexa14-history header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vexa14-history header button {
+  background: var(--panel2);
+  color: var(--text);
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.vexa14-history article {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 14px;
+  margin: 10px 0;
+  background: var(--panel2);
+}
+
+.vexa14-history article > div {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.vexa14-history article small {
+  color: var(--muted);
+}
+
+.vexa14-history time {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Çevrimiçi ve son görülme */
+
+.vexa101-presence {
+  font-size: 12px;
+  display: flex;
+  gap: 5px;
+  flex-direction: column;
+}
+
+.vexa101-presence p {
+  margin: 0;
+}
+
+/* Grup araması */
+
+.vexa14-group-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--panel2);
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.vexa14-group-call:hover {
+  filter: brightness(1.15);
+}
+
+/* Mobil uyumluluk */
+
+@media (max-width: 600px) {
+  .vexa14-history {
+    padding: 12px;
+  }
+
+  .vexa14-history article {
+    gap: 8px;
+  }
+
+  .vexa14-history time {
+    max-width: 95px;
+    text-align: right;
+  }
+}
+
 
