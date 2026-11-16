@@ -228,3 +228,17 @@
 @keyframes vexa-typing-pulse{0%,100%{opacity:.3}50%{opacity:1}}
 @media(prefers-reduced-motion:reduce){.vexa-typing-dots{animation:none}}
 
+/* Vexa 10.1 - yalnızca yeni profil/gizlilik alanları; mevcut sohbet baloncuklarına dokunmaz */
+.vexa101-section{display:flex;flex-direction:column;gap:11px;margin:18px 0;padding:16px;border:1px solid var(--line,#395243);border-radius:16px;background:var(--panel2,#21362a)}
+.vexa101-section h3,.vexa101-section h4{display:flex;align-items:center;gap:8px;margin:0}
+.vexa101-section label{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.vexa101-section select,.vexa101-section input:not([type=checkbox]){width:100%;min-width:0;background:var(--panel,#1b2e23);color:var(--text,#f1f8f2);border:1px solid var(--line,#395243);border-radius:10px;padding:10px}
+.vexa101-section .vexa101-check{flex-direction:row;align-items:center}
+.vexa101-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.vexa101-actions button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 12px;border-radius:10px;background:#365541;color:#fff}
+.vexa101-actions input{flex:1 1 170px}
+.vexa101-qr{width:220px;max-width:100%;height:auto;align-self:center;border-radius:12px;background:#fff}
+.vexa101-presence p{display:flex;align-items:center;justify-content:center;gap:6px}
+@media(prefers-reduced-motion:no-preference){.vexa101-section{animation:vexa101-in .25s ease-out}@keyframes vexa101-in{from{opacity:.4;transform:translateY(5px)}to{opacity:1;transform:none}}}
+
+
