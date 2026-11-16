@@ -56,3 +56,43 @@
 .vexa9-public-profile{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}.vexa9-public-profile p{overflow-wrap:anywhere;white-space:pre-wrap}.vexa9-tag{color:var(--accent);font-weight:700}
 .vexa9-ad-area{margin:20px 0}.vexa9-ad{display:flex;flex-direction:column;gap:9px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#1d3023}.vexa9-ad small{color:var(--muted);font-size:10px}.vexa9-ad img{max-width:100%;max-height:180px;object-fit:cover;border-radius:10px}.vexa9-ad p{color:var(--muted);margin:0}.vexa9-ad a{display:flex;align-items:center;gap:5px;color:var(--accent);text-decoration:none}
 .call-controls button[title="Ekranı paylaş"],.call-controls button[title="Paylaşımı durdur"]{background:#315840;color:#e3fbe9}
+
+/* Vexa 9.1: groups in ordinary chat layout */
+.vexa91-mode-list,.vexa91-mode-chat {display:block!important;width:100%;height:100%;min-height:0;overflow:hidden;background:transparent}
+.vexa91-mode-list .vexa-groups-sidebar {width:100%;height:100%;border:0;background:transparent}
+.vexa91-mode-list .vexa-groups-list-header {height:54px}
+.vexa91-mode-chat .vexa-groups-conversation {height:100%;width:100%;display:flex!important}
+.vexa91-mode-chat .vexa-group-back {display:none!important}
+.vexa91-mode-list .vexa-group-row {transition:background .2s,transform .2s}
+.vexa91-mode-list .vexa-group-row:hover {transform:translateX(3px)}
+.vexa91-mode-chat .vexa-group-message {animation:vexa91-pop .22s ease-out both}
+.vexa91-mode-chat .vexa-groups-settings {animation:vexa91-slide .24s ease-out}
+.vexa91-mode-chat .vexa-groups-welcome {margin:auto}
+.vexa91-profile {animation:vexa91-pop .25s ease-out}
+.vexa91-profile img {object-fit:cover;border-radius:50%;width:96px;height:96px}
+.vexa91-profile .vexa91-meta {display:grid;gap:8px;width:100%;text-align:left;margin:12px 0}
+.vexa91-profile .vexa91-meta span {padding:10px;border:1px solid var(--line);border-radius:10px}
+.vexa91-upload {display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.vexa91-upload input {max-width:100%;font-size:12px}
+@keyframes vexa91-pop {from{opacity:0;transform:translateY(7px) scale(.99)}to{opacity:1;transform:none}}
+@keyframes vexa91-slide {from{opacity:0;transform:translateX(9px)}to{opacity:1;transform:none}}
+@media(max-width:700px){
+ .vexa91-mode-list .vexa-groups-sidebar{height:100%;display:flex!important}
+ .vexa91-mode-chat .vexa-groups-conversation{height:100dvh}
+ .vexa91-mode-chat .vexa-group-back{display:grid!important}
+ .sidebar:has(.vexa91-mode-list) {display:block}
+ .sidebar:has(.vexa91-mode-list).chat-open {display:none}
+}
+@media(prefers-reduced-motion:reduce){.vexa91-mode-chat .vexa-group-message,.vexa91-profile,.vexa91-mode-chat .vexa-groups-settings{animation:none}}
+
+/* Vexa 9.2: groups share the same chat list and conversation viewport */
+.vexa92-groups-in-chats{margin-top:18px;padding-top:12px;border-top:1px solid var(--line);min-height:160px}
+.vexa92-groups-in-chats .vexa91-mode-list{height:auto!important;overflow:visible!important}
+.vexa92-groups-in-chats .vexa-groups-sidebar{height:auto!important;min-height:0!important;overflow:visible!important}
+.vexa92-groups-in-chats .vexa-groups-list-header{height:auto!important;padding:8px 2px 12px;display:flex;align-items:center;justify-content:space-between}
+.vexa92-groups-in-chats .vexa-groups-list{overflow:visible!important;max-height:none!important}
+.vexa92-groups-in-chats .vexa-group-row{width:100%;border-radius:12px}
+.vexa92-groups-in-chats .vexa-group-create{padding:10px 0}
+.vexa91-mode-chat{height:100%!important;min-height:0!important}
+.vexa91-mode-chat .vexa-groups-conversation{height:100%!important;min-height:0!important}
+@media(max-width:700px){.vexa91-mode-chat .vexa-groups-conversation{height:100dvh!important}}
