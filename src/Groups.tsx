@@ -13,6 +13,8 @@ const mutedKey=(id:string)=>`vexa-group-muted-${id}`;
 
 export default function Groups({userId,profiles,onClose,mode='full',activeGroupId,onSelectGroup}:{userId:string;profiles:Profile[];onClose?:()=>void;mode?:'full'|'list'|'chat';activeGroupId?:string|null;onSelectGroup?:(id:string|null)=>void}){
  const [groups,setGroups]=useState<Group[]>([]);
+ const [groupLoading,setGroupLoading]=useState(true);
+ const [groupLoadError,setGroupLoadError]=useState('');
  const [selected,setSelected]=useState<Group|null>(null);
  const [messages,setMessages]=useState<GroupMessage[]>([]);
  const [members,setMembers]=useState<Member[]>([]);
@@ -41,11 +43,17 @@ export default function Groups({userId,profiles,onClose,mode='full',activeGroupI
 
  const loadGroups=useCallback(async()=>{
   const {data,error:e}=await supabase.from('vexa_group_members').select('group_id,group:vexa_groups(id,title,created_by,avatar_url,description)').eq('user_id',userId);
-  if(e){setError(e.message);return}
-  const list=(data||[]).flatMap((r:any)=>r.group?[r.group as Group]:[]);
+  if(e){setError(e.message);setGroupLoadError(e.message);setGroupLoading(false);return}
+  setGroupLoadError('');setGroupLoading(false);
+  let list=(data||[]).flatMap((r:any)=>r.group?[r.group as Group]:[]);
+  if(mode==='chat' && activeGroupId && !list.some(g=>g.id===activeGroupId)){
+   const {data:direct,error:directError}=await supabase.from('vexa_groups').select('id,title,created_by,avatar_url,description').eq('id',activeGroupId).maybeSingle();
+   if(direct)list=[...list,direct as Group];
+   else if(directError)setGroupLoadError(directError.message);
+  }
   setGroups(list);
   setSelected(prev=>prev?list.find(g=>g.id===prev.id)||null:null);
- },[userId]);
+ },[userId,mode,activeGroupId]);
  const loadMessages=useCallback(async()=>{
   if(!selectedId)return;
   const {data,error:e}=await supabase.from('vexa_group_messages').select('id,group_id,sender_id,body,created_at').eq('group_id',selectedId).order('created_at',{ascending:true}).limit(250);
@@ -142,7 +150,7 @@ export default function Groups({userId,profiles,onClose,mode='full',activeGroupI
     {admin&&<><button style={btnStyle} onClick={()=>setAddOpen(v=>!v)}><UserPlus size={16}/> Üye ekle</button>{addOpen&&<><div style={{display:'flex',gap:8,alignItems:'center'}}><Search size={18}/><input style={inputStyle} placeholder="Kişi ara" value={find} onChange={e=>setFind(e.target.value)}/></div>{people.map(p=><button key={p.id} style={{...btnStyle,justifyContent:'space-between'}} disabled={busy} onClick={()=>void addMember(p.id)}>{display(p)} <Plus size={16}/></button>)}{!people.length&&<p className="hint">Eklenebilecek kişi bulunamadı.</p>}</>}</>}
     {!owner&&<button style={btnStyle} disabled={busy} onClick={()=>void leaveGroup()}><LogOut size={16}/> Gruptan ayrıl</button>}{owner&&<p className="hint">Grup kurucusu ayrılmadan önce sahipliği devretmelidir.</p>}
    </div> : <><div className="vexa-group-messages vexa-group-full-messages">{messages.map(m=><div key={m.id} className={'vexa-group-message '+(m.sender_id===userId?'mine':'')}><small>{person(m.sender_id)}</small><div style={{whiteSpace:'pre-wrap'}}>{m.body}</div><time>{clock(m.created_at)}</time></div>)}{!messages.length&&<p className="hint">Henüz mesaj yok. İlk mesajı gönder!</p>}<div ref={bottomRef}/></div><form className="vexa-group-compose vexa-group-full-compose" onSubmit={e=>{e.preventDefault();void send()}}><input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Gruba mesaj yaz…" maxLength={5000}/><button aria-label="Gönder" disabled={!draft.trim()||busy}><Send size={20}/></button></form></>}
-  </> : <div className="vexa-groups-welcome"><Users size={56}/><h2>Grup sohbetlerin</h2><p>Soldan bir grup seçerek mesajlaşmaya başla.</p></div>}
+  </> : <div className="vexa-groups-welcome"><Users size={56}/><h2>{groupLoading?'Grup yükleniyor…':groupLoadError?'Grup yüklenemedi':'Grup bulunamadı'}</h2><p>{groupLoadError||'Grup üyeliğin değişmiş olabilir. Sohbet listesine dönüp yeniden seç.'}</p><button type="button" style={btnStyle} onClick={()=>void loadGroups()}>Tekrar dene</button><button type="button" style={btnStyle} onClick={()=>onSelectGroup?.(null)}>Sohbet listesine dön</button></div>}
   {error&&<p className="error vexa-group-alert" role="alert">{error}</p>}{notice&&<p className="hint vexa-group-alert" role="status">{notice}</p>}
   </main>}
  </div>;
