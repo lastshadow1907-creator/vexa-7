@@ -129,3 +129,70 @@
 .conversation > .vexa91-mode-chat .vexa-group-messages{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important}
 .conversation > .vexa91-mode-chat .vexa-group-compose{flex:0 0 auto!important}
 @media(max-width:700px){.conversation > .vexa91-mode-chat,.conversation > .vexa91-mode-chat > .vexa-groups-conversation{height:100dvh!important}}
+/* Vexa - grup mesaj baloncuklari: mevcut style.css dosyasinin EN SONUNA ekle */
+.vexa91-mode-chat .vexa-group-full-messages,
+.vexa-groups-conversation .vexa-group-full-messages {
+  gap: 16px;
+  padding: 22px clamp(16px, 4vw, 52px);
+  align-items: stretch;
+}
+.vexa91-mode-chat .vexa-group-full-messages .vexa-group-message,
+.vexa-groups-conversation .vexa-group-full-messages .vexa-group-message {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  width: fit-content;
+  min-width: 90px;
+  max-width: min(72%, 560px);
+  margin: 0;
+  padding: 12px 16px 9px;
+  border: 1px solid #3a5643;
+  border-radius: 21px 21px 21px 7px;
+  background: #253b2d;
+  color: #edf8ef;
+  box-shadow: 0 3px 12px #00000016;
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.vexa91-mode-chat .vexa-group-full-messages .vexa-group-message.mine,
+.vexa-groups-conversation .vexa-group-full-messages .vexa-group-message.mine {
+  align-self: flex-end;
+  margin-left: auto;
+  background: #345a40;
+  border-color: #477452;
+  border-radius: 21px 21px 7px 21px;
+}
+.vexa91-mode-chat .vexa-group-full-messages .vexa-group-message small,
+.vexa-groups-conversation .vexa-group-full-messages .vexa-group-message small {
+  display: block;
+  margin: 0 0 5px;
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 750;
+  color: #b6eac3;
+}
+.vexa91-mode-chat .vexa-group-full-messages .vexa-group-message.mine small,
+.vexa-groups-conversation .vexa-group-full-messages .vexa-group-message.mine small {
+  color: #d2f5d9;
+}
+.vexa91-mode-chat .vexa-group-full-messages .vexa-group-message time,
+.vexa-groups-conversation .vexa-group-full-messages .vexa-group-message time {
+  align-self: flex-end;
+  margin-top: 5px;
+  font-size: 10px;
+  line-height: 1;
+  color: #b0c8b5;
+  opacity: .85;
+}
+@media (max-width:700px) {
+  .vexa91-mode-chat .vexa-group-full-messages,
+  .vexa-groups-conversation .vexa-group-full-messages {padding: 14px 12px; gap: 13px;}
+  .vexa91-mode-chat .vexa-group-full-messages .vexa-group-message,
+  .vexa-groups-conversation .vexa-group-full-messages .vexa-group-message {max-width: 86%; padding: 10px 13px 8px; font-size: 13px; border-radius: 19px 19px 19px 6px;}
+  .vexa91-mode-chat .vexa-group-full-messages .vexa-group-message.mine,
+  .vexa-groups-conversation .vexa-group-full-messages .vexa-group-message.mine {border-radius: 19px 19px 6px 19px;}
+}
+
