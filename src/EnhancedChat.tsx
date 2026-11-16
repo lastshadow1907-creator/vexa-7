@@ -11,7 +11,7 @@ type Reaction = { message_id: number; user_id: string; emoji: string };
 const emojis = ['❤️', '😂', '👍', '😮', '😢', '🔥'];
 const time = (date: string) => new Date(date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
-export default function EnhancedChat({ userId, peerId }: { userId: string; peerId: string }) {
+export default function EnhancedChat({ userId, peerId, clearedAt }: { userId: string; peerId: string; clearedAt?: string|null }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -209,8 +209,8 @@ export default function EnhancedChat({ userId, peerId }: { userId: string; peerI
     } catch (e) { setError((e as Error).message); setRecording(false); }
   }
 
-  const visible = messages.filter(m => !chatSearch.trim() ||
-    (m.body || '').toLocaleLowerCase('tr-TR').includes(chatSearch.trim().toLocaleLowerCase('tr-TR')));
+  const visible = messages.filter(m => (!clearedAt || new Date(m.created_at).getTime() > new Date(clearedAt).getTime()) && (!chatSearch.trim() ||
+    (m.body || '').toLocaleLowerCase('tr-TR').includes(chatSearch.trim().toLocaleLowerCase('tr-TR'))));
 
   return (
     <div className="enhanced-chat">
@@ -245,7 +245,7 @@ export default function EnhancedChat({ userId, peerId }: { userId: string; peerI
                   rel="noopener noreferrer" className="enhanced-download"><Download size={13} /> Dosyayı aç</a>}
               </>}
             </div>
-            <time>{time(m.created_at)}{m.edited_at ? ' · düzenlendi' : ''}</time>
+            <time>{time(m.created_at)}{m.edited_at ? ' · düzenlendi' : ''}{mine&&!deleted ? <span title={m.read_at?'Görüldü':'Gönderildi'} style={{marginLeft:6,color:m.read_at?'var(--accent)':'var(--muted)'}}>{m.read_at?'✓✓':'✓'}</span>:null}</time>
             {!deleted && <>
               <div className="enhanced-reactions">
                 {rs.map((r, i) => <button type="button" key={`${r.user_id}-${r.emoji}-${i}`}
