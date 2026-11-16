@@ -1,37 +1,7 @@
-import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import type {CSSProperties} from 'react';
-import {ArrowLeft,Plus,Send,Users,Settings,UserPlus,LogOut,Shield,ShieldOff,UserMinus,Save,X,Search,Bell,BellOff} from 'lucide-react';
-import {supabase} from './supabase';
-
-type Profile={id:string;display_name?:string|null};
-type Group={id:string;title:string;created_by:string;avatar_url?:string|null;description?:string|null};
-type Member={user_id:string;role:'admin'|'member'};
-type GroupMessage={id:string;group_id:string;sender_id:string;body:string;created_at:string};
-const clock=(v:string)=>new Date(v).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
-const display=(p?:Profile)=>p?.display_name?.trim()||'Vexa kullanıcısı';
-const mutedKey=(id:string)=>`vexa-group-muted-${id}`;
-
-export default function Groups({userId,profiles,onClose,mode='full',activeGroupId,onSelectGroup,activeGroup,onSelectGroupData}:{userId:string;profiles:Profile[];onClose?:()=>void;mode?:'full'|'list'|'chat';activeGroupId?:string|null;onSelectGroup?:(id:string|null)=>void;activeGroup?:Group|null;onSelectGroupData?:(group:Group|null)=>void}){
- const [groups,setGroups]=useState<Group[]>([]);
- const [groupLoading,setGroupLoading]=useState(true);
- const [groupLoadError,setGroupLoadError]=useState('');
- const [selected,setSelected]=useState<Group|null>(null);
- const [messages,setMessages]=useState<GroupMessage[]>([]);
- const [members,setMembers]=useState<Member[]>([]);
- const [draft,setDraft]=useState('');
- const [title,setTitle]=useState('');
- const [description,setDescription]=useState('');
- const [avatarUrl,setAvatarUrl]=useState('');
- const [creating,setCreating]=useState(false);
- const [busy,setBusy]=useState(false);
- const [error,setError]=useState('');
- const [notice,setNotice]=useState('');
- const [settings,setSettings]=useState(false);
- const [addOpen,setAddOpen]=useState(false);
- const [find,setFind]=useState('');
  const [muted,setMuted]=useState(false);
  const [confirmRemove,setConfirmRemove]=useState<string|null>(null);
  const bottomRef=useRef<HTMLDivElement|null>(null);
+ const instanceId=useRef(++channelSequence);
  const selectedId=mode==='full'?selected?.id:(activeGroupId||undefined);
  const currentGroup=mode==='full'?selected:(groups.find(g=>g.id===activeGroupId)||((activeGroup?.id===activeGroupId)?activeGroup:null));
  const me=members.find(m=>m.user_id===userId);
@@ -69,7 +39,7 @@ export default function Groups({userId,profiles,onClose,mode='full',activeGroupI
   if(!selectedId){setMembers([]);setMessages([]);return}
   setMuted(localStorage.getItem(mutedKey(selectedId))==='1');
   void loadMessages();void loadMembers();
-  const c=supabase.channel(`vexa8-group-${selectedId}`)
+  const c=supabase.channel(`vexa8-group-${selectedId}-${instanceId.current}-${++channelSequence}`)
    .on('postgres_changes',{event:'*',schema:'public',table:'vexa_group_messages',filter:`group_id=eq.${selectedId}`},()=>void loadMessages())
    .on('postgres_changes',{event:'*',schema:'public',table:'vexa_group_members',filter:`group_id=eq.${selectedId}`},()=>{void loadMembers();void loadGroups()})
    .on('postgres_changes',{event:'*',schema:'public',table:'vexa_groups',filter:`id=eq.${selectedId}`},()=>void loadGroups())
