@@ -11,7 +11,7 @@ const clock=(v:string)=>new Date(v).toLocaleTimeString('tr-TR',{hour:'2-digit',m
 const display=(p?:Profile)=>p?.display_name?.trim()||'Vexa kullanıcısı';
 const mutedKey=(id:string)=>`vexa-group-muted-${id}`;
 
-export default function Groups({userId,profiles}:{userId:string;profiles:Profile[]}){
+export default function Groups({userId,profiles,onClose}:{userId:string;profiles:Profile[];onClose?:()=>void}){
  const [groups,setGroups]=useState<Group[]>([]);
  const [selected,setSelected]=useState<Group|null>(null);
  const [messages,setMessages]=useState<GroupMessage[]>([]);
@@ -116,67 +116,33 @@ export default function Groups({userId,profiles}:{userId:string;profiles:Profile
  }
  const btnStyle:CSSProperties={background:'#304939',color:'#eaf5ed',borderRadius:9,padding:'8px 11px',display:'inline-flex',alignItems:'center',gap:6};
  const inputStyle:CSSProperties={width:'100%',padding:'11px',borderRadius:10,background:'#223529',color:'#eaf5ed',border:'1px solid #3b5944'};
- return <div className="vexa-groups-panel">
+ return <div className={'vexa-groups-layout '+(selected?'group-open':'')}>
+  <aside className="vexa-groups-sidebar">
+   <header className="vexa-groups-list-header"><button aria-label="Sohbetlere dön" onClick={onClose}><ArrowLeft size={20}/></button><h2>Gruplar</h2><button title="Yeni grup" onClick={()=>setCreating(v=>!v)}><Plus size={20}/></button></header>
+   {creating&&<div className="vexa-group-create"><input value={title} maxLength={50} onChange={e=>setTitle(e.target.value)} placeholder="Grup adı"/><button disabled={busy||title.trim().length<3} onClick={()=>void create()}>Grubu oluştur</button></div>}
+   <div className="vexa-groups-list">{groups.map(g=><button key={g.id} className={'vexa-group-row '+(selectedId===g.id?'active':'')} onClick={()=>{clearMessages();setSelected(g);setSettings(false)}}>
+    {g.avatar_url?.startsWith('https://')?<img src={g.avatar_url} alt="" className="vexa-group-avatar"/>:<span className="vexa-group-avatar vexa-group-avatar-fallback"><Users size={22}/></span>}
+    <span className="vexa-group-row-text"><strong>{g.title}</strong><small>Grup sohbetini aç</small></span>
+   </button>)}{!groups.length&&<p className="hint" style={{padding:16}}>Henüz grubun yok. + ile oluşturabilirsin.</p>}</div>
+  </aside>
+  <main className="vexa-groups-conversation">
   {selected ? <>
-   <div className="vexa-group-heading" style={{justifyContent:'space-between'}}>
-    <button aria-label="Gruplara dön" onClick={()=>{setSelected(null);setSettings(false)}}><ArrowLeft size={19}/></button>
-    {selected.avatar_url?.startsWith('https://')?<img src={selected.avatar_url} alt="" style={{width:36,height:36,objectFit:'cover',borderRadius:12}}/>:<Users size={23}/>}
-    <strong style={{flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{selected.title}</strong>
-    <button aria-label="Grup bilgileri" onClick={()=>setSettings(v=>!v)}><Settings size={19}/></button>
-   </div>
-   {settings ? <div style={{display:'grid',gap:12,overflowY:'auto',paddingBottom:20}}>
-    <h3>Grup bilgileri</h3>
-    <p className="hint">{selected.description||'Grup açıklaması yok.'} · {members.length} üye</p>
-    {admin&&<>
-     <label>Grup adı<input style={inputStyle} value={title} maxLength={50} onChange={e=>setTitle(e.target.value)}/></label>
-     <label>Açıklama<textarea style={inputStyle} value={description} maxLength={500} onChange={e=>setDescription(e.target.value)}/></label>
-     <label>Grup fotoğrafı (HTTPS bağlantısı)<input style={inputStyle} value={avatarUrl} onChange={e=>setAvatarUrl(e.target.value)} placeholder="https://..."/></label>
-     <button style={btnStyle} disabled={busy||title.trim().length<3} onClick={()=>void saveGroup()}><Save size={16}/> Kaydet</button>
-    </>}
+   <header className="vexa-groups-chat-header">
+    <button className="vexa-group-back" aria-label="Grup listesine dön" onClick={()=>{setSelected(null);setSettings(false)}}><ArrowLeft size={22}/></button>
+    {selected.avatar_url?.startsWith('https://')?<img src={selected.avatar_url} alt="" className="vexa-group-avatar"/>:<span className="vexa-group-avatar vexa-group-avatar-fallback"><Users size={21}/></span>}
+    <button className="vexa-group-chat-title" onClick={()=>setSettings(v=>!v)}><strong>{selected.title}</strong><small>{members.length} üye · {selected.description||'Grup sohbeti'}</small></button>
+    <button title="Grup bilgileri" onClick={()=>setSettings(v=>!v)}><Settings size={20}/></button>
+   </header>
+   {settings ? <div className="vexa-groups-settings">
+    <h3>Grup bilgileri</h3><p className="hint">{selected.description||'Grup açıklaması yok.'} · {members.length} üye</p>
+    {admin&&<><label>Grup adı<input style={inputStyle} value={title} maxLength={50} onChange={e=>setTitle(e.target.value)}/></label><label>Açıklama<textarea style={inputStyle} value={description} maxLength={500} onChange={e=>setDescription(e.target.value)}/></label><label>Grup fotoğrafı (HTTPS)<input style={inputStyle} value={avatarUrl} onChange={e=>setAvatarUrl(e.target.value)} placeholder="https://..."/></label><button style={btnStyle} disabled={busy||title.trim().length<3} onClick={()=>void saveGroup()}><Save size={16}/> Kaydet</button></>}
     <button style={btnStyle} onClick={()=>{const next=!muted;setMuted(next);localStorage.setItem(mutedKey(selected.id),next?'1':'0')}}>{muted?<BellOff size={16}/>:<Bell size={16}/>} {muted?'Sessizden çıkar':'Bu cihazda sessize al'}</button>
-    <h3>Üyeler</h3>
-    {members.map(m=><div key={m.user_id} style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',borderBottom:'1px solid #304637',paddingBottom:10}}>
-     <span style={{flex:1}}>{person(m.user_id)} {m.user_id===userId?'(Sen)':''} {m.role==='admin'?'· Yönetici':''}</span>
-     {admin&&m.user_id!==userId&&<>
-      <button title={m.role==='admin'?'Yöneticiliği kaldır':'Yönetici yap'} style={btnStyle} disabled={busy||m.user_id===selected.created_by} onClick={()=>void changeRole(m.user_id,m.role==='admin'?'member':'admin')}>{m.role==='admin'?<ShieldOff size={16}/>:<Shield size={16}/>}</button>
-      {confirmRemove===m.user_id?<><button style={btnStyle} disabled={busy} onClick={()=>void removeMember(m.user_id)}>Onayla</button><button style={btnStyle} onClick={()=>setConfirmRemove(null)}><X size={16}/></button></>:<button title="Üyeyi çıkar" style={btnStyle} disabled={busy||m.user_id===selected.created_by} onClick={()=>setConfirmRemove(m.user_id)}><UserMinus size={16}/></button>}
-     </>}
-    </div>)}
-    {admin&&<><button style={btnStyle} onClick={()=>setAddOpen(v=>!v)}><UserPlus size={16}/> Üye ekle</button>
-     {addOpen&&<><div style={{display:'flex',gap:8,alignItems:'center'}}><Search size={18}/><input style={inputStyle} placeholder="Kişi ara" value={find} onChange={e=>setFind(e.target.value)}/></div>
-      {people.map(p=><button key={p.id} style={{...btnStyle,justifyContent:'space-between'}} disabled={busy} onClick={()=>void addMember(p.id)}>{display(p)} <Plus size={16}/></button>)}
-      {!people.length&&<p className="hint">Eklenebilecek kişi bulunamadı.</p>}
-     </>}
-    </>}
-    {!owner&&<button style={btnStyle} disabled={busy} onClick={()=>void leaveGroup()}><LogOut size={16}/> Gruptan ayrıl</button>}
-    {owner&&<p className="hint">Grup kurucusu ayrılmadan önce sahipliği devretmelidir.</p>}
-   </div> : <>
-    <div className="vexa-group-messages">
-     {messages.map(m=><div key={m.id} className={'vexa-group-message '+(m.sender_id===userId?'mine':'')}>
-      <small>{person(m.sender_id)}</small><div style={{whiteSpace:'pre-wrap'}}>{m.body}</div><time>{clock(m.created_at)}</time>
-     </div>)}
-     {!messages.length&&<p className="hint">Henüz mesaj yok.</p>}
-     <div ref={bottomRef}/>
-    </div>
-    <form className="vexa-group-compose" onSubmit={e=>{e.preventDefault();void send()}}>
-     <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Gruba mesaj yaz…" maxLength={5000}/>
-     <button aria-label="Gönder" disabled={!draft.trim()||busy}><Send size={18}/></button>
-    </form>
-   </>}
-  </> : <>
-   <h2>Gruplarım</h2>
-   {groups.map(g=><button key={g.id} className="vexa-group-row" onClick={()=>{clearMessages();setSelected(g);setSettings(false)}}>
-    {g.avatar_url?.startsWith('https://')?<img src={g.avatar_url} alt="" style={{width:38,height:38,borderRadius:12,objectFit:'cover'}}/>:<Users size={23}/>}
-    <strong>{g.title}</strong>
-   </button>)}
-   {!groups.length&&<p className="hint">Henüz grubun yok.</p>}
-   <button style={btnStyle} onClick={()=>setCreating(v=>!v)}><Plus size={16}/> Yeni grup</button>
-   {creating&&<div className="vexa-group-create">
-    <input value={title} maxLength={50} onChange={e=>setTitle(e.target.value)} placeholder="Grup adı"/>
-    <button disabled={busy||title.trim().length<3} onClick={()=>void create()}>Oluştur</button>
-   </div>}
-  </>}
-  {error&&<p className="error" role="alert">{error}</p>}
-  {notice&&<p className="hint" role="status">{notice}</p>}
+    <h3>Üyeler</h3>{members.map(m=><div key={m.user_id} className="vexa-group-member"><span style={{flex:1}}>{person(m.user_id)} {m.user_id===userId?'(Sen)':''} {m.role==='admin'?'· Yönetici':''}</span>{admin&&m.user_id!==userId&&<><button title={m.role==='admin'?'Yöneticiliği kaldır':'Yönetici yap'} style={btnStyle} disabled={busy||m.user_id===selected.created_by} onClick={()=>void changeRole(m.user_id,m.role==='admin'?'member':'admin')}>{m.role==='admin'?<ShieldOff size={16}/>:<Shield size={16}/>}</button>{confirmRemove===m.user_id?<><button style={btnStyle} disabled={busy} onClick={()=>void removeMember(m.user_id)}>Onayla</button><button style={btnStyle} onClick={()=>setConfirmRemove(null)}><X size={16}/></button></>:<button title="Üyeyi çıkar" style={btnStyle} disabled={busy||m.user_id===selected.created_by} onClick={()=>setConfirmRemove(m.user_id)}><UserMinus size={16}/></button>}</>}</div>)}
+    {admin&&<><button style={btnStyle} onClick={()=>setAddOpen(v=>!v)}><UserPlus size={16}/> Üye ekle</button>{addOpen&&<><div style={{display:'flex',gap:8,alignItems:'center'}}><Search size={18}/><input style={inputStyle} placeholder="Kişi ara" value={find} onChange={e=>setFind(e.target.value)}/></div>{people.map(p=><button key={p.id} style={{...btnStyle,justifyContent:'space-between'}} disabled={busy} onClick={()=>void addMember(p.id)}>{display(p)} <Plus size={16}/></button>)}{!people.length&&<p className="hint">Eklenebilecek kişi bulunamadı.</p>}</>}</>}
+    {!owner&&<button style={btnStyle} disabled={busy} onClick={()=>void leaveGroup()}><LogOut size={16}/> Gruptan ayrıl</button>}{owner&&<p className="hint">Grup kurucusu ayrılmadan önce sahipliği devretmelidir.</p>}
+   </div> : <><div className="vexa-group-messages vexa-group-full-messages">{messages.map(m=><div key={m.id} className={'vexa-group-message '+(m.sender_id===userId?'mine':'')}><small>{person(m.sender_id)}</small><div style={{whiteSpace:'pre-wrap'}}>{m.body}</div><time>{clock(m.created_at)}</time></div>)}{!messages.length&&<p className="hint">Henüz mesaj yok. İlk mesajı gönder!</p>}<div ref={bottomRef}/></div><form className="vexa-group-compose vexa-group-full-compose" onSubmit={e=>{e.preventDefault();void send()}}><input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Gruba mesaj yaz…" maxLength={5000}/><button aria-label="Gönder" disabled={!draft.trim()||busy}><Send size={20}/></button></form></>}
+  </> : <div className="vexa-groups-welcome"><Users size={56}/><h2>Grup sohbetlerin</h2><p>Soldan bir grup seçerek mesajlaşmaya başla.</p></div>}
+  {error&&<p className="error vexa-group-alert" role="alert">{error}</p>}{notice&&<p className="hint vexa-group-alert" role="status">{notice}</p>}
+  </main>
  </div>;
 }
