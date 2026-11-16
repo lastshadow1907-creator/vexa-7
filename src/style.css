@@ -94,3 +94,551 @@
 .vexa92-groups-in-chats .vexa-group-row{width:100%;border-radius:12px}
 .vexa92-groups-in-chats .vexa-group-create{padding:10px 0}
 .vexa91-mode-chat{height:100%!important;min-height:0!important}
+.vexa91-mode-chat .vexa-groups-conversation{height:100%!important;min-height:0!important}
+@media(max-width:700px){.vexa91-mode-chat .vexa-groups-conversation{height:100dvh!important}}
+
+/* FIX: group conversation is the only grid child in chat mode.
+   The old two-column grid placed it in a 350px column, leaving a blank pane. */
+.vexa-groups-layout.vexa91-mode-chat {
+  display: flex !important;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.vexa-groups-layout.vexa91-mode-chat > .vexa-groups-conversation {
+  display: flex !important;
+  flex: 1 1 auto;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0;
+  min-height: 0;
+}
+@media (max-width: 700px) {
+  .vexa-groups-layout.vexa91-mode-chat > .vexa-groups-conversation {
+    height: 100% !important;
+  }
+}
+
+/* Vexa 9.3: chat mode must occupy the conversation viewport */
+.conversation:has(> .vexa91-mode-chat){display:flex;min-width:0;min-height:0}
+.conversation > .vexa-groups-layout.vexa91-mode-chat{display:flex!important;flex:1 1 auto!important;width:100%!important;height:100%!important;min-height:0!important;min-width:0!important;overflow:hidden!important;grid-template-columns:none!important}
+.conversation > .vexa91-mode-chat > .vexa-groups-conversation{display:flex!important;flex:1 1 auto!important;width:100%!important;height:100%!important;min-height:0!important;min-width:0!important;overflow:hidden!important}
+.conversation > .vexa91-mode-chat .vexa-group-messages{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important}
+.conversation > .vexa91-mode-chat .vexa-group-compose{flex:0 0 auto!important}
+@media(max-width:700px){.conversation > .vexa91-mode-chat,.conversation > .vexa91-mode-chat > .vexa-groups-conversation{height:100dvh!important}}
+/* Vexa - grup mesaj baloncuklari: mevcut style.css dosyasinin EN SONUNA ekle */
+.vexa91-mode-chat .vexa-group-full-messages,
+.vexa-groups-conversation .vexa-group-full-messages {
+  gap: 16px;
+  padding: 22px clamp(16px, 4vw, 52px);
+  align-items: stretch;
+}
+.vexa91-mode-chat .vexa-group-full-messages .vexa-group-message,
+.vexa-groups-conversation .vexa-group-full-messages .vexa-group-message {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  width: fit-content;
+  min-width: 90px;
+  max-width: min(72%, 560px);
+  margin: 0;
+  padding: 12px 16px 9px;
+  border: 1px solid #3a5643;
+  border-radius: 21px 21px 21px 7px;
+  background: #253b2d;
+  color: #edf8ef;
+  box-shadow: 0 3px 12px #00000016;
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.vexa91-mode-chat .vexa-group-full-messages .vexa-group-message.mine,
+.vexa-groups-conversation .vexa-group-full-messages .vexa-group-message.mine {
+  align-self: flex-end;
+  margin-left: auto;
+  background: #345a40;
+  border-color: #477452;
+  border-radius: 21px 21px 7px 21px;
+}
+.vexa91-mode-chat .vexa-group-full-messages .vexa-group-message small,
+.vexa-groups-conversation .vexa-group-full-messages .vexa-group-message small {
+  display: block;
+  margin: 0 0 5px;
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 750;
+  color: #b6eac3;
+}
+.vexa91-mode-chat .vexa-group-full-messages .vexa-group-message.mine small,
+.vexa-groups-conversation .vexa-group-full-messages .vexa-group-message.mine small {
+  color: #d2f5d9;
+}
+.vexa91-mode-chat .vexa-group-full-messages .vexa-group-message time,
+.vexa-groups-conversation .vexa-group-full-messages .vexa-group-message time {
+  align-self: flex-end;
+  margin-top: 5px;
+  font-size: 10px;
+  line-height: 1;
+  color: #b0c8b5;
+  opacity: .85;
+}
+@media (max-width:700px) {
+  .vexa91-mode-chat .vexa-group-full-messages,
+  .vexa-groups-conversation .vexa-group-full-messages {padding: 14px 12px; gap: 13px;}
+  .vexa91-mode-chat .vexa-group-full-messages .vexa-group-message,
+  .vexa-groups-conversation .vexa-group-full-messages .vexa-group-message {max-width: 86%; padding: 10px 13px 8px; font-size: 13px; border-radius: 19px 19px 19px 6px;}
+  .vexa91-mode-chat .vexa-group-full-messages .vexa-group-message.mine,
+  .vexa-groups-conversation .vexa-group-full-messages .vexa-group-message.mine {border-radius: 19px 19px 6px 19px;}
+}
+/* VEXA - OZEL SOHBET BALONCUKLARI (EnhancedChat.tsx)
+   src/style.css dosyasinin EN ALTINA ekle. Grup CSS'i degildir. */
+.enhanced-list.message-list{gap:9px;padding:18px clamp(12px,3vw,34px)}
+.enhanced-list .message{position:relative;display:flex;flex-direction:column;align-items:flex-start;align-self:flex-start;width:fit-content;min-width:0;max-width:min(78%,540px);padding:0 0 2px;margin:0 34px 0 0;isolation:isolate}
+.enhanced-list .message.mine{align-self:flex-end;align-items:flex-end;margin:0 0 0 34px}
+.enhanced-list .message .message-body{display:block;box-sizing:border-box;width:fit-content;min-width:55px;max-width:100%;padding:10px 13px 21px;margin:0!important;background:#263e2f;border:1px solid #3d5b46;border-radius:18px 18px 18px 5px;box-shadow:0 2px 6px #0002;color:#eff9f0;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+.enhanced-list .message.mine .message-body{background:#355c42;border-color:#487453;border-radius:18px 18px 5px 18px}
+/* Saat baloncugun sag altinda, ayri bir satir olusturmaz. */
+.enhanced-list .message>time{position:absolute;right:10px;top:auto;bottom:8px;margin:0!important;z-index:1;pointer-events:none;color:#b8cfbf;font-size:10px;line-height:1;white-space:nowrap}
+/* Tepkiler baloncugun alt kenarina yapisir, yeni bir satir gibi uzamaz. */
+.enhanced-list .message .enhanced-reactions{position:relative;z-index:2;display:flex;align-self:flex-start;gap:3px;min-height:0;margin:-7px 0 0 8px;padding:0}
+.enhanced-list .message.mine .enhanced-reactions{align-self:flex-end;margin:-7px 8px 0 0}
+.enhanced-list .message .enhanced-reactions:empty{display:none}
+.enhanced-list .message .enhanced-reactions button{display:inline-flex;align-items:center;justify-content:center;min-width:27px;min-height:24px;padding:2px 5px;border:1px solid #496d53;border-radius:999px;background:#243a2c;font-size:14px;box-shadow:0 2px 5px #0003}
+/* 'Islemler' dugmesi baloncugun altinda degil, yaninda kucuk uc nokta. */
+.enhanced-list .message .enhanced-actions{position:absolute;z-index:5;top:5px;left:calc(100% + 6px);right:auto;width:30px;max-width:none;margin:0!important}
+.enhanced-list .message.mine .enhanced-actions{left:auto;right:calc(100% + 6px)}
+.enhanced-list .message .enhanced-actions-trigger{display:grid;place-items:center;width:29px;height:29px;min-width:29px;padding:0!important;border:1px solid #3d5b46;border-radius:10px;background:#23372a;color:#d4e8d9;font-size:15px;line-height:1;opacity:0;transition:opacity .15s ease}
+.enhanced-list .message .enhanced-actions-trigger span{display:none}
+.enhanced-list .message:hover .enhanced-actions-trigger,.enhanced-list .message .enhanced-actions-trigger:focus-visible,.enhanced-list .message .enhanced-actions-trigger[aria-expanded="true"]{opacity:1}
+.enhanced-list .message .enhanced-actions-menu{position:absolute;z-index:30;top:33px;left:0;right:auto;display:flex;flex-direction:column;align-items:stretch;gap:4px;width:max-content;min-width:160px;max-width:min(260px,80vw);padding:7px;border:1px solid #3d5b46;border-radius:12px;background:#1e3226;box-shadow:0 10px 28px #0008}
+.enhanced-list .message.mine .enhanced-actions-menu{left:auto;right:0}
+.enhanced-list .message .enhanced-actions-menu>button{justify-content:flex-start;width:100%;padding:9px 10px;font-size:12px}
+.enhanced-list .message .enhanced-actions-menu .enhanced-emoji{display:flex;flex-wrap:wrap;gap:3px}
+.enhanced-list .message .enhanced-actions-menu .enhanced-emoji button{padding:5px;background:transparent;font-size:16px}
+@media (hover:none){.enhanced-list .message .enhanced-actions-trigger{opacity:.7}}
+@media (max-width:700px){.enhanced-list .message{max-width:calc(88% - 30px)}.enhanced-list .message .message-body{font-size:14px}.enhanced-list .message .enhanced-actions-trigger{opacity:.65}}
+/* Vexa 10: sadece yazıyor göstergesi; mesaj baloncuklarına dokunmaz */
+.vexa-typing-indicator{display:flex;align-items:center;gap:8px;padding:7px 15px;color:var(--muted,#a6b7ac);font-size:12px;min-height:30px}
+.vexa-typing-dots{letter-spacing:3px;animation:vexa-typing-pulse 1.1s ease-in-out infinite}
+@keyframes vexa-typing-pulse{0%,100%{opacity:.3}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.vexa-typing-dots{animation:none}}
+
+/* Vexa 10.1 - yalnızca yeni profil/gizlilik alanları; mevcut sohbet baloncuklarına dokunmaz */
+.vexa101-section{display:flex;flex-direction:column;gap:11px;margin:18px 0;padding:16px;border:1px solid var(--line,#395243);border-radius:16px;background:var(--panel2,#21362a)}
+.vexa101-section h3,.vexa101-section h4{display:flex;align-items:center;gap:8px;margin:0}
+.vexa101-section label{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.vexa101-section select,.vexa101-section input:not([type=checkbox]){width:100%;min-width:0;background:var(--panel,#1b2e23);color:var(--text,#f1f8f2);border:1px solid var(--line,#395243);border-radius:10px;padding:10px}
+.vexa101-section .vexa101-check{flex-direction:row;align-items:center}
+.vexa101-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.vexa101-actions button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 12px;border-radius:10px;background:#365541;color:#fff}
+.vexa101-actions input{flex:1 1 170px}
+.vexa101-qr{width:220px;max-width:100%;height:auto;align-self:center;border-radius:12px;background:#fff}
+.vexa101-presence p{display:flex;align-items:center;justify-content:center;gap:6px}
+@media(prefers-reduced-motion:no-preference){.vexa101-section{animation:vexa101-in .25s ease-out}@keyframes vexa101-in{from{opacity:.4;transform:translateY(5px)}to{opacity:1;transform:none}}}
+/* Vexa 10.2: yalnızca profil ve QR ekranları */
+.vexa102-backdrop{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(5px)}
+.vexa102-dialog{width:min(480px,100%);max-height:92dvh;overflow:auto;background:#14241b;border:1px solid #365341;border-radius:22px;box-shadow:0 25px 90px #000a;color:#f0f8f1}
+.vexa102-card{position:relative;text-align:center;overflow:hidden}
+.vexa102-cover{height:125px;background:linear-gradient(130deg,#254d38,#162d21 55%,#397353);display:flex;align-items:flex-start;justify-content:space-between;padding:18px}
+.vexa102-brand{font-size:13px;letter-spacing:.05em;font-weight:700;color:#c5e5ce}
+.vexa102-close{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:#0d1c15b8;color:#fff}
+.vexa102-avatar{position:relative;margin:-58px auto 0;width:112px;height:112px;border-radius:50%;border:5px solid #14241b;background:#326b4d;display:grid;place-items:center;font-size:38px;font-weight:800;overflow:hidden}
+.vexa102-avatar img{width:100%;height:100%;object-fit:cover}
+.vexa102-body{padding:8px 25px 28px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.vexa102-body h2{font-size:25px;line-height:1.2;margin:6px 0 0;overflow-wrap:anywhere}
+.vexa102-body .vexa9-tag{margin:0;font-size:15px;color:#85e2a4;font-weight:700}
+.vexa102-body .vexa101-presence{font-size:13px;color:#bdd8c6}
+.vexa102-body .vexa101-presence p{margin:4px 0}
+.vexa102-bio{background:#1e3427;padding:13px 15px;border-radius:12px;width:100%;white-space:pre-wrap;overflow-wrap:anywhere;margin:5px 0;text-align:left}
+.vexa102-details{width:100%;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid #34513f;padding:15px 0;color:#aac5b3;font-size:12px}
+.vexa102-details span{display:flex;align-items:center;gap:6px}.vexa102-details .hint{margin:0;font-size:12px}
+.vexa102-buttons{display:flex;gap:9px;width:100%;flex-wrap:wrap}.vexa102-buttons button{flex:1 1 145px;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:11px;background:#294433;color:#e7f5ea;font-weight:700}
+.vexa102-buttons .vexa102-primary{background:#7bdc9a;color:#092217}
+.vexa102-file-btn{display:inline-flex!important;align-items:center;justify-content:center;background:#365541;color:#fff;border-radius:10px;padding:9px 12px;cursor:pointer;font-size:14px!important}
+.vexa102-file-btn input{display:none}.vexa102-qr-video{display:block;width:100%;max-height:270px;object-fit:cover;border-radius:13px;background:#101b15}
+@media(max-width:600px){.vexa102-backdrop{padding:8px}.vexa102-dialog{max-height:94dvh}.vexa102-body{padding:8px 16px 22px}}
+
+/* Vexa 11.0 - yeni özellik merkezi */
+
+.vexa11-hub {
+ padding: 18px;
+ display: grid;
+ gap: 14px;
+ color: var(--text, #eaf7ee);
+}
+
+.vexa11-tabs {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 7px;
+}
+
+.vexa11-tabs button,
+.vexa11-hub button {
+ border: 1px solid var(--line, #385243);
+ border-radius: 9px;
+ padding: 9px 12px;
+ background: var(--panel2, #253d30);
+ color: inherit;
+ cursor: pointer;
+}
+
+.vexa11-tabs button.active {
+ outline: 2px solid var(--accent, #62b47b);
+}
+
+.vexa11-hub input,
+.vexa11-hub textarea,
+.vexa11-hub select {
+ width: 100%;
+ padding: 10px;
+ border-radius: 9px;
+ border: 1px solid var(--line, #385243);
+ background: var(--panel, #1b2b22);
+ color: inherit;
+}
+
+.vexa11-hub label {
+ display: grid;
+ gap: 6px;
+ margin: 12px 0;
+}
+
+.vexa11-actions {
+ display: flex;
+ gap: 8px;
+ margin: 10px 0;
+}
+
+.vexa11-item {
+ border: 1px solid var(--line, #385243);
+ border-radius: 12px;
+ padding: 12px;
+ margin: 9px 0;
+ overflow-wrap: anywhere;
+}
+
+.vexa11-item p {
+ white-space: pre-wrap;
+}
+
+.vexa11-error {
+ color: #ffb4b4;
+}
+
+.vexa11-messages {
+ max-height: 350px;
+ overflow: auto;
+}
+
+.vexa11-hub form {
+ display: flex;
+ gap: 8px;
+}
+
+.vexa11-hub a {
+ color: var(--accent, #8cdb9d);
+}
+/* Vexa 12.0: mevcut sohbet yapısını koruyan temalar */
+:root{--vexa12-accent:#49c984}
+:root[data-vexa-theme="ocean"]{--vexa12-accent:#65a8ff}
+:root[data-vexa-theme="violet"]{--vexa12-accent:#b38bfa}
+:root[data-vexa-theme="rose"]{--vexa12-accent:#ff8bb8}
+:root[data-vexa-theme="amber"]{--vexa12-accent:#ffb66b}
+:root[data-vexa-theme]{--accent:var(--vexa12-accent);--accentText:#101820}
+:root[data-vexa-mode="light"]{--bg:#f4f6f8;--panel:#ffffff;--panel2:#e9eef1;--text:#18272c;--muted:#62737b;--line:#d2dce0}
+:root[data-vexa-mode="dark"]{--bg:#101b1d;--panel:#172529;--panel2:#203338;--text:#eff7f7;--muted:#9aafb1;--line:#365057}
+:root[data-vexa-mode="dark"] .shell,:root[data-vexa-mode="dark"] .sidebar,:root[data-vexa-mode="dark"] .conversation{color:var(--text)}
+:root[data-vexa-mode="light"] .shell,:root[data-vexa-mode="light"] .sidebar,:root[data-vexa-mode="light"] .conversation{color:var(--text)}
+:root[data-vexa-wallpaper="dots"] .conversation{background-image:radial-gradient(color-mix(in srgb,var(--accent) 17%,transparent) 1px,transparent 1px);background-size:22px 22px}
+:root[data-vexa-wallpaper="grid"] .conversation{background-image:linear-gradient(color-mix(in srgb,var(--accent) 9%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--accent) 9%,transparent) 1px,transparent 1px);background-size:28px 28px}
+.vexa12-settings{padding:18px 16px 55px;display:grid;gap:14px;max-width:750px;margin:auto;color:var(--text)}
+.vexa12-heading h2{margin:0 0 6px}.vexa12-heading p,.vexa12-panel p{color:var(--muted);font-size:13px}
+.vexa12-panel{padding:18px;background:var(--panel2);border:1px solid var(--line);border-radius:18px;display:grid;gap:12px}
+.vexa12-panel h3{margin:0;font-size:17px}
+.vexa12-swatches{display:flex;gap:9px;flex-wrap:wrap}
+.vexa12-swatches button{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 10px;border-radius:12px;display:flex;gap:8px;align-items:center}
+.vexa12-swatches button[aria-pressed="true"]{outline:2px solid var(--accent)}
+.vexa12-swatches button span{width:17px;height:17px;border-radius:50%}
+.vexa12-field{display:grid;gap:6px;font-size:13px}
+.vexa12-settings input,.vexa12-settings select{min-width:0;width:100%;padding:11px;border-radius:11px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+.vexa12-settings button:not(.vexa12-swatches button){border:1px solid var(--line);padding:10px 13px;border-radius:11px;background:var(--panel);color:var(--text);cursor:pointer}
+.vexa12-settings button:disabled{opacity:.5}
+.vexa12-actions{display:flex;gap:8px;flex-wrap:wrap}.vexa12-actions input{flex:1 1 160px}
+.vexa12-result{border-top:1px solid var(--line);padding-top:10px;overflow-wrap:anywhere}.vexa12-result p{white-space:pre-wrap}
+.vexa12-notice{padding:12px;border-radius:12px;border:1px solid var(--line)}
+@media(max-width:650px){.vexa12-settings{padding:12px}.vexa12-panel{padding:13px}}
+/* Vexa 13 - katlanabilir profil, hareket ve animasyonlu logo */
+.vexa13-profile{padding-bottom:28px;animation:vexa13-appear .4s ease both}
+.vexa13-profile-head{display:flex;gap:13px;align-items:center;margin:-26px 12px 18px;position:relative}
+.vexa13-profile-head .avatar{box-shadow:0 0 0 4px var(--panel),0 9px 22px #0003}
+.vexa13-profile-head h2{margin:0;font-size:20px;overflow-wrap:anywhere}
+.vexa13-profile-head p{font-size:12px;color:var(--muted);margin:4px 0 0}
+.vexa13-category{border:1px solid var(--line);border-radius:15px;background:var(--panel2);margin:9px 5px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.vexa13-category[open]{border-color:var(--accent);box-shadow:0 6px 24px #00000010}
+.vexa13-category>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:23px 1fr 16px;column-gap:10px;align-items:center;padding:15px 13px;font-weight:650;font-size:14px;transition:background .2s}
+.vexa13-category>summary::-webkit-details-marker{display:none}
+.vexa13-category>summary:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.vexa13-category>summary svg{color:var(--accent)}
+.vexa13-category>summary span{grid-column:2;font-weight:400;font-size:11px;color:var(--muted);margin-top:3px}
+.vexa13-category>summary:after{content:'⌄';grid-column:3;grid-row:1/3;font-size:19px;color:var(--muted);transition:transform .24s}
+.vexa13-category[open]>summary:after{transform:rotate(180deg)}
+.vexa13-category-body{padding:4px 13px 16px;animation:vexa13-slide .26s ease both;min-width:0}
+.vexa13-category-body input,.vexa13-category-body textarea{max-width:100%}
+.vexa13-category-body .vexa12-settings{padding:0;max-width:100%;gap:10px}
+.vexa13-category-body .vexa12-heading{display:none}
+.vexa13-category-body .vexa12-panel{padding:12px;border-radius:12px}
+.vexa13-logout{margin:16px 5px;width:calc(100% - 10px)}
+/* Vexa. yazısının yumuşak parıltısı ve noktanın nabzı */
+.logo{display:inline-flex;align-items:baseline;gap:2px;animation:vexa13-logo-in .75s cubic-bezier(.18,.75,.2,1) both;position:relative;isolation:isolate}
+.logo:before{content:'';position:absolute;inset:-7px -10px;background:radial-gradient(ellipse at 45% 55%,color-mix(in srgb,var(--accent) 19%,transparent),transparent 72%);z-index:-1;animation:vexa13-glow 4s ease-in-out infinite;pointer-events:none}
+.logo span{display:inline-block;transform-origin:center;animation:vexa13-pulse 2.4s ease-in-out infinite;color:var(--accent)}
+.nav button,.contact,.vexa12-panel,.vexa13-category{transition:transform .2s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease}
+.nav button:hover,.contact:hover{transform:translateX(3px)}
+.vexa12-swatches button:hover{transform:translateY(-2px)}
+.vexa12-swatches button[aria-pressed=true] span{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+@keyframes vexa13-logo-in{from{opacity:0;transform:translateY(-9px) scale(.94);filter:blur(4px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes vexa13-glow{0%,100%{opacity:.3;transform:scale(.95)}50%{opacity:1;transform:scale(1.08)}}
+@keyframes vexa13-pulse{0%,100%{transform:scale(.9);opacity:.7}50%{transform:scale(1.25);opacity:1}}
+@keyframes vexa13-appear{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes vexa13-slide{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.logo,.logo:before,.logo span,.vexa13-profile,.vexa13-category-body{animation:none!important}.nav button,.contact,.vexa12-swatches button{transition:none!important}}
+/* VEXA - Belirgin animasyonlar. style.css dosyasinin EN ALTINA ekle. */
+.sidebar-header .logo,.auth .logo{
+  position:relative!important;display:inline-flex!important;align-items:center!important;
+  gap:3px!important;overflow:visible!important;
+  font-weight:900!important;letter-spacing:-1px!important;
+  background:linear-gradient(105deg,var(--text,#fff) 0%,var(--text,#fff) 30%,var(--accent,#58d78b) 48%,#fff 53%,var(--text,#fff) 72%);
+  background-size:250% 100%!important;
+  -webkit-background-clip:text!important;background-clip:text!important;
+  -webkit-text-fill-color:transparent!important;
+  animation:vexa-logo-shimmer 3.4s linear infinite,vexa-logo-enter .7s ease-out both!important;
+}
+.sidebar-header .logo span,.auth .logo span{
+  display:inline-block!important;
+  -webkit-text-fill-color:var(--accent,#58d78b)!important;
+  color:var(--accent,#58d78b)!important;
+  filter:drop-shadow(0 0 5px var(--accent,#58d78b));
+  transform-origin:center!important;
+  animation:vexa-dot-beat 1.3s ease-in-out infinite!important;
+}
+.sidebar-header .logo::before,.auth .logo::before{
+  content:'';position:absolute;inset:-8px -12px;z-index:-1;pointer-events:none;
+  border-radius:22px;background:radial-gradient(ellipse,color-mix(in srgb,var(--accent,#58d78b) 24%,transparent),transparent 70%);
+  animation:vexa-halo 2.4s ease-in-out infinite!important;
+}
+.vexa13-profile{animation:vexa-profile-enter .55s cubic-bezier(.2,.8,.2,1) both!important}
+.vexa13-category{transition:transform .24s ease,border-color .24s ease,box-shadow .24s ease!important}
+.vexa13-category:hover{transform:translateY(-2px);box-shadow:0 8px 22px #0002}
+.vexa13-category[open]{border-color:var(--accent,#58d78b)!important}
+.vexa13-category[open] .vexa13-category-body{animation:vexa-panel-open .38s cubic-bezier(.2,.8,.2,1) both!important;transform-origin:top}
+.vexa13-category summary svg{transition:transform .25s ease!important}
+.vexa13-category[open] summary svg{transform:rotate(-8deg) scale(1.12)}
+.nav button{transition:transform .22s ease,background-color .22s ease,box-shadow .22s ease!important}
+.nav button:hover{transform:translateX(5px)!important}
+.nav button.active{box-shadow:inset 3px 0 0 var(--accent,#58d78b)}
+.vexa12-swatches button{transition:transform .22s ease,box-shadow .22s ease!important}
+.vexa12-swatches button:hover{transform:translateY(-3px) scale(1.05)!important}
+.vexa12-swatches button[aria-pressed='true']{box-shadow:0 0 0 2px var(--accent,#58d78b)}
+@keyframes vexa-logo-shimmer{0%{background-position:120% 50%}100%{background-position:-120% 50%}}
+@keyframes vexa-logo-enter{from{opacity:0;transform:translateY(-13px) scale(.88);filter:blur(5px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+@keyframes vexa-dot-beat{0%,100%{transform:scale(.82);opacity:.65;filter:drop-shadow(0 0 2px var(--accent,#58d78b))}45%{transform:scale(1.45);opacity:1;filter:drop-shadow(0 0 12px var(--accent,#58d78b))}}
+@keyframes vexa-halo{0%,100%{opacity:.3;transform:scale(.9)}50%{opacity:1;transform:scale(1.12)}}
+@keyframes vexa-profile-enter{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes vexa-panel-open{from{opacity:0;transform:translateY(-12px) scaleY(.94)}to{opacity:1;transform:translateY(0) scaleY(1)}}
+@media(prefers-reduced-motion:reduce){.sidebar-header .logo,.auth .logo,.sidebar-header .logo span,.auth .logo span,.sidebar-header .logo::before,.auth .logo::before,.vexa13-profile,.vexa13-category[open] .vexa13-category-body{animation:none!important}}
+/* Vexa 13 - arama düğmeleri ve çevrimiçi durumunu geri getir */
+.call-inbox{display:none!important}
+.call-inbox.call-visible{display:block!important;position:fixed;z-index:90;top:14px;right:24px;pointer-events:none}
+.call-inbox.call-visible .call-actions{display:flex!important;gap:8px;pointer-events:auto;margin:0}
+.call-inbox .incoming-call,.call-inbox .call-overlay,.call-inbox .call-error{pointer-events:auto}
+.call-inbox.call-visible .call-actions button{display:grid;place-items:center;min-width:38px;min-height:38px;transition:transform .2s,box-shadow .2s}
+.call-inbox.call-visible .call-actions button:hover{transform:translateY(-2px);box-shadow:0 4px 16px #0005}
+.chat-header .vexa101-presence{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.chat-header .vexa101-presence p{margin:0}
+.chat-header .vexa101-presence .hint{font-size:11px}
+@media(max-width:700px){.call-inbox.call-visible{top:56px;right:9px}.call-inbox.call-visible .call-actions button{min-width:32px;min-height:32px;padding:6px}}
+
+/* =====================================
+   VEXA 14 - ARAMA GEÇMİŞİ
+===================================== */
+
+.vexa14-history {
+  padding: 24px;
+  max-width: 850px;
+  margin: auto;
+  width: 100%;
+  color: var(--text);
+}
+
+.vexa14-history header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vexa14-history header button {
+  background: var(--panel2);
+  color: var(--text);
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.vexa14-history article {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 14px;
+  margin: 10px 0;
+  background: var(--panel2);
+}
+
+.vexa14-history article > div {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.vexa14-history article small {
+  color: var(--muted);
+}
+
+.vexa14-history time {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Çevrimiçi ve son görülme */
+
+.vexa101-presence {
+  font-size: 12px;
+  display: flex;
+  gap: 5px;
+  flex-direction: column;
+}
+
+.vexa101-presence p {
+  margin: 0;
+}
+
+/* Grup araması */
+
+.vexa14-group-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--panel2);
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.vexa14-group-call:hover {
+  filter: brightness(1.15);
+}
+
+/* Mobil uyumluluk */
+
+@media (max-width: 600px) {
+  .vexa14-history {
+    padding: 12px;
+  }
+
+  .vexa14-history article {
+    gap: 8px;
+  }
+
+  .vexa14-history time {
+    max-width: 95px;
+    text-align: right;
+  }
+}
+
+
+
+
+/* VEXA MOBIL DUZELTME — mevcut style.css dosyasinin EN SONUNA eklenir. */
+@media (max-width:700px) {
+  html,body,#root { width:100%; height:100%; min-height:0; margin:0; overflow:hidden; }
+  .shell { display:block; width:100%; height:100vh; height:100dvh; min-height:0; overflow:hidden; }
+  /* Eski .sidebar:has(.vexa91-mode-list){display:block} kurali flex duzenini bozuyordu. */
+  .shell > .sidebar,
+  .shell > .sidebar:has(.vexa91-mode-list) {
+    display:flex;
+    flex-direction:column;
+    width:100%;
+    height:100vh;
+    height:100dvh;
+    min-height:0;
+    max-height:100dvh;
+    overflow:hidden;
+  }
+  .shell > .sidebar.chat-open,
+  .shell > .sidebar:has(.vexa91-mode-list).chat-open { display:none; }
+  .sidebar-header { flex:0 0 58px; min-height:58px; padding:0 16px; }
+  .sidebar-header .logo { font-size:28px; }
+  .panel-scroll,
+  .sidebar > .panel-scroll:has(.vexa91-mode-list) {
+    display:block;
+    flex:1 1 auto;
+    min-height:0;
+    max-height:none;
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding:12px 14px 20px;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .panel-scroll h2 { font-size:23px; margin:7px 0 15px; }
+  .contact { min-height:66px; margin:2px 0; }
+  .vexa92-groups-in-chats { margin-top:16px; padding-top:8px; min-height:0; border-top:1px solid var(--line); }
+  .vexa92-groups-in-chats .vexa91-mode-list,
+  .vexa92-groups-in-chats .vexa-groups-sidebar { height:auto!important; min-height:0!important; width:100%; overflow:visible!important; }
+  .vexa92-groups-in-chats .vexa-groups-list-header { padding:7px 0 9px; height:auto!important; }
+  .vexa92-groups-in-chats .vexa-groups-list-header h2 { margin:0; }
+  .vexa92-groups-in-chats .vexa-groups-list { padding:0; }
+  .vexa92-groups-in-chats .vexa-group-row { min-height:62px; padding:9px 10px; }
+  /* Alt menuyu ekranin altina sabitle; 7 sekme yatay kaydirilabilir. */
+  .shell > .sidebar > .mobile-nav {
+    position:relative;
+    display:flex;
+    flex:0 0 auto;
+    align-items:stretch;
+    width:100%;
+    min-height:66px;
+    gap:2px;
+    margin-top:auto;
+    padding:6px 4px calc(7px + env(safe-area-inset-bottom,0px));
+    border-top:1px solid var(--line);
+    background:var(--panel,#192a20);
+    overflow-x:auto;
+    overflow-y:hidden;
+    scrollbar-width:none;
+    box-sizing:border-box;
+  }
+  .mobile-nav::-webkit-scrollbar { display:none; }
+  .mobile-nav button {
+    flex:1 0 52px;
+    min-width:52px;
+    max-width:none;
+    min-height:54px;
+    padding:6px 2px;
+    gap:4px;
+    border-radius:10px;
+  }
+  .mobile-nav button svg { flex:none; width:21px; height:21px; }
+  .mobile-nav button small { font-size:10px; line-height:1.15; white-space:nowrap; overflow:visible; }
+  .shell > .conversation { width:100%; height:100vh; height:100dvh; min-height:0; }
+  .shell > .conversation.show { display:flex; }
+}
