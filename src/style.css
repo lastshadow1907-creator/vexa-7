@@ -195,4 +195,31 @@
   .vexa91-mode-chat .vexa-group-full-messages .vexa-group-message.mine,
   .vexa-groups-conversation .vexa-group-full-messages .vexa-group-message.mine {border-radius: 19px 19px 6px 19px;}
 }
+/* VEXA - OZEL SOHBET BALONCUKLARI (EnhancedChat.tsx)
+   src/style.css dosyasinin EN ALTINA ekle. Grup CSS'i degildir. */
+.enhanced-list.message-list{gap:9px;padding:18px clamp(12px,3vw,34px)}
+.enhanced-list .message{position:relative;display:flex;flex-direction:column;align-items:flex-start;align-self:flex-start;width:fit-content;min-width:0;max-width:min(78%,540px);padding:0 0 2px;margin:0 34px 0 0;isolation:isolate}
+.enhanced-list .message.mine{align-self:flex-end;align-items:flex-end;margin:0 0 0 34px}
+.enhanced-list .message .message-body{display:block;box-sizing:border-box;width:fit-content;min-width:55px;max-width:100%;padding:10px 13px 21px;margin:0!important;background:#263e2f;border:1px solid #3d5b46;border-radius:18px 18px 18px 5px;box-shadow:0 2px 6px #0002;color:#eff9f0;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+.enhanced-list .message.mine .message-body{background:#355c42;border-color:#487453;border-radius:18px 18px 5px 18px}
+/* Saat baloncugun sag altinda, ayri bir satir olusturmaz. */
+.enhanced-list .message>time{position:absolute;right:10px;top:auto;bottom:8px;margin:0!important;z-index:1;pointer-events:none;color:#b8cfbf;font-size:10px;line-height:1;white-space:nowrap}
+/* Tepkiler baloncugun alt kenarina yapisir, yeni bir satir gibi uzamaz. */
+.enhanced-list .message .enhanced-reactions{position:relative;z-index:2;display:flex;align-self:flex-start;gap:3px;min-height:0;margin:-7px 0 0 8px;padding:0}
+.enhanced-list .message.mine .enhanced-reactions{align-self:flex-end;margin:-7px 8px 0 0}
+.enhanced-list .message .enhanced-reactions:empty{display:none}
+.enhanced-list .message .enhanced-reactions button{display:inline-flex;align-items:center;justify-content:center;min-width:27px;min-height:24px;padding:2px 5px;border:1px solid #496d53;border-radius:999px;background:#243a2c;font-size:14px;box-shadow:0 2px 5px #0003}
+/* 'Islemler' dugmesi baloncugun altinda degil, yaninda kucuk uc nokta. */
+.enhanced-list .message .enhanced-actions{position:absolute;z-index:5;top:5px;left:calc(100% + 6px);right:auto;width:30px;max-width:none;margin:0!important}
+.enhanced-list .message.mine .enhanced-actions{left:auto;right:calc(100% + 6px)}
+.enhanced-list .message .enhanced-actions-trigger{display:grid;place-items:center;width:29px;height:29px;min-width:29px;padding:0!important;border:1px solid #3d5b46;border-radius:10px;background:#23372a;color:#d4e8d9;font-size:15px;line-height:1;opacity:0;transition:opacity .15s ease}
+.enhanced-list .message .enhanced-actions-trigger span{display:none}
+.enhanced-list .message:hover .enhanced-actions-trigger,.enhanced-list .message .enhanced-actions-trigger:focus-visible,.enhanced-list .message .enhanced-actions-trigger[aria-expanded="true"]{opacity:1}
+.enhanced-list .message .enhanced-actions-menu{position:absolute;z-index:30;top:33px;left:0;right:auto;display:flex;flex-direction:column;align-items:stretch;gap:4px;width:max-content;min-width:160px;max-width:min(260px,80vw);padding:7px;border:1px solid #3d5b46;border-radius:12px;background:#1e3226;box-shadow:0 10px 28px #0008}
+.enhanced-list .message.mine .enhanced-actions-menu{left:auto;right:0}
+.enhanced-list .message .enhanced-actions-menu>button{justify-content:flex-start;width:100%;padding:9px 10px;font-size:12px}
+.enhanced-list .message .enhanced-actions-menu .enhanced-emoji{display:flex;flex-wrap:wrap;gap:3px}
+.enhanced-list .message .enhanced-actions-menu .enhanced-emoji button{padding:5px;background:transparent;font-size:16px}
+@media (hover:none){.enhanced-list .message .enhanced-actions-trigger{opacity:.7}}
+@media (max-width:700px){.enhanced-list .message{max-width:calc(88% - 30px)}.enhanced-list .message .message-body{font-size:14px}.enhanced-list .message .enhanced-actions-trigger{opacity:.65}}
 
