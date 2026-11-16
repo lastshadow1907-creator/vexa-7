@@ -344,5 +344,34 @@
 .vexa11-hub a {
  color: var(--accent, #8cdb9d);
 }
+/* Vexa 12.0: mevcut sohbet yapısını koruyan temalar */
+:root{--vexa12-accent:#49c984}
+:root[data-vexa-theme="ocean"]{--vexa12-accent:#65a8ff}
+:root[data-vexa-theme="violet"]{--vexa12-accent:#b38bfa}
+:root[data-vexa-theme="rose"]{--vexa12-accent:#ff8bb8}
+:root[data-vexa-theme="amber"]{--vexa12-accent:#ffb66b}
+:root[data-vexa-theme]{--accent:var(--vexa12-accent);--accentText:#101820}
+:root[data-vexa-mode="light"]{--bg:#f4f6f8;--panel:#ffffff;--panel2:#e9eef1;--text:#18272c;--muted:#62737b;--line:#d2dce0}
+:root[data-vexa-mode="dark"]{--bg:#101b1d;--panel:#172529;--panel2:#203338;--text:#eff7f7;--muted:#9aafb1;--line:#365057}
+:root[data-vexa-mode="dark"] .shell,:root[data-vexa-mode="dark"] .sidebar,:root[data-vexa-mode="dark"] .conversation{color:var(--text)}
+:root[data-vexa-mode="light"] .shell,:root[data-vexa-mode="light"] .sidebar,:root[data-vexa-mode="light"] .conversation{color:var(--text)}
+:root[data-vexa-wallpaper="dots"] .conversation{background-image:radial-gradient(color-mix(in srgb,var(--accent) 17%,transparent) 1px,transparent 1px);background-size:22px 22px}
+:root[data-vexa-wallpaper="grid"] .conversation{background-image:linear-gradient(color-mix(in srgb,var(--accent) 9%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--accent) 9%,transparent) 1px,transparent 1px);background-size:28px 28px}
+.vexa12-settings{padding:18px 16px 55px;display:grid;gap:14px;max-width:750px;margin:auto;color:var(--text)}
+.vexa12-heading h2{margin:0 0 6px}.vexa12-heading p,.vexa12-panel p{color:var(--muted);font-size:13px}
+.vexa12-panel{padding:18px;background:var(--panel2);border:1px solid var(--line);border-radius:18px;display:grid;gap:12px}
+.vexa12-panel h3{margin:0;font-size:17px}
+.vexa12-swatches{display:flex;gap:9px;flex-wrap:wrap}
+.vexa12-swatches button{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 10px;border-radius:12px;display:flex;gap:8px;align-items:center}
+.vexa12-swatches button[aria-pressed="true"]{outline:2px solid var(--accent)}
+.vexa12-swatches button span{width:17px;height:17px;border-radius:50%}
+.vexa12-field{display:grid;gap:6px;font-size:13px}
+.vexa12-settings input,.vexa12-settings select{min-width:0;width:100%;padding:11px;border-radius:11px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+.vexa12-settings button:not(.vexa12-swatches button){border:1px solid var(--line);padding:10px 13px;border-radius:11px;background:var(--panel);color:var(--text);cursor:pointer}
+.vexa12-settings button:disabled{opacity:.5}
+.vexa12-actions{display:flex;gap:8px;flex-wrap:wrap}.vexa12-actions input{flex:1 1 160px}
+.vexa12-result{border-top:1px solid var(--line);padding-top:10px;overflow-wrap:anywhere}.vexa12-result p{white-space:pre-wrap}
+.vexa12-notice{padding:12px;border-radius:12px;border:1px solid var(--line)}
+@media(max-width:650px){.vexa12-settings{padding:12px}.vexa12-panel{padding:13px}}
 
 
