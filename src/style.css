@@ -263,4 +263,86 @@
 .vexa102-file-btn input{display:none}.vexa102-qr-video{display:block;width:100%;max-height:270px;object-fit:cover;border-radius:13px;background:#101b15}
 @media(max-width:600px){.vexa102-backdrop{padding:8px}.vexa102-dialog{max-height:94dvh}.vexa102-body{padding:8px 16px 22px}}
 
+/* Vexa 11.0 - yeni özellik merkezi */
+
+.vexa11-hub {
+ padding: 18px;
+ display: grid;
+ gap: 14px;
+ color: var(--text, #eaf7ee);
+}
+
+.vexa11-tabs {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 7px;
+}
+
+.vexa11-tabs button,
+.vexa11-hub button {
+ border: 1px solid var(--line, #385243);
+ border-radius: 9px;
+ padding: 9px 12px;
+ background: var(--panel2, #253d30);
+ color: inherit;
+ cursor: pointer;
+}
+
+.vexa11-tabs button.active {
+ outline: 2px solid var(--accent, #62b47b);
+}
+
+.vexa11-hub input,
+.vexa11-hub textarea,
+.vexa11-hub select {
+ width: 100%;
+ padding: 10px;
+ border-radius: 9px;
+ border: 1px solid var(--line, #385243);
+ background: var(--panel, #1b2b22);
+ color: inherit;
+}
+
+.vexa11-hub label {
+ display: grid;
+ gap: 6px;
+ margin: 12px 0;
+}
+
+.vexa11-actions {
+ display: flex;
+ gap: 8px;
+ margin: 10px 0;
+}
+
+.vexa11-item {
+ border: 1px solid var(--line, #385243);
+ border-radius: 12px;
+ padding: 12px;
+ margin: 9px 0;
+ overflow-wrap: anywhere;
+}
+
+.vexa11-item p {
+ white-space: pre-wrap;
+}
+
+.vexa11-error {
+ color: #ffb4b4;
+}
+
+.vexa11-messages {
+ max-height: 350px;
+ overflow: auto;
+}
+
+.vexa11-hub form {
+ display: flex;
+ gap: 8px;
+}
+
+.vexa11-hub a {
+ color: var(--accent, #8cdb9d);
+}
+
 
