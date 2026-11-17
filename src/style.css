@@ -642,3 +642,290 @@
   .shell > .conversation { width:100%; height:100vh; height:100dvh; min-height:0; }
   .shell > .conversation.show { display:flex; }
 }
+/*
+ VEXA 15 - Gorunum ve mobil yerlesim duzeltmesi
+ Bu dosyanin TAMAMINI src/style.css DOSYASININ EN ALTINA ekleyin.
+ Mevcut CSS kurallarini silmeyin. App.tsx, SQL ve AdMob kodu degismez.
+*/
+
+/* Theme: mevcut renk secici ve acik/koyu mod ile uyumlu */
+:root[data-vexa-mode="dark"] {
+  --bg:#0c1115;
+  --panel:#141d23;
+  --panel2:#1b2830;
+  --line:#2c3d44;
+  --text:#edf5f3;
+  --muted:#a0b3b8;
+  color-scheme:dark;
+}
+:root[data-vexa-mode="light"] {
+  --bg:#f2f5f5;
+  --panel:#ffffff;
+  --panel2:#edf3f2;
+  --line:#d7e2e0;
+  --text:#192a2e;
+  --muted:#61757a;
+  color-scheme:light;
+}
+:root:not([data-vexa-mode]) {
+  --bg:#0c1115;
+  --panel:#141d23;
+  --panel2:#1b2830;
+  --line:#2c3d44;
+  --text:#edf5f3;
+  --muted:#a0b3b8;
+}
+
+html,body,#root { width:100%; max-width:100%; min-height:0; }
+body { background:var(--bg); color:var(--text); }
+.shell { background:var(--bg); }
+.shell > .sidebar {
+  background:var(--panel);
+  border-right:1px solid var(--line);
+}
+.sidebar-header {
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+}
+.sidebar-header .edition {
+  padding:5px 9px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--panel2);
+  color:var(--muted);
+  font-size:11px;
+  letter-spacing:.03em;
+}
+/* Desktop: 7 sekme dar alana sigsin; ikinci satira dusmesin. */
+@media (min-width:701px) {
+  .shell { grid-template-columns:clamp(315px,28vw,380px) minmax(0,1fr); }
+  .sidebar > .nav {
+    display:flex;
+    flex-wrap:nowrap;
+    gap:5px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scrollbar-width:thin;
+    padding:12px 10px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  .sidebar > .nav button {
+    flex:0 0 66px;
+    min-width:66px;
+    min-height:62px;
+    border-radius:12px;
+    font-size:10px;
+    transition:background-color .15s ease;
+  }
+  .sidebar > .nav button:hover { transform:none!important; }
+  .sidebar > .nav button.active {
+    box-shadow:inset 0 -3px 0 var(--accent);
+  }
+}
+
+/* Modern, sade listeler ve okunabilir kontroller */
+.panel-scroll { scrollbar-width:thin; scrollbar-color:var(--line) transparent; }
+.panel-scroll h2 { font-size:clamp(20px,2.2vw,24px); letter-spacing:-.6px; }
+.contact, .vexa-group-row {
+  border:1px solid transparent;
+  border-radius:15px;
+  transition:background-color .15s ease,border-color .15s ease;
+}
+.contact { min-height:68px; padding:11px 12px; }
+.contact:hover, .contact.selected,
+.vexa-group-row:hover {
+  background:color-mix(in srgb,var(--accent) 9%,var(--panel2));
+  border-color:color-mix(in srgb,var(--accent) 24%,var(--line));
+  transform:none!important;
+}
+.contact strong { font-size:14px; font-weight:700; }
+.contact small { font-size:12px; }
+.avatar { background:color-mix(in srgb,var(--accent) 25%,var(--panel2)); color:var(--text); }
+.panel-scroll input, .panel-scroll textarea,
+.search-form input, .vexa-group-compose input,
+.vexa-group-create input, .composer input:not([type=file]) {
+  background:var(--panel2);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:13px;
+}
+.panel-scroll input:focus, .panel-scroll textarea:focus,
+.composer input:focus, .vexa-group-compose input:focus {
+  outline:2px solid color-mix(in srgb,var(--accent) 48%,transparent);
+  outline-offset:0;
+}
+.vexa13-category,.vexa12-panel,.vexa101-section {
+  background:var(--panel2);
+  border-color:var(--line);
+  border-radius:16px;
+}
+.vexa13-category > summary { min-height:58px; }
+.conversation { background-color:var(--bg); }
+.chat-header {
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+}
+.enhanced-toolbar { background:var(--bg); border-color:var(--line); }
+.message-body, .enhanced-list .message .message-body {
+  border-radius:18px 18px 18px 6px;
+  line-height:1.5;
+}
+.message.mine .message-body, .enhanced-list .message.mine .message-body {
+  border-radius:18px 18px 6px 18px;
+}
+.composer, .enhanced-compose {
+  background:var(--panel);
+  border-top:1px solid var(--line);
+}
+.vexa-group-full-messages,.enhanced-list,.message-list {
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* Mobil: tek kaydirilabilir alan + ekranin en altinda sabit menu. */
+@media (max-width:700px) {
+  html,body,#root {
+    width:100%;
+    height:100%;
+    min-height:0;
+    margin:0;
+    overflow:hidden;
+  }
+  .shell {
+    display:block!important;
+    position:relative;
+    width:100%;
+    height:100vh;
+    height:100dvh;
+    min-height:0;
+    max-height:100dvh;
+    overflow:hidden;
+  }
+  .shell > .sidebar,
+  .shell > .sidebar:has(.vexa91-mode-list) {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:58px minmax(0,1fr) auto;
+    width:100%;
+    height:100%;
+    max-height:100%;
+    min-height:0;
+    overflow:hidden;
+    border-right:0;
+  }
+  .shell > .sidebar.chat-open,
+  .shell > .sidebar:has(.vexa91-mode-list).chat-open {
+    display:none!important;
+  }
+  .shell > .sidebar > .sidebar-header {
+    grid-row:1;
+    min-width:0;
+    min-height:0;
+    height:58px;
+    padding:0 16px;
+  }
+  .shell > .sidebar > .nav { display:none!important; }
+  .shell > .sidebar > .panel-scroll,
+  .shell > .sidebar > .panel-scroll:has(.vexa91-mode-list),
+  .shell > .sidebar > .panel-scroll:has(.vexa-groups-panel) {
+    grid-row:2;
+    display:block;
+    width:100%;
+    height:auto;
+    min-height:0;
+    max-height:none;
+    overflow-x:hidden;
+    overflow-y:auto;
+    padding:12px 13px 14px;
+    margin:0;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .shell > .sidebar > .mobile-nav {
+    grid-row:3;
+    display:flex!important;
+    position:relative!important;
+    inset:auto!important;
+    width:100%;
+    height:auto;
+    min-height:65px;
+    flex:0 0 auto;
+    margin:0!important;
+    padding:6px 4px max(7px,env(safe-area-inset-bottom,0px));
+    border-top:1px solid var(--line);
+    border-radius:0;
+    background:var(--panel);
+    overflow-x:auto;
+    overflow-y:hidden;
+    scrollbar-width:none;
+    gap:2px;
+    box-sizing:border-box;
+    z-index:30;
+  }
+  .shell > .sidebar > .mobile-nav::-webkit-scrollbar { display:none; }
+  .shell > .sidebar > .mobile-nav button {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    flex:1 0 48px;
+    min-width:48px;
+    min-height:50px;
+    max-width:none;
+    margin:0;
+    padding:6px 2px;
+    gap:4px;
+    border-radius:11px;
+    background:transparent;
+    color:var(--muted);
+    line-height:1.1;
+    transform:none!important;
+  }
+  .shell > .sidebar > .mobile-nav button.active {
+    background:color-mix(in srgb,var(--accent) 13%,var(--panel2));
+    color:var(--accent);
+  }
+  .shell > .sidebar > .mobile-nav button svg { width:21px; height:21px; }
+  .shell > .sidebar > .mobile-nav button small {
+    max-width:100%;
+    font-size:9px;
+    line-height:1.1;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  /* Sohbet acilinca menu yerine sohbet tam gorunur. */
+  .shell > .conversation { display:none; width:100%; height:100%; min-height:0; }
+  .shell > .conversation.show { display:flex; flex-direction:column; height:100%; }
+  .shell > .conversation.show > .vexa91-mode-chat,
+  .shell > .conversation.show > .vexa91-mode-chat > .vexa-groups-conversation,
+  .shell > .conversation.show > .vexa-groups-layout.vexa91-mode-chat > .vexa-groups-conversation {
+    height:100%!important;
+    max-height:100%!important;
+    min-height:0!important;
+  }
+  .chat-header { flex:0 0 60px; min-height:60px; height:60px; }
+  .enhanced-chat { flex:1 1 auto; min-height:0; }
+  .enhanced-list,.message-list { flex:1 1 auto; min-height:0; }
+  .composer,.enhanced-compose {
+    flex:0 0 auto;
+    min-width:0;
+    padding:8px 7px max(9px,env(safe-area-inset-bottom,0px));
+  }
+  .composer input:not([type=file]),.enhanced-compose input:not([type=file]) {
+    min-width:0;
+    width:0;
+    flex:1 1 auto;
+    font-size:16px; /* Android klavye ve iOS otomatik yakinlastirma */
+  }
+  .vexa-group-compose { min-width:0; padding-bottom:max(8px,env(safe-area-inset-bottom,0px)); }
+  .vexa-group-compose input { min-width:0; font-size:16px; }
+  .vexa13-category,.vexa12-panel { border-radius:14px; }
+  .contact { min-height:66px; }
+  .call-inbox.call-visible { right:8px; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .contact,.vexa-group-row { transition:none!important; }
+}
+
