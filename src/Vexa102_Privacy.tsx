@@ -32,7 +32,7 @@ type PublicPresence={status:Status|null;last_seen_at:string|null;profile_visible
 export function VexaPublicPresence({userId}:{userId:string}){
  const [value,setValue]=useState<PublicPresence|null>(null);const [error,setError]=useState('');
  const load=useCallback(async()=>{const {data,error}=await supabase.rpc('vexa101_public_presence',{p_user_id:userId});if(error)setError(error.message);else setValue((data||null) as PublicPresence|null)},[userId]);
- useEffect(()=>{void load()},[load]);
+ useEffect(()=>{void load();const timer=window.setInterval(()=>void load(),30000);return()=>window.clearInterval(timer)},[load]);
  return <div className="vexa101-presence">{value?.status&&<p><Activity size={15}/> {statuses[value.status]||value.status}{value.focus_until&&new Date(value.focus_until)>new Date()?' · Odak modu':''}</p>}{value?.last_seen_at&&<p className="hint">Son görülme: {new Date(value.last_seen_at).toLocaleString('tr-TR')}</p>}{value&&!value.profile_visible&&<p className="hint">Bu kişinin profil ayrıntıları gizli.</p>}{error&&<p className="hint">Durum bilgisi alınamadı: {error}</p>}</div>
 }
 export function VexaProfileQR({userId}:{userId:string}){
