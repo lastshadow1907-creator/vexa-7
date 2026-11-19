@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Star, Forward, Sticker, ImagePlay } from 'lucide-react';
+import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Star, Forward, Images, FileText, Sticker } from 'lucide-react';
 import { supabase } from './supabase';
 
 type Msg = {
@@ -40,8 +40,17 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const [forwarding, setForwarding] = useState<Msg | null>(null);
   const [forwardTarget, setForwardTarget] = useState('');
   const [peerTyping, setPeerTyping] = useState(false);
+  const [showGallery,setShowGallery]=useState(false);
+  const [galleryFilter,setGalleryFilter]=useState<'all'|'image'|'video'|'document'>('all');
   const [showStickers,setShowStickers]=useState(false);
-  const [stickerBusy,setStickerBusy]=useState(false);
+  const stickers=['❤️','💚','🥰','😂','🎉','🔥','😍','🤗','😎','💐','🐱','✨','💌','👍','🙌','💯'];
+  const galleryItems=messages.filter(m=>!m.deleted_at && m.media_path && urls[m.media_path] && (galleryFilter==='all'||m.media_type===galleryFilter));
+  async function sendSticker(sticker:string){
+    setBusy(true);setError('');
+    const {error:e}=await supabase.from('messages').insert({sender_id:userId,recipient_id:peerId,body:sticker,media_path:null,media_type:null});
+    setBusy(false);setShowStickers(false);
+    if(e)setError(e.message);else await load();
+  }
   const typingChannel = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -182,16 +191,6 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     if (!chatSearch) bottom.current?.scrollIntoView({ block: 'end' });
   }, [messages.length, callRows.length, chatSearch]);
 
-  async function sendSticker(emoji:string){
-    if(stickerBusy)return;
-    setStickerBusy(true);setError('');
-    try{
-      const {error:e}=await supabase.from('messages').insert({sender_id:userId,recipient_id:peerId,body:`[vexa-sticker]${emoji}`,reply_to_message_id:reply?.id??null});
-      if(e)throw e;
-      setShowStickers(false);setReply(null);await load();
-    }catch(e){setError((e as Error).message)}finally{setStickerBusy(false)}
-  }
-
   async function send() {
     if (busy) return;
     const body = draft.trim();
@@ -214,9 +213,9 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
           if (file.size > 25 * 1024 * 1024) throw new Error('Dosya en fazla 25 MB olabilir.');
           const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif',
             'video/mp4', 'video/webm', 'video/quicktime', 'audio/webm',
-            'audio/mp4', 'audio/ogg', 'audio/mpeg'];
+            'audio/mp4', 'audio/ogg', 'audio/mpeg', 'application/pdf'];
           if (!allowed.includes(file.type)) throw new Error('Bu dosya türü desteklenmiyor.');
-          mediaType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'audio';
+          mediaType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : file.type==='application/pdf' ? 'document' : 'audio';
           const ext = file.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '').slice(0, 8) || 'bin';
           uploadedPath = `${userId}/${crypto.randomUUID()}.${ext}`;
           const { error: e } = await supabase.storage.from('vexa-media')
@@ -315,7 +314,13 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
           <Pin size={16} /> {pinned ? 'Sabitlendi' : 'Sabitle'}
         </button>
         <button type="button" onClick={()=>setShowStarred(v=>!v)} title="Yıldızlı mesajlar"><Star size={16}/>{showStarred?' Tümü':' Yıldızlı'}</button>
+        <button type="button" onClick={()=>setShowGallery(v=>!v)} title="Medya galerisi"><Images size={16}/> Medya</button>
       </div>
+      {showGallery && <section className="vexa-media-gallery" aria-label="Sohbet medyası">
+        <div className="vexa-gallery-heading"><strong>Paylaşılan medya</strong><button type="button" onClick={()=>setShowGallery(false)} aria-label="Galeriyi kapat"><X size={17}/></button></div>
+        <div className="vexa-gallery-filters">{(['all','image','video','document'] as const).map(t=><button key={t} type="button" className={galleryFilter===t?'active':''} onClick={()=>setGalleryFilter(t)}>{({all:'Tümü',image:'Fotoğraf',video:'Video',document:'PDF'} as const)[t]}</button>)}</div>
+        <div className="vexa-gallery-grid">{galleryItems.map(m=><a key={m.id} href={urls[m.media_path!]} target="_blank" rel="noopener noreferrer" title={new Date(m.created_at).toLocaleString('tr-TR')}>{m.media_type==='image'?<img src={urls[m.media_path!]} alt="Paylaşılan fotoğraf" loading="lazy"/>:m.media_type==='video'?<span>▶ Video</span>:<span><FileText size={22}/> PDF</span>}</a>)}{!galleryItems.length&&<p>Bu kategoride medya yok.</p>}</div>
+      </section>}
       {peerTyping && <div className="vexa8-typing" role="status">{peerName||'Kişi'} yazıyor…</div>}
       {showSearch && <div className="enhanced-preview">
         <input aria-label="Sohbette ara" placeholder="Mesajlarda ara..." value={chatSearch}
@@ -349,12 +354,14 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
             <div className="message-body" onClick={() => { if (!deleted && !m.media_path) setOpenActions(openActions === m.id ? null : m.id); }}>
               {deleted ? <i>Bu mesaj silindi</i> : <>
                 {m.reply_to_message_id && <div className="vexa8-reply-quote">↳ {messages.find(x=>x.id===m.reply_to_message_id)?.body?.slice(0,110)||'Yanıtlanan mesaj'}</div>}
-                {m.body?.startsWith('[vexa-sticker]') ? <div className="vexa81-sticker" aria-label="Çıkartma">{m.body.slice(14)}</div> : m.body && <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{m.body}</div>}
+                {m.body && <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{m.body}</div>}
                 {m.media_path && urls[m.media_path] && (m.media_type === 'image'
                   ? <img className="enhanced-media" src={urls[m.media_path]} alt="Gönderilen fotoğraf" />
                   : m.media_type === 'video'
                     ? <video className="enhanced-media" controls src={urls[m.media_path]} />
-                    : <audio controls src={urls[m.media_path]} />)}
+                    : m.media_type === 'document'
+                      ? <a href={urls[m.media_path]} target="_blank" rel="noopener noreferrer" className="vexa-document"><FileText size={18}/> PDF dosyasını aç</a>
+                      : <audio controls src={urls[m.media_path]} />)}
                 {m.media_path && urls[m.media_path] && <a href={urls[m.media_path]} target="_blank"
                   rel="noopener noreferrer" className="enhanced-download"><Download size={13} /> Dosyayı aç</a>}
               </>}
@@ -406,12 +413,11 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         }}><X size={17} /></button>
       </div>}
       {error && <div className="enhanced-error" role="alert">{error}</div>}
-      {showStickers&&<div className="vexa81-sticker-panel" role="dialog" aria-label="Çıkartmalar"><strong>Çıkartmalar</strong><div>{['❤️','🥰','😂','🔥','😍','🎉','😎','😭','💐','🐱','🐻','✨'].map(e=><button type="button" key={e} disabled={stickerBusy} onClick={()=>void sendSticker(e)}>{e}</button>)}</div><small>GIF göndermek için GIF dosyası seçebilirsin.</small></div>}
+      {showStickers&&<div className="vexa-sticker-picker" aria-label="Çıkartmalar">{stickers.map(st=><button type="button" key={st} onClick={()=>void sendSticker(st)} disabled={busy} aria-label={`${st} çıkartması`}>{st}</button>)}</div>}
       <form className="composer enhanced-compose" onSubmit={e => { e.preventDefault(); void send(); }}>
-        <input ref={fileRef} type="file" hidden accept="image/*,video/mp4,video/webm,audio/*"
+        <input ref={fileRef} type="file" hidden accept="image/*,video/mp4,video/webm,audio/*,application/pdf"
           onChange={e => setFile(e.target.files?.[0] || null)} />
-        <button type="button" title="Çıkartmalar" aria-label="Çıkartmalar" onClick={()=>setShowStickers(v=>!v)}><Sticker size={19}/></button>
-        <button type="button" title="GIF dosyası seç" aria-label="GIF dosyası seç" onClick={()=>fileRef.current?.click()}><ImagePlay size={19}/></button>
+        <button type="button" title="Çıkartmalar" onClick={()=>setShowStickers(v=>!v)}><Sticker size={19}/></button>
         <button type="button" title="Medya ekle" onClick={() => fileRef.current?.click()}><Paperclip size={19} /></button>
         <button type="button" title={recording ? 'Kaydı bitir' : 'Ses kaydı'} onClick={() => void record()}>
           {recording ? <Square size={19} /> : <Mic size={19} />}
