@@ -27,9 +27,8 @@ const short=(s:string,n=55)=>s.length>n?s.slice(0,n-1)+'…':s;
 const photo=(p?:Profile|null)=>{const v=p?.avatar_path||'';return /^https:\/\//i.test(v)?v:null};
 function Avatar({p,size=43}:{p?:Profile|null;size?:number}){const src=photo(p);return <span className="avatar" style={{width:size,height:size,flexBasis:size,borderRadius:'50%',overflow:'hidden'}}>{src?<img src={src} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>:name(p).slice(0,1).toUpperCase()}</span>}
 function storageGet(key:string):string[]{try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return []}}
-// Bu deger yuklu APK'nin versionName degeriyle ayni olmali.
-// Yeni APK yayinlarken once bu degeri guncelleyip yeniden derleyin.
-const VEXA_INSTALLED_VERSION='1.0.0';
+// Android uygulamasi gercek versionName degerini user agent icinde gonderir.
+const VEXA_INSTALLED_VERSION=navigator.userAgent.match(/VexaAndroid\/([0-9]+(?:\.[0-9]+)*)/i)?.[1]||null;
 const VEXA_RELEASES_API='https://api.github.com/repos/lastshadow1907-creator/vexa-7/releases/latest';
 type VexaRelease={tag_name:string;html_url:string;body:string|null;assets:Array<{name:string;browser_download_url:string}>};
 function compareVersions(a:string,b:string){
@@ -58,7 +57,7 @@ export default function App(){
  const [updateDismissed,setUpdateDismissed]=useState(false);
  const uid=session?.user.id;
  useEffect(()=>{
-  if(!/VexaAndroid/i.test(navigator.userAgent))return;
+  if(!VEXA_INSTALLED_VERSION)return;
   let active=true;
   const check=async()=>{
    try{
