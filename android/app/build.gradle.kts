@@ -1,6 +1,7 @@
+
 plugins {
-    id("com.android.application") version "8.7.3"
-    id("org.jetbrains.kotlin.android") version "1.9.25"
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -32,6 +33,9 @@ android {
 }
 
 dependencies {
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-ktx:1.9.3")
-    implementation("com.google.android.gms:play-services-ads:25.5.0")
+    implementation("androidx.webkit:webkit:1.12.1")
+
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
 }
