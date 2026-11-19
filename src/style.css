@@ -389,3 +389,39 @@ export default function Vexa14CallHistory({userId,lookupName}:{userId:string;loo
  <time>{new Date(r.created_at).toLocaleString('tr-TR')}</time></article>;
 })}</section>
 }
+
+
+/* Vexa 7 mobile chat layout repair */
+.enhanced-chat,.enhanced-list,.conversation{min-width:0}
+.enhanced-list.message-list{gap:13px;padding:16px clamp(12px,3vw,30px)}
+.enhanced-list .message,.enhanced-list .message.mine{max-width:min(82%,540px);margin:0}
+.enhanced-list .message .message-body{padding:10px 13px 24px;cursor:pointer}
+.enhanced-list .message>time{bottom:7px;right:11px;font-size:10px}
+.enhanced-list .message .enhanced-actions{width:26px;top:5px;pointer-events:none}
+.enhanced-actions-trigger{width:26px;height:26px;opacity:0;pointer-events:none;transition:opacity .15s}
+.enhanced-list .message:hover .enhanced-actions,.enhanced-list .message:focus-within .enhanced-actions,.enhanced-list .message .enhanced-actions:has([aria-expanded='true']){pointer-events:auto}
+.enhanced-list .message:hover .enhanced-actions-trigger,.enhanced-list .message:focus-within .enhanced-actions-trigger,.enhanced-actions-trigger[aria-expanded='true']{opacity:1;pointer-events:auto}
+.vexa16-call-event{align-self:center;display:flex;align-items:center;gap:10px;width:fit-content;max-width:min(100%,390px);min-width:0;padding:10px 13px;border:1px solid var(--line);border-radius:15px;background:var(--panel);color:var(--text);font-size:12px;line-height:1.35}
+.vexa16-call-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:11px;background:var(--panel2);color:var(--muted)}
+.vexa16-call-event.missed .vexa16-call-icon{color:#ff858a;background:#ff858a15}
+.vexa16-call-event.answered .vexa16-call-icon{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.vexa16-call-copy{display:flex;flex-direction:column;gap:3px;min-width:0;overflow-wrap:anywhere}
+.vexa16-call-copy strong{font-size:12px;font-weight:650}
+.vexa16-call-copy small{font-size:11px;color:var(--muted)}
+.vexa16-call-video{flex:none;color:var(--muted)}
+.vexa16-call-event time{flex:none;align-self:center;margin-left:auto;font-size:10px;color:var(--muted)}
+.enhanced-toolbar{gap:6px;min-width:0}
+.enhanced-toolbar button{flex:none;white-space:nowrap}
+@media(max-width:700px){
+ .chat-header{gap:7px;padding:0 10px;overflow:hidden}
+ .chat-header strong{font-size:15px}
+ .chat-header .muted-icon{margin-left:auto}
+ .enhanced-list .message,.enhanced-list .message.mine{max-width:85%}
+ .enhanced-list .message .enhanced-actions-trigger{opacity:0;pointer-events:none}
+ .enhanced-list .message .enhanced-actions-trigger[aria-expanded='true']{opacity:1;pointer-events:auto}
+ .enhanced-toolbar{min-height:40px;justify-content:flex-start;padding:4px 12px}
+ .enhanced-toolbar button{font-size:12px;padding:7px 9px}
+ .vexa16-call-event{max-width:96%;padding:9px 10px;gap:8px}
+ .vexa16-call-copy small{font-size:10px}
+ .vexa16-call-event time{font-size:10px}
+}
