@@ -120,7 +120,17 @@ export default function App(){
  }
  async function findUsers(){if(search.trim().replace(/^#/,'').length<2)return;setBusy(true);setError('');const {data:tags,error:e}=await supabase.from('vexa91_identity').select('user_id,handle,tag_number').ilike('handle',`%${search.trim().replace(/^#/,'').split('#')[0].replace(/[%_]/g,'')}%`).limit(30);if(e)setError(e.message);else{const ids=(tags||[]).filter(t=>!search.includes('#')||String(t.tag_number).padStart(4,'0')===search.split('#')[1]).map(t=>t.user_id as string).filter((id:string)=>id!==uid);const {data,error:profileError}=ids.length?await supabase.from('profiles').select('id,display_name,bio,avatar_path,username,cover_url').in('id',ids):{data:[],error:null};if(profileError)setError(profileError.message);setResults(data||[])}setBusy(false)}
  async function addFriend(id:string){const {error:e}=await supabase.rpc('vexa_send_friend_request',{p_recipient_id:id});if(e)setError(e.message);else await load()}
- async function updateRequest(id:string,accept:boolean){const {error:e}=await supabase.from('friend_requests').update({status:accept?'accepted':'rejected'}).eq('id',id).eq('recipient_id',uid);if(e)setError(e.message);else await load()}
+ async function updateRequest(id:string,accept:boolean){
+  if(!uid)return;
+  setError('');
+  const {data,error:e}=await supabase.from('friend_requests')
+   .update({status:accept?'accepted':'rejected'})
+   .eq('id',id).eq('recipient_id',uid).eq('status','pending')
+   .select('id,status').maybeSingle();
+  if(e){setError('İstek güncellenemedi: '+e.message);return}
+  if(!data){setError('İstek güncellenmedi. Supabase RLS güncelleme iznini ve isteğin hâlâ beklemede olduğunu kontrol et.');return}
+  await load();
+ }
  async function saveProfile(){if(!uid||busy)return;setBusy(true);setError('');setSaveNotice('');try{const {data,error:e}=await supabase.from('profiles').update({display_name:displayName.trim(),bio,cover_url:coverUrl.trim()||null}).eq('id',uid).select('id').maybeSingle();if(e)throw e;if(!data)throw new Error('Profil kaydı bulunamadı veya düzenleme iznin yok. Supabase profiles RLS kurallarını kontrol et.');setSaveNotice('Profil değişiklikleri kaydedildi.');await load()}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
  function toggle(kind:'pin'|'archive',id:string){if(!uid)return;const prev=kind==='pin'?pinned:archived;const next=prev.includes(id)?prev.filter(x=>x!==id):[...prev,id];localStorage.setItem('vexa-'+kind+'-'+uid,JSON.stringify(next));if(kind==='pin')setPinned(next);else setArchived(next);setMenuId(null)}
  function clearConversation(peerId:string){if(!uid)return;if(!window.confirm('Bu sohbet geçmişi yalnızca senin hesabında gizlensin mi? Karşı tarafın mesajları silinmez.'))return;const next={...clearAt,[peerId]:new Date().toISOString()};localStorage.setItem('vexa-clear-'+uid,JSON.stringify(next));setClearAt(next);setMenuId(null);}
