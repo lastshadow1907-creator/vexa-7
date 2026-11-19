@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Star, Forward } from 'lucide-react';
+import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Star, Forward, Sticker, ImagePlay } from 'lucide-react';
 import { supabase } from './supabase';
 
 type Msg = {
@@ -40,6 +40,8 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const [forwarding, setForwarding] = useState<Msg | null>(null);
   const [forwardTarget, setForwardTarget] = useState('');
   const [peerTyping, setPeerTyping] = useState(false);
+  const [showStickers,setShowStickers]=useState(false);
+  const [stickerBusy,setStickerBusy]=useState(false);
   const typingChannel = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -179,6 +181,16 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   useEffect(() => {
     if (!chatSearch) bottom.current?.scrollIntoView({ block: 'end' });
   }, [messages.length, callRows.length, chatSearch]);
+
+  async function sendSticker(emoji:string){
+    if(stickerBusy)return;
+    setStickerBusy(true);setError('');
+    try{
+      const {error:e}=await supabase.from('messages').insert({sender_id:userId,recipient_id:peerId,body:`[vexa-sticker]${emoji}`,reply_to_message_id:reply?.id??null});
+      if(e)throw e;
+      setShowStickers(false);setReply(null);await load();
+    }catch(e){setError((e as Error).message)}finally{setStickerBusy(false)}
+  }
 
   async function send() {
     if (busy) return;
@@ -337,7 +349,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
             <div className="message-body" onClick={() => { if (!deleted && !m.media_path) setOpenActions(openActions === m.id ? null : m.id); }}>
               {deleted ? <i>Bu mesaj silindi</i> : <>
                 {m.reply_to_message_id && <div className="vexa8-reply-quote">↳ {messages.find(x=>x.id===m.reply_to_message_id)?.body?.slice(0,110)||'Yanıtlanan mesaj'}</div>}
-                {m.body && <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{m.body}</div>}
+                {m.body?.startsWith('[vexa-sticker]') ? <div className="vexa81-sticker" aria-label="Çıkartma">{m.body.slice(14)}</div> : m.body && <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{m.body}</div>}
                 {m.media_path && urls[m.media_path] && (m.media_type === 'image'
                   ? <img className="enhanced-media" src={urls[m.media_path]} alt="Gönderilen fotoğraf" />
                   : m.media_type === 'video'
@@ -394,9 +406,12 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         }}><X size={17} /></button>
       </div>}
       {error && <div className="enhanced-error" role="alert">{error}</div>}
+      {showStickers&&<div className="vexa81-sticker-panel" role="dialog" aria-label="Çıkartmalar"><strong>Çıkartmalar</strong><div>{['❤️','🥰','😂','🔥','😍','🎉','😎','😭','💐','🐱','🐻','✨'].map(e=><button type="button" key={e} disabled={stickerBusy} onClick={()=>void sendSticker(e)}>{e}</button>)}</div><small>GIF göndermek için GIF dosyası seçebilirsin.</small></div>}
       <form className="composer enhanced-compose" onSubmit={e => { e.preventDefault(); void send(); }}>
         <input ref={fileRef} type="file" hidden accept="image/*,video/mp4,video/webm,audio/*"
           onChange={e => setFile(e.target.files?.[0] || null)} />
+        <button type="button" title="Çıkartmalar" aria-label="Çıkartmalar" onClick={()=>setShowStickers(v=>!v)}><Sticker size={19}/></button>
+        <button type="button" title="GIF dosyası seç" aria-label="GIF dosyası seç" onClick={()=>fileRef.current?.click()}><ImagePlay size={19}/></button>
         <button type="button" title="Medya ekle" onClick={() => fileRef.current?.click()}><Paperclip size={19} /></button>
         <button type="button" title={recording ? 'Kaydı bitir' : 'Ses kaydı'} onClick={() => void record()}>
           {recording ? <Square size={19} /> : <Mic size={19} />}
