@@ -9,7 +9,7 @@ export function Vexa102ProfileCard({profile,selfId,isFriend,onClose,onAdd,onMess
  const avatar=profile.avatar_path&&/^https:\/\//.test(profile.avatar_path)?profile.avatar_path:null;
  const link=`${window.location.origin}/?vexa_user=${encodeURIComponent(profile.id)}`;
  return <div className="vexa102-card">
-  <div className="vexa102-cover"><span className="vexa102-brand">Vexa · Profil</span><button className="vexa102-close" aria-label="Kapat" onClick={onClose}><X size={20}/></button></div>
+  <div className="vexa102-cover" style={profile.cover_url?{backgroundImage:`linear-gradient(transparent,rgba(0,0,0,.4)),url(${profile.cover_url})`,backgroundSize:'cover',backgroundPosition:'center'}:undefined}><span className="vexa102-brand">Vexa · Profil</span><button className="vexa102-close" aria-label="Kapat" onClick={onClose}><X size={20}/></button></div>
   <div className="vexa102-avatar">{avatar?<img src={avatar} alt={`${display} profil fotoğrafı`}/>:display.charAt(0).toUpperCase()}</div>
   <div className="vexa102-body"><h2>{display}</h2><VexaIdentity userId={profile.id}/><VexaPublicPresence userId={profile.id}/>
    {profile.bio&&<p className="vexa102-bio">{profile.bio}</p>}
