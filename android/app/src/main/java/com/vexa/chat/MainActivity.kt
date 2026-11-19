@@ -57,6 +57,32 @@ class MainActivity : ComponentActivity() {
         if (allowed.isNotEmpty()) request.grant(allowed) else request.deny()
     }
 
+    private fun downloadApk(url: String, userAgent: String? = null) {
+        try {
+            val uri = Uri.parse(url)
+            val host = uri.host ?: ""
+            // Yalnızca Vexa deposunun resmi GitHub Releases APK dosyaları.
+            if (uri.scheme != "https" || host != "github.com" ||
+                !uri.path.orEmpty().startsWith("/lastshadow1907-creator/vexa-7/releases/download/") ||
+                !uri.path.orEmpty().endsWith(".apk", ignoreCase = true)) {
+                Toast.makeText(this, "Güvenilmeyen APK bağlantısı", Toast.LENGTH_SHORT).show()
+                return
+            }
+            val filename = uri.lastPathSegment?.takeIf { it.endsWith(".apk", true) } ?: "Vexa.apk"
+            val req = DownloadManager.Request(uri)
+                .setTitle(filename)
+                .setDescription("Vexa güncellemesi indiriliyor")
+                .setMimeType("application/vnd.android.package-archive")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename)
+            if (!userAgent.isNullOrBlank()) req.addRequestHeader("User-Agent", userAgent)
+            (getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(req)
+            Toast.makeText(this, "Vexa APK indiriliyor. İndirilenler bölümünden yükleyebilirsin.", Toast.LENGTH_LONG).show()
+        } catch (_: Exception) {
+            Toast.makeText(this, "APK indirilemedi", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun handleAuthCallback(uri: Uri?) {
         if (uri?.scheme != "com.vexa.chat" || uri.host != "auth" || uri.path != "/callback") return
         val code = uri.getQueryParameter("code") ?: return
@@ -113,6 +139,12 @@ class MainActivity : ComponentActivity() {
 
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val url = request.url
+                if (url.scheme == "https" && url.host == "github.com" &&
+                    url.path.orEmpty().startsWith("/lastshadow1907-creator/vexa-7/releases/download/") &&
+                    url.path.orEmpty().endsWith(".apk", ignoreCase = true)) {
+                    downloadApk(url.toString(), view.settings.userAgentString)
+                    return true
+                }
                 if (url.scheme == "https" &&
                     (url.host == "vexa-7.vercel.app" || url.host?.endsWith(".supabase.co") == true)
                 ) return false
@@ -177,22 +209,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        web.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
-            try {
-                if (!url.startsWith("https://")) return@setDownloadListener
-                val req = DownloadManager.Request(Uri.parse(url))
-                    .setMimeType(mimeType)
-                    .addRequestHeader("User-Agent", userAgent)
-                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                    .setDestinationInExternalPublicDir(
-                        Environment.DIRECTORY_DOWNLOADS,
-                        URLUtil.guessFileName(url, contentDisposition, mimeType)
-                    )
-                (getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(req)
-                Toast.makeText(this, "İndirme başladı", Toast.LENGTH_SHORT).show()
-            } catch (_: Exception) {
-                Toast.makeText(this, "İndirme başlatılamadı", Toast.LENGTH_SHORT).show()
-            }
+        web.setDownloadListener { url, userAgent, _, _, _ ->
+            downloadApk(url, userAgent)
         }
 
         if (savedInstanceState == null) web.loadUrl(site) else web.restoreState(savedInstanceState)
