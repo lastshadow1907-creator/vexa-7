@@ -286,8 +286,8 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
           const mine = m.sender_id === userId;
           const deleted = !!m.deleted_at;
           const rs = reactions.filter(r => r.message_id === m.id);
-          return <div className={`message ${mine ? 'mine' : ''}`} key={m.id}>
-            <div className="message-body">
+          return <div className={`message ${mine ? 'mine' : ''}`} key={m.id} onContextMenu={e => { e.preventDefault(); if (!deleted) setOpenActions(openActions === m.id ? null : m.id); }}>
+            <div className="message-body" onClick={() => { if (!deleted && !m.media_path) setOpenActions(openActions === m.id ? null : m.id); }}>
               {deleted ? <i>Bu mesaj silindi</i> : <>
                 {m.body && <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{m.body}</div>}
                 {m.media_path && urls[m.media_path] && (m.media_type === 'image'
