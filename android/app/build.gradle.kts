@@ -30,3 +30,8 @@ android {
         jvmTarget = "17"
     }
 }
+
+dependencies {
+    implementation("androidx.activity:activity-ktx:1.9.3")
+    implementation("com.google.android.gms:play-services-ads:25.5.0")
+}
