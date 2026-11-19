@@ -10,15 +10,19 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
 class VexaMessagingService : FirebaseMessagingService() {
+    override fun onNewToken(token: String) {
+        super.onNewToken(token)
+        // MainActivity yeniden acildiginda guncel tokeni WebView'a iletir.
+    }
     override fun onMessageReceived(message: RemoteMessage) {
         val kind = message.data["type"] ?: "message"
         val title = message.data["title"] ?: message.notification?.title ?: "Vexa"
         val body = message.data["body"] ?: message.notification?.body ?: "Yeni bildirimin var"
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        val channelId = if (kind == "call") "vexa_calls" else "vexa_messages"
+        val channelId = if (kind == "call" || kind == "missed_call") "vexa_calls" else "vexa_messages"
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(channelId,
-                if (kind == "call") "Gelen aramalar" else "Mesajlar ve arkadaşlık istekleri",
+                if (kind == "call" || kind == "missed_call") "Gelen aramalar" else "Mesajlar ve arkadaşlık istekleri",
                 NotificationManager.IMPORTANCE_HIGH)
             manager.createNotificationChannel(channel)
         }
