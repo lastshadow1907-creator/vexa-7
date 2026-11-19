@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <application android:label="Vexa" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:usesCleartextTraffic="false" android:allowBackup="false">
+    <application android:icon="@drawable/vexa_icon" android:label="Vexa" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:usesCleartextTraffic="false" android:allowBackup="false">
         <!-- Vexa AdMob uygulama kimligi. Reklam birimleri test modunda. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
