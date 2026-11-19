@@ -1,7 +1,7 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import type {CSSProperties} from 'react';
 import type {Session} from '@supabase/supabase-js';
-import {MessageCircle,Users,Search,UserRound,ArrowLeft,LogOut,Settings,Pin,Archive,ArchiveRestore,MoreVertical,Camera,RefreshCw,Trash2,PhoneCall} from 'lucide-react';
+import {MessageCircle,Users,Search,UserRound,ArrowLeft,LogOut,Settings,Share2,Pin,Archive,ArchiveRestore,MoreVertical,Camera,RefreshCw,Trash2,PhoneCall} from 'lucide-react';
 import {supabase,configured} from './supabase';
 import Calls from './Calls';
 import EnhancedChat from './EnhancedChat';
@@ -83,6 +83,23 @@ export default function App(){
   return()=>{cancelled=true};
  },[uid,selected?.id,tab,loadMessages]);
  async function sendReset(){setResetNotice('');if(!email.includes('@')){setResetNotice('E-posta adresini yaz.');return}setBusy(true);const {error:e}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo:window.location.origin+window.location.pathname});setBusy(false);setResetNotice(e?e.message:'Bu adrese kayıtlı hesap varsa şifre sıfırlama bağlantısı gönderildi.')}
+ async function googleLogin(){
+  setError('');setBusy(true);
+  try{
+   const isAndroid=/VexaAndroid/i.test(navigator.userAgent);
+   const redirectTo=isAndroid?'com.vexa.chat://auth/callback':window.location.origin+window.location.pathname;
+   const {data,error:e}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo,skipBrowserRedirect:true}});
+   if(e)throw e;
+   if(!data.url)throw new Error('Google giriş adresi oluşturulamadı.');
+   window.location.assign(data.url);
+  }catch(e){setError((e as Error).message);setBusy(false)}
+ }
+ async function shareVexa(){
+  const url='https://vexa-7.vercel.app/';
+  const data={title:'Vexa',text:'Vexa uygulamasına katıl, birlikte mesajlaşalım!',url};
+  try{if(navigator.share){await navigator.share(data)}else{await navigator.clipboard.writeText(`${data.text} ${url}`);setSaveNotice('Davet bağlantısı kopyalandı.')}}
+  catch(e){if((e as Error).name!=='AbortError')setError('Paylaşım başlatılamadı. Bağlantı: '+url)}
+ }
  async function auth(){setError('');setBusy(true);try{const r=register?await supabase.auth.signUp({email,password}):await supabase.auth.signInWithPassword({email,password});if(r.error)throw r.error;if(register&&!r.data.session)setError('Doğrulama e-postanı kontrol et.')}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
  async function findUsers(){if(search.trim().replace(/^#/,'').length<2)return;setBusy(true);setError('');const {data:tags,error:e}=await supabase.from('vexa91_identity').select('user_id,handle,tag_number').ilike('handle',`%${search.trim().replace(/^#/,'').split('#')[0].replace(/[%_]/g,'')}%`).limit(30);if(e)setError(e.message);else{const ids=(tags||[]).filter(t=>!search.includes('#')||String(t.tag_number).padStart(4,'0')===search.split('#')[1]).map(t=>t.user_id as string).filter((id:string)=>id!==uid);const {data,error:profileError}=ids.length?await supabase.from('profiles').select('id,display_name,bio,avatar_path,username,cover_url').in('id',ids):{data:[],error:null};if(profileError)setError(profileError.message);setResults(data||[])}setBusy(false)}
  async function addFriend(id:string){const {error:e}=await supabase.rpc('vexa_send_friend_request',{p_recipient_id:id});if(e)setError(e.message);else await load()}
@@ -95,7 +112,7 @@ export default function App(){
  const ordered=useMemo(()=>accepted.filter(p=>(showArchived?archived.includes(p.id):!archived.includes(p.id))&&name(p).toLocaleLowerCase('tr').includes(chatSearch.toLocaleLowerCase('tr'))).sort((a,b)=>Number(pinned.includes(b.id))-Number(pinned.includes(a.id))||(new Date(summaries.get(b.id)?.last?.created_at||0).getTime()-new Date(summaries.get(a.id)?.last?.created_at||0).getTime())),[accepted,showArchived,archived,chatSearch,pinned,summaries]);
  if(!configured)return <main className="auth"><h1>Vexa</h1><p>Önce .env dosyasına Supabase URL ve anon anahtarını ekle.</p></main>;
  if(!ready)return <main className="auth">Yükleniyor…</main>;
- if(!session)return <main className="auth"><div className="logo">Vexa<span>●</span></div><h1>{resetMode?'Şifremi unuttum':register?'Hesap oluştur':'Tekrar hoş geldin'}</h1><p>{resetMode?'Şifre sıfırlama bağlantısını e-postana gönderelim.':'Vexa hesabınla devam et.'}</p>{resetMode?<form onSubmit={e=>{e.preventDefault();void sendReset()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/><button disabled={busy}>Sıfırlama bağlantısı gönder</button></form>:<form onSubmit={e=>{e.preventDefault();void auth()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/><input type="password" placeholder="Şifre" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}/><button disabled={busy}>{register?'Kaydol':'Giriş yap'}</button></form>}<button className="link" onClick={()=>{setResetMode(false);setRegister(!register)}}>{register||resetMode?'Giriş yap':'Yeni hesap oluştur'}</button>{!register&&!resetMode&&<button className="link" onClick={()=>setResetMode(true)}>Şifremi unuttum</button>}{resetNotice&&<p role="status" className="hint">{resetNotice}</p>}{error&&<p className="error">{error}</p>}</main>;
+ if(!session)return <main className="auth"><div className="logo">Vexa<span>●</span></div><h1>{resetMode?'Şifremi unuttum':register?'Hesap oluştur':'Tekrar hoş geldin'}</h1><p>{resetMode?'Şifre sıfırlama bağlantısını e-postana gönderelim.':'Vexa hesabınla devam et.'}</p>{resetMode?<form onSubmit={e=>{e.preventDefault();void sendReset()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/><button disabled={busy}>Sıfırlama bağlantısı gönder</button></form>:<form onSubmit={e=>{e.preventDefault();void auth()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/><input type="password" placeholder="Şifre" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}/><button disabled={busy}>{register?'Kaydol':'Giriş yap'}</button></form>}<button className="link" onClick={()=>{setResetMode(false);setRegister(!register)}}>{register||resetMode?'Giriş yap':'Yeni hesap oluştur'}</button>{!register&&!resetMode&&<button className="link" onClick={()=>setResetMode(true)}>Şifremi unuttum</button>}<button type="button" className="vexa-google-login" disabled={busy} onClick={()=>void googleLogin()}>Google ile giriş yap</button>{resetNotice&&<p role="status" className="hint">{resetNotice}</p>}{error&&<p className="error">{error}</p>}</main>;
  const nav=[{id:'chats',icon:MessageCircle,label:'Sohbetler'},{id:'calls14',icon:PhoneCall,label:'Aramalar'},{id:'statuses',icon:Camera,label:'Durumlar'},{id:'find',icon:Search,label:'Kişi Ara'},{id:'requests',icon:Users,label:'İstekler'},{id:'profile',icon:UserRound,label:'Profilim'},{id:'vexa11',icon:Settings,label:'Vexa 11'}] as const;
  const mobileNav=nav.filter(n=>['chats','calls14','statuses','find','profile'].includes(n.id));
  const go=(t:Tab)=>{setTab(t);setSelected(null);setActiveGroupId(null);setActiveGroup(null);setError('');setMenuId(null)};
@@ -108,7 +125,7 @@ export default function App(){
  {tab==='find'&&<><h2>Kişi Ara</h2><VexaQRFind onFound={id=>{void supabase.from('profiles').select('id,display_name,bio,avatar_path,username,cover_url').eq('id',id).maybeSingle().then(({data,error:e})=>{if(e)setError(e.message);else if(data)setInspect(data as Profile);else setError('Bu profil bulunamadı.');})}}/><form className="search-form" onSubmit={e=>{e.preventDefault();void findUsers()}}><input placeholder="Kullanıcı#1234 ara" value={search} onChange={e=>setSearch(e.target.value)}/><button disabled={busy}>Ara</button></form>{results.map(p=><div className="contact" key={p.id}><Avatar p={p}/><span className="grow"><strong>{name(p)}</strong><small>{p.bio||p.username||''}</small></span><button className="small" onClick={()=>setInspect(p)}>Profil</button><button className="small" onClick={()=>void addFriend(p.id)}>Ekle</button></div>)}</>}
  {tab==='requests'&&<><h2>Arkadaşlık istekleri</h2>{friends.filter(f=>f.status==='pending').length===0&&<p className="hint">Bekleyen arkadaşlık isteği yok.</p>}{friends.filter(f=>f.status==='pending').map(f=><div className="request" key={f.id}><strong>{name(profiles.find(p=>p.id===(f.sender_id===uid?f.recipient_id:f.sender_id)))}</strong>{f.recipient_id===uid?<div className="request-actions"><button onClick={()=>void updateRequest(f.id,true)}>Kabul et</button><button className="ghost" onClick={()=>void updateRequest(f.id,false)}>Reddet</button></div>:<small>Yanıt bekleniyor</small>}</div>)}</>}
  {tab==='profile'&&<div className="vexa13-profile"><div className="profile-cover" style={coverUrl?{backgroundImage:`linear-gradient(transparent,rgba(0,0,0,.35)),url(${coverUrl})`,backgroundSize:'cover',backgroundPosition:'center'}:undefined}/><div className="vexa13-profile-head"><Avatar p={{id:uid!,display_name:displayName,avatar_path:avatarUrl}} size={70}/><div><h2>{displayName||'Profilim'}</h2><p>Hesabını ve Vexa deneyimini yönet</p></div></div>
- <div className="vexa16-profile-shortcuts">
+ <div className="vexa16-profile-shortcuts"><button type="button" onClick={()=>void shareVexa()}><Share2 size={18}/> Vexa uygulamasını paylaş</button>
   <button type="button" onClick={()=>go('requests')}><Users size={18}/> Arkadaşlık istekleri</button>
   <button type="button" onClick={()=>go('vexa11')}><Settings size={18}/> Vexa özellikleri</button>
  </div>
