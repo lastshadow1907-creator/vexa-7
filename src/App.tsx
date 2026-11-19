@@ -45,6 +45,23 @@ export default function App(){
  const uid=session?.user.id;
  useVexaPresenceHeartbeat(uid);
  useEffect(()=>{if(!uid)return;try{const t=JSON.parse(localStorage.getItem('vexa12-theme-'+uid)||'{}');applyVexaTheme(t.color||'emerald',t.mode==='light'?'light':'dark');document.documentElement.dataset.vexaWallpaper=t.wallpaper||'none'}catch{applyVexaTheme('emerald','dark')}},[uid]);
+  // Android WebView FCM tokenini, oturum acildiktan sonra kullaniciya bagla.
+  useEffect(()=>{
+   if(!uid)return;
+   let cancelled=false;
+   const saveToken=async(token:string)=>{
+    if(cancelled||!/^[A-Za-z0-9:_-]{40,4096}$/.test(token))return;
+    const {error:e}=await supabase.from('vexa_fcm_tokens').upsert(
+     {user_id:uid,token,platform:'android',updated_at:new Date().toISOString()},
+     {onConflict:'token'}
+    );
+    if(e)console.warn('FCM cihaz kaydi:',e.message);
+   };
+   const onToken=(event:Event)=>{const token=(event as CustomEvent<string>).detail;if(typeof token==='string')void saveToken(token)};
+   window.addEventListener('vexa-fcm-token',onToken);
+   const cached=sessionStorage.getItem('vexa-fcm-token');if(cached)void saveToken(cached);
+   return()=>{cancelled=true;window.removeEventListener('vexa-fcm-token',onToken)};
+  },[uid]);
  useEffect(()=>{let active=true;void supabase.auth.getSession().then(({data})=>{if(active){setSession(data.session);setReady(true)}});const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));return()=>{active=false;subscription.unsubscribe()}},[]);
  useEffect(()=>{setLastRead(uid?JSON.parse(localStorage.getItem('vexa-lastread-'+uid)||'{}'):{});setSelected(null);setChatRows([]);setClearAt(uid?JSON.parse(localStorage.getItem('vexa-clear-'+uid)||'{}'):{});setArchived(uid?storageGet('vexa-archive-'+uid):[]);setPinned(uid?storageGet('vexa-pin-'+uid):[])},[uid]);
  const load=useCallback(async()=>{if(!uid)return;const [f,p]=await Promise.all([supabase.from('friend_requests').select('id,sender_id,recipient_id,status').or(`sender_id.eq.${uid},recipient_id.eq.${uid}`),supabase.from('profiles').select('id,display_name,bio,avatar_path,username,cover_url').limit(500)]);if(f.error||p.error){setError(f.error?.message||p.error?.message||'Yüklenemedi');return}setFriends(f.data||[]);setProfiles(p.data||[]);const me=(p.data||[]).find(x=>x.id===uid);setDisplayName(me?.display_name||'');setBio(me?.bio||'');setAvatarUrl(photo(me)||'');setCoverUrl(me?.cover_url||'')},[uid]);
