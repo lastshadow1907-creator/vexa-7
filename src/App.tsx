@@ -28,7 +28,7 @@ function Avatar({p,size=43}:{p?:Profile|null;size?:number}){const src=photo(p);r
 function storageGet(key:string):string[]{try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return []}}
 export default function App(){
  const [session,setSession]=useState<Session|null>(null),[ready,setReady]=useState(false);
- const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[register,setRegister]=useState(false);
+ const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[username,setUsername]=useState(''),[register,setRegister]=useState(false);
  const [resetMode,setResetMode]=useState(false),[resetNotice,setResetNotice]=useState('');
  const [tab,setTab]=useState<Tab>('chats'),[friends,setFriends]=useState<FriendRequest[]>([]),[profiles,setProfiles]=useState<Profile[]>([]);
  const [selected,setSelected]=useState<Profile|null>(null),[inspect,setInspect]=useState<Profile|null>(null);
@@ -100,7 +100,24 @@ export default function App(){
   try{if(navigator.share){await navigator.share(data)}else{await navigator.clipboard.writeText(`${data.text} ${url}`);setSaveNotice('Davet bağlantısı kopyalandı.')}}
   catch(e){if((e as Error).name!=='AbortError')setError('Paylaşım başlatılamadı. Bağlantı: '+url)}
  }
- async function auth(){setError('');setBusy(true);try{const r=register?await supabase.auth.signUp({email,password}):await supabase.auth.signInWithPassword({email,password});if(r.error)throw r.error;if(register&&!r.data.session)setError('Doğrulama e-postanı kontrol et.')}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
+ async function auth(){
+  setError('');
+  const handle=username.trim().toLowerCase();
+  if(register&&!/^[a-z0-9_]{3,20}$/.test(handle)){
+   setError('Kullanıcı adı 3–20 karakter olmalı; yalnızca küçük harf, rakam ve _ kullanılabilir.');return;
+  }
+  setBusy(true);
+  try{
+   const r=register
+    ?await supabase.auth.signUp({email:email.trim(),password,options:{data:{username:handle,display_name:handle}}})
+    :await supabase.auth.signInWithPassword({email:email.trim(),password});
+   if(r.error)throw r.error;
+   if(register&&!r.data.session)setError('Kayıt alındı. Doğrulama e-postanı kontrol et.');
+  }catch(e){
+   const message=(e as Error).message;
+   setError(/duplicate key|profiles_username_key|kullanıcı adı.*kullanımda/i.test(message)?'Bu kullanıcı adı kullanılıyor. Başka bir ad seç.':message);
+  }finally{setBusy(false)}
+ }
  async function findUsers(){if(search.trim().replace(/^#/,'').length<2)return;setBusy(true);setError('');const {data:tags,error:e}=await supabase.from('vexa91_identity').select('user_id,handle,tag_number').ilike('handle',`%${search.trim().replace(/^#/,'').split('#')[0].replace(/[%_]/g,'')}%`).limit(30);if(e)setError(e.message);else{const ids=(tags||[]).filter(t=>!search.includes('#')||String(t.tag_number).padStart(4,'0')===search.split('#')[1]).map(t=>t.user_id as string).filter((id:string)=>id!==uid);const {data,error:profileError}=ids.length?await supabase.from('profiles').select('id,display_name,bio,avatar_path,username,cover_url').in('id',ids):{data:[],error:null};if(profileError)setError(profileError.message);setResults(data||[])}setBusy(false)}
  async function addFriend(id:string){const {error:e}=await supabase.rpc('vexa_send_friend_request',{p_recipient_id:id});if(e)setError(e.message);else await load()}
  async function updateRequest(id:string,accept:boolean){const {error:e}=await supabase.from('friend_requests').update({status:accept?'accepted':'rejected'}).eq('id',id).eq('recipient_id',uid);if(e)setError(e.message);else await load()}
@@ -112,7 +129,7 @@ export default function App(){
  const ordered=useMemo(()=>accepted.filter(p=>(showArchived?archived.includes(p.id):!archived.includes(p.id))&&name(p).toLocaleLowerCase('tr').includes(chatSearch.toLocaleLowerCase('tr'))).sort((a,b)=>Number(pinned.includes(b.id))-Number(pinned.includes(a.id))||(new Date(summaries.get(b.id)?.last?.created_at||0).getTime()-new Date(summaries.get(a.id)?.last?.created_at||0).getTime())),[accepted,showArchived,archived,chatSearch,pinned,summaries]);
  if(!configured)return <main className="auth"><h1>Vexa</h1><p>Önce .env dosyasına Supabase URL ve anon anahtarını ekle.</p></main>;
  if(!ready)return <main className="auth">Yükleniyor…</main>;
- if(!session)return <main className="auth"><div className="logo">Vexa<span>●</span></div><h1>{resetMode?'Şifremi unuttum':register?'Hesap oluştur':'Tekrar hoş geldin'}</h1><p>{resetMode?'Şifre sıfırlama bağlantısını e-postana gönderelim.':'Vexa hesabınla devam et.'}</p>{resetMode?<form onSubmit={e=>{e.preventDefault();void sendReset()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/><button disabled={busy}>Sıfırlama bağlantısı gönder</button></form>:<form onSubmit={e=>{e.preventDefault();void auth()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/><input type="password" placeholder="Şifre" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}/><button disabled={busy}>{register?'Kaydol':'Giriş yap'}</button></form>}<button className="link" onClick={()=>{setResetMode(false);setRegister(!register)}}>{register||resetMode?'Giriş yap':'Yeni hesap oluştur'}</button>{!register&&!resetMode&&<button className="link" onClick={()=>setResetMode(true)}>Şifremi unuttum</button>}<button type="button" className="vexa-google-login" disabled={busy} onClick={()=>void googleLogin()}>Google ile giriş yap</button>{resetNotice&&<p role="status" className="hint">{resetNotice}</p>}{error&&<p className="error">{error}</p>}</main>;
+ if(!session)return <main className="auth"><div className="logo">Vexa<span>●</span></div><h1>{resetMode?'Şifremi unuttum':register?'Hesap oluştur':'Tekrar hoş geldin'}</h1><p>{resetMode?'Şifre sıfırlama bağlantısını e-postana gönderelim.':'Vexa hesabınla devam et.'}</p>{resetMode?<form onSubmit={e=>{e.preventDefault();void sendReset()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/><button disabled={busy}>Sıfırlama bağlantısı gönder</button></form>:<form onSubmit={e=>{e.preventDefault();void auth()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/>{register&&<><input type="text" placeholder="Kullanıcı adı (3–20 karakter)" aria-label="Kullanıcı adı" value={username} onChange={e=>setUsername(e.target.value.toLowerCase())} minLength={3} maxLength={20} pattern="[a-z0-9_]{3,20}" title="3–20 karakter: küçük harf, rakam veya alt çizgi" autoComplete="username" required/><small className="hint">Etiketin (#1234 gibi) otomatik ve benzersiz atanır.</small></>}<input type="password" placeholder="Şifre" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}/><button disabled={busy}>{register?'Kaydol':'Giriş yap'}</button></form>}<button className="link" onClick={()=>{setResetMode(false);setRegister(!register)}}>{register||resetMode?'Giriş yap':'Yeni hesap oluştur'}</button>{!register&&!resetMode&&<button className="link" onClick={()=>setResetMode(true)}>Şifremi unuttum</button>}<button type="button" className="vexa-google-login" disabled={busy} onClick={()=>void googleLogin()}>Google ile giriş yap</button>{resetNotice&&<p role="status" className="hint">{resetNotice}</p>}{error&&<p className="error">{error}</p>}</main>;
  const nav=[{id:'chats',icon:MessageCircle,label:'Sohbetler'},{id:'calls14',icon:PhoneCall,label:'Aramalar'},{id:'statuses',icon:Camera,label:'Durumlar'},{id:'find',icon:Search,label:'Kişi Ara'},{id:'requests',icon:Users,label:'İstekler'},{id:'profile',icon:UserRound,label:'Profilim'},{id:'vexa11',icon:Settings,label:'Vexa 11'}] as const;
  const mobileNav=nav.filter(n=>['chats','calls14','statuses','find','profile'].includes(n.id));
  const go=(t:Tab)=>{setTab(t);setSelected(null);setActiveGroupId(null);setActiveGroup(null);setError('');setMenuId(null)};
@@ -147,4 +164,3 @@ const subtleBtn:CSSProperties={padding:'10px 12px',borderRadius:11,background:'v
 const unreadStyle:CSSProperties={display:'inline-grid',placeItems:'center',minWidth:21,height:21,padding:'0 5px',borderRadius:20,background:'var(--accent)',color:'var(--accentText)',fontSize:11,fontWeight:800};
 const popupStyle:CSSProperties={position:'absolute',right:8,top:48,zIndex:30,minWidth:205,padding:6,border:'1px solid var(--line)',borderRadius:13,background:'#213429',boxShadow:'0 12px 35px #0008'};
 const popupButton:CSSProperties={display:'flex',alignItems:'center',gap:10,width:'100%',padding:'11px 10px',textAlign:'left',background:'transparent',color:'var(--text)',borderRadius:8};
-
