@@ -521,3 +521,16 @@ export default function Vexa14CallHistory({userId,lookupName}:{userId:string;loo
 .vexa-ai-compose{display:flex;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}.vexa-ai-compose input{flex:1;min-width:0;border-radius:14px}.vexa-ai-compose button{background:var(--accent);color:var(--accentText);border-radius:12px;padding:12px}
 @media(max-width:700px){.shell{height:100dvh;max-height:100dvh}.vexa-ai-head{padding:12px}.vexa-ai-messages{padding:12px}}
 @media(prefers-reduced-motion:reduce){.conversation.show,.panel-scroll,.vexa8-incoming,.vexa8-ring-avatar,.vexa-ai-bubble{animation:none!important}.nav button,.mobile-nav button,.contact{transition:none!important}}
+
+/* Vexa 8.0: akıcı ve erişilebilir mobil geçişler */
+html { -webkit-text-size-adjust:100%; }
+body { overscroll-behavior:none; }
+#root { padding-top:env(safe-area-inset-top,0px); }
+button { transition:transform .16s ease,opacity .16s ease,background-color .18s ease; }
+button:active:not(:disabled){transform:scale(.97)}
+.vexa8-incoming { animation:vexa8-call-enter .32s cubic-bezier(.2,.9,.2,1) both; }
+.vexa8-ring-avatar { animation:vexa8-call-pulse 1.9s ease-in-out infinite; }
+.call-overlay { animation:vexa8-call-enter .28s ease-out both; }
+@keyframes vexa8-call-enter{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes vexa8-call-pulse{0%,100%{box-shadow:0 0 0 0 rgba(100,217,155,.2)}55%{box-shadow:0 0 0 22px rgba(100,217,155,0)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
