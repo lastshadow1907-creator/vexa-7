@@ -75,7 +75,8 @@ class MainActivity : ComponentActivity() {
 
     private fun deliverFirebaseToken() {
         FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
-            val js = "window.dispatchEvent(new CustomEvent('vexa-fcm-token', {detail: " + JSONObject.quote(token) + "}));"
+            val quoted = JSONObject.quote(token)
+            val js = "sessionStorage.setItem('vexa-fcm-token', $quoted);window.dispatchEvent(new CustomEvent('vexa-fcm-token', {detail: $quoted}));"
             web.evaluateJavascript(js, null)
         }
     }
@@ -216,6 +217,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         web.onResume()
+        if (::web.isInitialized && Uri.parse(web.url ?: "").host == "vexa-7.vercel.app") deliverFirebaseToken()
     }
 
     override fun onDestroy() {
