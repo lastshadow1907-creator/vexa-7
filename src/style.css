@@ -491,3 +491,8 @@ export default function Vexa14CallHistory({userId,lookupName}:{userId:string;loo
 .vexa-cropper-mask{position:absolute;inset:0;pointer-events:none;border-radius:50%;border:2px solid #ffffffa8;outline:100px solid #0008;outline-offset:0}
 .vexa-cropper-zoom{display:grid!important;gap:7px;margin:0!important;color:var(--text)!important}.vexa-cropper-zoom input{width:100%;accent-color:var(--accent);padding:0}
 .vexa-cropper-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.vexa-cropper-actions button:last-child{background:var(--accent);color:var(--accentText);font-weight:700}.vexa-cropper-remove{justify-self:start;color:#ffb7bd}
+
+/* Vexa paylaşım ve Google giriş butonları */
+.vexa-google-login{width:100%;margin:12px 0;padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:700}
+.vexa-google-login:hover{background:var(--hover)}
+.vexa16-profile-shortcuts button{min-width:0}
