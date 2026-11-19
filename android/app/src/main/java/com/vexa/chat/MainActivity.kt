@@ -113,7 +113,10 @@ class MainActivity : ComponentActivity() {
         setContentView(web)
 
         WebView.setWebContentsDebuggingEnabled(false)
-        web.settings.userAgentString = web.settings.userAgentString + " VexaAndroid"
+        val installedVersion = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0"
+        } catch (_: Exception) { "1.0" }
+        web.settings.userAgentString = web.settings.userAgentString + " VexaAndroid/" + installedVersion
         web.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
