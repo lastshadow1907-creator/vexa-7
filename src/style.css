@@ -496,3 +496,28 @@ export default function Vexa14CallHistory({userId,lookupName}:{userId:string;loo
 .vexa-google-login{width:100%;margin:12px 0;padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:700}
 .vexa-google-login:hover{background:var(--hover)}
 .vexa16-profile-shortcuts button{min-width:0}
+
+/* Vexa 8.0: akıcı, erişilebilir geçişler ve güvenli ekran boşlukları */
+:root{--vexa8-ease:cubic-bezier(.22,1,.36,1)}
+.shell{padding-top:env(safe-area-inset-top,0px)}
+.sidebar,.conversation{min-height:0}
+.nav button,.mobile-nav button,.contact,.call-controls button,.call-actions button{transition:background-color .18s ease,color .18s ease,transform .22s var(--vexa8-ease)}
+.nav button:active,.mobile-nav button:active,.contact:active,.call-controls button:active{transform:scale(.96)}
+.conversation.show,.panel-scroll{animation:vexa8-enter .24s var(--vexa8-ease) both}
+@keyframes vexa8-enter{from{opacity:.7;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.vexa8-incoming{animation:vexa8-incoming .38s var(--vexa8-ease) both;z-index:9999}
+@keyframes vexa8-incoming{from{opacity:0;transform:translateY(28px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+.vexa8-ring-avatar{width:78px;height:78px;flex:0 0 78px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;background:var(--accent);color:#071e15;font-size:32px;font-weight:800;box-shadow:0 0 0 0 rgba(56,215,151,.5);animation:vexa8-pulse 1.8s ease-out infinite}
+@keyframes vexa8-pulse{60%{box-shadow:0 0 0 22px rgba(56,215,151,0)}100%{box-shadow:0 0 0 0 rgba(56,215,151,0)}}
+.vexa-ai{height:100%;min-height:0;display:flex;flex-direction:column;background:var(--panel);color:var(--text);width:100%}
+.vexa-ai-head{display:flex;gap:12px;align-items:center;padding:18px;border-bottom:1px solid var(--line)}
+.vexa-ai-head div{display:grid;gap:4px}.vexa-ai-head small{color:var(--muted)}
+.vexa-ai-messages{flex:1;overflow-y:auto;min-height:0;padding:20px;display:flex;flex-direction:column;gap:14px}
+.vexa-ai-empty{margin:auto;text-align:center;max-width:460px}.vexa-ai-empty p{color:var(--muted)}
+.vexa-ai-prompts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px}.vexa-ai-prompts button{border:1px solid var(--line);padding:10px 12px;border-radius:18px;color:var(--text);background:var(--panel2)}
+.vexa-ai-bubble{max-width:min(85%,620px);padding:13px 16px;border-radius:18px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;animation:vexa8-enter .2s ease both}
+.vexa-ai-bubble.user{align-self:flex-end;background:var(--accent);color:var(--accentText)}.vexa-ai-bubble.assistant{align-self:flex-start;background:var(--panel2);border:1px solid var(--line)}
+.vexa-ai-bubble button{margin-left:10px;color:inherit;opacity:.75}.vexa-ai-thinking{color:var(--muted);display:flex;align-items:center;gap:8px}.vexa-ai-error{color:#ff9e9e;padding:0 18px}
+.vexa-ai-compose{display:flex;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}.vexa-ai-compose input{flex:1;min-width:0;border-radius:14px}.vexa-ai-compose button{background:var(--accent);color:var(--accentText);border-radius:12px;padding:12px}
+@media(max-width:700px){.shell{height:100dvh;max-height:100dvh}.vexa-ai-head{padding:12px}.vexa-ai-messages{padding:12px}}
+@media(prefers-reduced-motion:reduce){.conversation.show,.panel-scroll,.vexa8-incoming,.vexa8-ring-avatar,.vexa-ai-bubble{animation:none!important}.nav button,.mobile-nav button,.contact{transition:none!important}}
