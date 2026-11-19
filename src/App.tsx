@@ -27,6 +27,18 @@ const short=(s:string,n=55)=>s.length>n?s.slice(0,n-1)+'…':s;
 const photo=(p?:Profile|null)=>{const v=p?.avatar_path||'';return /^https:\/\//i.test(v)?v:null};
 function Avatar({p,size=43}:{p?:Profile|null;size?:number}){const src=photo(p);return <span className="avatar" style={{width:size,height:size,flexBasis:size,borderRadius:'50%',overflow:'hidden'}}>{src?<img src={src} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>:name(p).slice(0,1).toUpperCase()}</span>}
 function storageGet(key:string):string[]{try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return []}}
+// Bu deger yuklu APK'nin versionName degeriyle ayni olmali.
+// Yeni APK yayinlarken once bu degeri guncelleyip yeniden derleyin.
+const VEXA_INSTALLED_VERSION='1.0.0';
+const VEXA_RELEASES_API='https://api.github.com/repos/lastshadow1907-creator/vexa-7/releases/latest';
+type VexaRelease={tag_name:string;html_url:string;body:string|null;assets:Array<{name:string;browser_download_url:string}>};
+function compareVersions(a:string,b:string){
+ const parse=(v:string)=>v.replace(/^v/i,'').split('-')[0].split('.').map(x=>Number(x)||0);
+ const x=parse(a),y=parse(b);
+ for(let i=0;i<Math.max(x.length,y.length);i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0)?1:-1;}
+ return 0;
+}
+
 export default function App(){
  const [session,setSession]=useState<Session|null>(null),[ready,setReady]=useState(false);
  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[username,setUsername]=useState(''),[register,setRegister]=useState(false);
@@ -42,7 +54,26 @@ export default function App(){
  const [clearAt,setClearAt]=useState<Record<string,string>>({});
  const [lastRead,setLastRead]=useState<Record<string,string>>({});
  const [archived,setArchived]=useState<string[]>([]),[pinned,setPinned]=useState<string[]>([]),[showArchived,setShowArchived]=useState(false),[menuId,setMenuId]=useState<string|null>(null);
+ const [availableUpdate,setAvailableUpdate]=useState<{version:string;url:string;notes:string}|null>(null);
+ const [updateDismissed,setUpdateDismissed]=useState(false);
  const uid=session?.user.id;
+ useEffect(()=>{
+  if(!/VexaAndroid/i.test(navigator.userAgent))return;
+  let active=true;
+  const check=async()=>{
+   try{
+    const response=await fetch(VEXA_RELEASES_API,{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});
+    if(!response.ok)throw new Error('GitHub Releases: '+response.status);
+    const release=(await response.json()) as VexaRelease;
+    const apk=release.assets?.find(asset=>/\.apk$/i.test(asset.name));
+    if(active&&apk&&compareVersions(release.tag_name,VEXA_INSTALLED_VERSION)>0){
+     setAvailableUpdate({version:release.tag_name,url:apk.browser_download_url,notes:(release.body||'').slice(0,250)});
+    }
+   }catch(e){console.warn('Vexa guncelleme kontrolu:',e);}
+  };
+  void check();
+  return()=>{active=false};
+ },[]);
  useVexaPresenceHeartbeat(uid);
  useEffect(()=>{if(!uid)return;try{const t=JSON.parse(localStorage.getItem('vexa12-theme-'+uid)||'{}');applyVexaTheme(t.color||'emerald',t.mode==='light'?'light':'dark');document.documentElement.dataset.vexaWallpaper=t.wallpaper||'none'}catch{applyVexaTheme('emerald','dark')}},[uid]);
   // Android WebView FCM tokenini, oturum acildiktan sonra kullaniciya bagla.
@@ -186,6 +217,18 @@ export default function App(){
  
  {uid&&<div className={"call-inbox"+(tab==='chats'&&!activeGroupId&&selected?" call-visible":"")}><Calls userId={uid} peer={tab==='chats'&&!activeGroupId?selected?.id||null:null} peerName={selected?name(selected):''} lookupName={id=>name(profiles.find(p=>p.id===id))}/></div>}
  {inspect&&<div role="presentation" onClick={()=>setInspect(null)} className="vexa102-backdrop"><div role="dialog" aria-modal="true" aria-label="Kişi profili" onClick={e=>e.stopPropagation()} className="vexa102-dialog"><Vexa102ProfileCard profile={inspect} selfId={uid!} isFriend={accepted.some(p=>p.id===inspect.id)} onClose={()=>setInspect(null)} onAdd={()=>void addFriend(inspect.id)} onMessage={()=>{setSelected(inspect);setTab('chats');setInspect(null)}}/></div></div>}
+  {availableUpdate&&!updateDismissed&&<div className="vexa102-backdrop" role="presentation" style={{zIndex:9999}}>
+   <div className="vexa102-dialog" role="dialog" aria-modal="true" aria-label="Vexa guncellemesi" style={{maxWidth:420,padding:24}}>
+    <h2 style={{marginTop:0}}>Vexa güncellemesi mevcut</h2>
+    <p>Yeni sürüm: <strong>{availableUpdate.version}</strong></p>
+    {availableUpdate.notes&&<p style={{whiteSpace:'pre-wrap',maxHeight:110,overflow:'auto'}}>{availableUpdate.notes}</p>}
+    <p style={{fontSize:13,opacity:.75}}>APK telefonun İndirilenler klasörüne kaydedilir. Android yükleme için ayrıca onay ister.</p>
+    <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+     <a href={availableUpdate.url} style={{...subtleBtn,background:'var(--accent)',color:'var(--accentText)',textDecoration:'none',fontWeight:700}}>Güncellemeyi indir</a>
+     <button type="button" style={subtleBtn} onClick={()=>setUpdateDismissed(true)}>Daha sonra</button>
+    </div>
+   </div>
+  </div>}
  </div>;
 }
 const iconBtn:CSSProperties={display:'grid',placeItems:'center',width:36,height:36,borderRadius:10,background:'transparent',color:'var(--muted)',flexShrink:0};
