@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Star, Forward, Sticker } from 'lucide-react';
+import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Star, Forward } from 'lucide-react';
 import { supabase } from './supabase';
 
 type Msg = {
