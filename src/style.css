@@ -317,7 +317,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
   .vexa92-groups-in-chats .vexa91-mode-list,.vexa92-groups-in-chats .vexa-groups-sidebar{height:auto;min-height:0;overflow:visible}
   .mobile-nav{
     position:fixed;left:0;right:0;bottom:0;top:auto;z-index:70;
-    display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:center;
+    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;
     gap:2px;width:100%;height:var(--mobile-nav-height);min-height:0;
     margin:0;padding:5px 5px calc(6px + env(safe-area-inset-bottom,0px));
     background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -8px 30px #0002;
