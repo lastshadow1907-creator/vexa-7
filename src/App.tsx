@@ -31,6 +31,7 @@ export default function App(){
  const [session,setSession]=useState<Session|null>(null),[ready,setReady]=useState(false);
  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[username,setUsername]=useState(''),[register,setRegister]=useState(false);
  const [resetMode,setResetMode]=useState(false),[resetNotice,setResetNotice]=useState('');
+ const [signupNotice,setSignupNotice]=useState('');
  const [tab,setTab]=useState<Tab>('chats'),[friends,setFriends]=useState<FriendRequest[]>([]),[profiles,setProfiles]=useState<Profile[]>([]);
  const [selected,setSelected]=useState<Profile|null>(null),[inspect,setInspect]=useState<Profile|null>(null);
  const [activeGroupId,setActiveGroupId]=useState<string|null>(null);
@@ -102,7 +103,7 @@ export default function App(){
   catch(e){if((e as Error).name!=='AbortError')setError('Paylaşım başlatılamadı. Bağlantı: '+url)}
  }
  async function auth(){
-  setError('');
+  setError('');setSignupNotice('');
   const handle=username.trim().toLowerCase();
   if(register&&!/^[a-z0-9_]{3,20}$/.test(handle)){
    setError('Kullanıcı adı 3–20 karakter olmalı; yalnızca küçük harf, rakam ve _ kullanılabilir.');return;
@@ -110,10 +111,10 @@ export default function App(){
   setBusy(true);
   try{
    const r=register
-    ?await supabase.auth.signUp({email:email.trim(),password,options:{data:{username:handle,display_name:handle}}})
+    ?await supabase.auth.signUp({email:email.trim(),password,options:{emailRedirectTo:window.location.origin+window.location.pathname,data:{username:handle,display_name:handle}}})
     :await supabase.auth.signInWithPassword({email:email.trim(),password});
    if(r.error)throw r.error;
-   if(register&&!r.data.session)setError('Kayıt alındı. Doğrulama e-postanı kontrol et.');
+   if(register&&!r.data.session){setSignupNotice('Kayıt isteğin alındı. E-postana gelen hesap doğrulama bağlantısına tıkla. Spam klasörünü de kontrol et.');setRegister(false);setResetMode(false);setPassword('');}
   }catch(e){
    const message=(e as Error).message;
    setError(/duplicate key|profiles_username_key|kullanıcı adı.*kullanımda/i.test(message)?'Bu kullanıcı adı kullanılıyor. Başka bir ad seç.':message);
@@ -140,7 +141,7 @@ export default function App(){
  const ordered=useMemo(()=>accepted.filter(p=>(showArchived?archived.includes(p.id):!archived.includes(p.id))&&name(p).toLocaleLowerCase('tr').includes(chatSearch.toLocaleLowerCase('tr'))).sort((a,b)=>Number(pinned.includes(b.id))-Number(pinned.includes(a.id))||(new Date(summaries.get(b.id)?.last?.created_at||0).getTime()-new Date(summaries.get(a.id)?.last?.created_at||0).getTime())),[accepted,showArchived,archived,chatSearch,pinned,summaries]);
  if(!configured)return <main className="auth"><h1>Vexa</h1><p>Önce .env dosyasına Supabase URL ve anon anahtarını ekle.</p></main>;
  if(!ready)return <main className="auth">Yükleniyor…</main>;
- if(!session)return <main className="auth"><div className="logo">Vexa<span>●</span></div><h1>{resetMode?'Şifremi unuttum':register?'Hesap oluştur':'Tekrar hoş geldin'}</h1><p>{resetMode?'Şifre sıfırlama bağlantısını e-postana gönderelim.':'Vexa hesabınla devam et.'}</p>{resetMode?<form onSubmit={e=>{e.preventDefault();void sendReset()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/><button disabled={busy}>Sıfırlama bağlantısı gönder</button></form>:<form onSubmit={e=>{e.preventDefault();void auth()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/>{register&&<><input type="text" placeholder="Kullanıcı adı (3–20 karakter)" aria-label="Kullanıcı adı" value={username} onChange={e=>setUsername(e.target.value.toLowerCase())} minLength={3} maxLength={20} pattern="[a-z0-9_]{3,20}" title="3–20 karakter: küçük harf, rakam veya alt çizgi" autoComplete="username" required/><small className="hint">Etiketin (#1234 gibi) otomatik ve benzersiz atanır.</small></>}<input type="password" placeholder="Şifre" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}/><button disabled={busy}>{register?'Kaydol':'Giriş yap'}</button></form>}<button className="link" onClick={()=>{setResetMode(false);setRegister(!register)}}>{register||resetMode?'Giriş yap':'Yeni hesap oluştur'}</button>{!register&&!resetMode&&<button className="link" onClick={()=>setResetMode(true)}>Şifremi unuttum</button>}<button type="button" className="vexa-google-login" disabled={busy} onClick={()=>void googleLogin()}>Google ile giriş yap</button>{resetNotice&&<p role="status" className="hint">{resetNotice}</p>}{error&&<p className="error">{error}</p>}</main>;
+ if(!session)return <main className="auth"><div className="logo">Vexa<span>●</span></div><h1>{resetMode?'Şifremi unuttum':register?'Hesap oluştur':'Tekrar hoş geldin'}</h1><p>{resetMode?'Şifre sıfırlama bağlantısını e-postana gönderelim.':'Vexa hesabınla devam et.'}</p>{resetMode?<form onSubmit={e=>{e.preventDefault();void sendReset()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/><button disabled={busy}>Sıfırlama bağlantısı gönder</button></form>:<form onSubmit={e=>{e.preventDefault();void auth()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/>{register&&<><input type="text" placeholder="Kullanıcı adı (3–20 karakter)" aria-label="Kullanıcı adı" value={username} onChange={e=>setUsername(e.target.value.toLowerCase())} minLength={3} maxLength={20} pattern="[a-z0-9_]{3,20}" title="3–20 karakter: küçük harf, rakam veya alt çizgi" autoComplete="username" required/><small className="hint">Etiketin (#1234 gibi) otomatik ve benzersiz atanır.</small></>}<input type="password" placeholder="Şifre" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}/><button disabled={busy}>{register?'Kaydol':'Giriş yap'}</button></form>}<button className="link" onClick={()=>{setResetMode(false);setRegister(resetMode?false:!register);setError('');setResetNotice('');setSignupNotice('')}}>{register||resetMode?'Giriş yap':'Yeni hesap oluştur'}</button>{!register&&!resetMode&&<button className="link" onClick={()=>{setResetMode(true);setRegister(false);setError('');setSignupNotice('')}}>Şifremi unuttum</button>}<button type="button" className="vexa-google-login" disabled={busy} onClick={()=>void googleLogin()}>Google ile giriş yap</button>{signupNotice&&<p role="status" className="hint">{signupNotice}</p>}{resetNotice&&<p role="status" className="hint">{resetNotice}</p>}{error&&<p className="error">{error}</p>}</main>;
  const nav=[{id:'chats',icon:MessageCircle,label:'Sohbetler'},{id:'calls14',icon:PhoneCall,label:'Aramalar'},{id:'ai',icon:MessageCircle,label:'Vexa AI'},{id:'statuses',icon:Camera,label:'Durumlar'},{id:'find',icon:Search,label:'Kişi Ara'},{id:'requests',icon:Users,label:'İstekler'},{id:'profile',icon:UserRound,label:'Profilim'},{id:'vexa11',icon:Settings,label:'Vexa 11'}] as const;
  const mobileNav=nav.filter(n=>['chats','calls14','ai','find','profile'].includes(n.id));
  const go=(t:Tab)=>{setTab(t);setSelected(null);setActiveGroupId(null);setActiveGroup(null);setError('');setMenuId(null)};
