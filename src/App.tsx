@@ -8,13 +8,14 @@ import EnhancedChat from './EnhancedChat';
 import Groups from './Groups';
 import Statuses from './Statuses';
 import {VexaSettings,VexaAds} from './VexaFeatures';
-import {VexaIdentity,VexaJoined,VexaAvatarEditor,VexaTagEditor} from './Vexa92_Profile';
+import {VexaIdentity,VexaJoined,VexaTagEditor} from './Vexa92_Profile';
 import {VexaPrivacySettings,VexaProfileQR,VexaQRFind,useVexaPresenceHeartbeat,VexaPublicPresence} from './Vexa102_Privacy';
 import {Vexa102ProfileCard} from './Vexa102_ProfileCard';
 import type {Profile,FriendRequest} from './supabase';
 import Vexa11Hub from './Vexa11Hub';
 import Vexa12Settings,{applyVexaTheme} from './Vexa12Settings';
 import Vexa14CallHistory from './Vexa14CallHistory';
+import VexaAvatarCropper from './VexaAvatarCropper';
 
 type Tab='chats'|'find'|'requests'|'profile'|'statuses'|'vexa11'|'calls14';
 type ChatRow={id:number;sender_id:string;recipient_id:string;body:string|null;created_at:string;read_at?:string|null;deleted_at?:string|null;media_type?:string|null};
@@ -111,7 +112,7 @@ export default function App(){
   <button type="button" onClick={()=>go('requests')}><Users size={18}/> Arkadaşlık istekleri</button>
   <button type="button" onClick={()=>go('vexa11')}><Settings size={18}/> Vexa özellikleri</button>
  </div>
- <details className="vexa13-category" open><summary><UserRound size={19}/> Profil bilgileri <span>Ad, biyografi ve fotoğraf</span></summary><div className="vexa13-category-body"><label>Görünen ad</label><input value={displayName} maxLength={60} onChange={e=>setDisplayName(e.target.value)}/><label>Kapak fotoğrafı HTTPS bağlantısı</label><input type="url" placeholder="https://..." value={coverUrl} onChange={e=>setCoverUrl(e.target.value)} /><label>Hakkımda</label><textarea value={bio} maxLength={300} onChange={e=>setBio(e.target.value)} rows={3}/><VexaAvatarEditor userId={uid!} onChange={(url:string)=>{setAvatarUrl(url);void load()}}/><button className="full" disabled={busy} onClick={()=>void saveProfile()}>{busy?'Kaydediliyor…':'Değişiklikleri kaydet'}</button>{saveNotice&&<p role="status" className="hint">{saveNotice}</p>}</div></details>
+ <details className="vexa13-category" open><summary><UserRound size={19}/> Profil bilgileri <span>Ad, biyografi ve fotoğraf</span></summary><div className="vexa13-category-body"><label>Görünen ad</label><input value={displayName} maxLength={60} onChange={e=>setDisplayName(e.target.value)}/><label>Kapak fotoğrafı HTTPS bağlantısı</label><input type="url" placeholder="https://..." value={coverUrl} onChange={e=>setCoverUrl(e.target.value)} /><label>Hakkımda</label><textarea value={bio} maxLength={300} onChange={e=>setBio(e.target.value)} rows={3}/><VexaAvatarCropper userId={uid!} avatarUrl={avatarUrl} onChange={(url:string)=>{setAvatarUrl(url);void load()}}/><button className="full" disabled={busy} onClick={()=>void saveProfile()}>{busy?'Kaydediliyor…':'Değişiklikleri kaydet'}</button>{saveNotice&&<p role="status" className="hint">{saveNotice}</p>}</div></details>
  <details className="vexa13-category"><summary><Users size={19}/> Kimlik ve QR <span>Etiket, hesap ve QR kod</span></summary><div className="vexa13-category-body"><VexaIdentity userId={uid!}/><VexaJoined userId={uid!}/><VexaTagEditor userId={uid!}/><VexaProfileQR userId={uid!}/></div></details>
  <details className="vexa13-category"><summary><Settings size={19}/> Görünüm ve hesap <span>Temalar, şifre ve oturumlar</span></summary><div className="vexa13-category-body"><Vexa12Settings userId={uid!}/></div></details>
  <details className="vexa13-category"><summary><Pin size={19}/> Gizlilik ve tercihler <span>Görünürlük ve uygulama ayarları</span></summary><div className="vexa13-category-body"><VexaPrivacySettings userId={uid!}/><VexaSettings userId={uid!}/></div></details>
