@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video } from 'lucide-react';
+import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Star, Forward, Sticker } from 'lucide-react';
 import { supabase } from './supabase';
 
 type Msg = {
   id: number; sender_id: string; recipient_id: string; body: string | null;
   created_at: string; read_at: string | null; deleted_at: string | null; edited_at: string | null;
-  media_path: string | null; media_type: string | null;
+  media_path: string | null; media_type: string | null; reply_to_message_id?: number | null;
 };
 type Reaction = { message_id: number; user_id: string; emoji: string };
 type CallRow = {id:string;caller_id:string;callee_id:string;kind:'audio'|'video';status:string;created_at:string;connected_at:string|null;ended_at:string|null;duration_seconds:number|null};
@@ -35,6 +35,13 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const [chatSearch, setChatSearch] = useState('');
   const [pinned, setPinned] = useState(false);
   const [openActions, setOpenActions] = useState<number | null>(null);
+  const [starred, setStarred] = useState<number[]>([]);
+  const [showStarred, setShowStarred] = useState(false);
+  const [forwarding, setForwarding] = useState<Msg | null>(null);
+  const [forwardTarget, setForwardTarget] = useState('');
+  const [peerTyping, setPeerTyping] = useState(false);
+  const typingChannel = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -46,7 +53,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     const chatKey = `${userId}:${peerId}`;
     const { data, error: loadError } = await supabase
       .from('messages')
-      .select('id,sender_id,recipient_id,body,created_at,read_at,deleted_at,edited_at,media_path,media_type')
+      .select('id,sender_id,recipient_id,body,created_at,read_at,deleted_at,edited_at,media_path,media_type,reply_to_message_id')
       .or(`and(sender_id.eq.${userId},recipient_id.eq.${peerId}),and(sender_id.eq.${peerId},recipient_id.eq.${userId})`)
       .order('created_at', { ascending: true })
       .limit(250);
@@ -54,6 +61,8 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     if (loadError) { setError(loadError.message); return; }
     const rows = (data || []) as Msg[];
     setMessages(rows);
+    const fav = await supabase.from('vexa8_starred_messages').select('message_id').eq('user_id',userId);
+    if (!fav.error && currentChat.current === chatKey) setStarred((fav.data || []).map(x=>Number(x.message_id)));
     // Yalnızca gerçekten okunmamış gelen mesajları işaretle.
     // Gizli okundu bilgisi tercihi açık olsa da yerel okunmamış sayacı
     // App.tsx içindeki sohbet-açıldı işaretiyle ayrıca sıfırlanır.
@@ -105,7 +114,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
 
   useEffect(() => {
     setDraft(''); setReply(null); setEdit(null); setFile(null);
-    setError(''); setChatSearch(''); setShowSearch(false); setOpenActions(null);
+    setError(''); setChatSearch(''); setShowSearch(false); setOpenActions(null); setShowStarred(false);
     void load();
     const channel = supabase.channel(`vexa-chat-${[userId, peerId].sort().join('-')}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => { void load(); })
@@ -113,6 +122,38 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [load, userId, peerId]);
+
+  useEffect(() => {
+    let active = true;
+    const channel = supabase.channel(`vexa8-typing-${[userId,peerId].sort().join('-')}`);
+    typingChannel.current = channel;
+    channel.on('broadcast', { event: 'typing' }, ({payload}) => {
+      if (!active || payload?.sender !== peerId) return;
+      setPeerTyping(true);
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+      typingTimer.current = setTimeout(()=>setPeerTyping(false), 2500);
+    }).subscribe();
+    return () => {active=false; typingChannel.current=null; if(typingTimer.current)clearTimeout(typingTimer.current); void supabase.removeChannel(channel);setPeerTyping(false);};
+  },[userId,peerId]);
+
+  async function toggleStar(m: Msg) {
+    const exists = starred.includes(m.id);
+    const q = exists ? await supabase.from('vexa8_starred_messages').delete().eq('user_id',userId).eq('message_id',m.id)
+      : await supabase.from('vexa8_starred_messages').insert({user_id:userId,message_id:m.id});
+    if(q.error)setError(q.error.message);
+    else setStarred(v=>exists?v.filter(id=>id!==m.id):[...v,m.id]);
+    setOpenActions(null);
+  }
+
+  async function forwardMessage() {
+    if(!forwarding || !forwardTarget.trim())return;
+    const target = forwardTarget.trim();
+    if(target===userId){setError('Kendine iletemezsin.');return;}
+    const {data:friend,error:friendError}=await supabase.from('friend_requests').select('id').eq('status','accepted').or(`and(sender_id.eq.${userId},recipient_id.eq.${target}),and(sender_id.eq.${target},recipient_id.eq.${userId})`).limit(1);
+    if(friendError || !friend?.length){setError('Alıcıyla arkadaşlık doğrulanamadı. İletme yapılmadı.');return;}
+    const {error:e}=await supabase.from('messages').insert({sender_id:userId,recipient_id:target,body:`↪ İletildi\n${forwarding.body||'Medya'}`,media_path:null,media_type:null});
+    if(e)setError(e.message);else{setForwarding(null);setForwardTarget('');setOpenActions(null);}
+  }
 
   // Kullanıcı sekmeye geri döndüğünde açık sohbeti tekrar okundu say.
   useEffect(() => {
@@ -168,11 +209,10 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
             .upload(uploadedPath, file, { contentType: file.type });
           if (e) throw e;
         }
-        // messages.id bigint, reply_to uuid: sayısal ID'yi reply_to'ya yazmıyoruz.
-        const text = reply ? `↳ ${reply.body?.slice(0, 100) || 'Medya'}\n\n${body}` : body;
+        const text = body;
         const { error: e } = await supabase.from('messages').insert({
           sender_id: userId, recipient_id: peerId, body: text || null,
-          media_path: uploadedPath, media_type: mediaType
+          media_path: uploadedPath, media_type: mediaType, reply_to_message_id: reply?.id ?? null
         });
         if (e) {
           if (uploadedPath) await supabase.storage.from('vexa-media').remove([uploadedPath]);
@@ -188,7 +228,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   }
 
   async function remove(m: Msg) {
-    if (!window.confirm('Bu mesaj silinsin mi?')) return;
+    if (!window.confirm('Bu mesaj herkesten silinsin mi?')) return;
     const { error: e } = await supabase.from('messages')
       .update({ deleted_at: new Date().toISOString() }).eq('id', m.id).eq('sender_id', userId);
     if (e) setError(e.message);
@@ -237,7 +277,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     } catch (e) { setError((e as Error).message); setRecording(false); }
   }
 
-  const visible = messages.filter(m => (!clearedAt || new Date(m.created_at).getTime() > new Date(clearedAt).getTime()) && (!chatSearch.trim() ||
+  const visible = messages.filter(m => (!showStarred || starred.includes(m.id)) && (!clearedAt || new Date(m.created_at).getTime() > new Date(clearedAt).getTime()) && (!chatSearch.trim() ||
     (m.body || '').toLocaleLowerCase('tr-TR').includes(chatSearch.trim().toLocaleLowerCase('tr-TR'))));
   const timeline:TimelineItem[] = [
     ...visible.map((m):TimelineItem=>({type:'message',at:new Date(m.created_at).getTime(),data:m})),
@@ -257,7 +297,9 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         <button type="button" onClick={() => void togglePin()} title="Sohbeti sabitle">
           <Pin size={16} /> {pinned ? 'Sabitlendi' : 'Sabitle'}
         </button>
+        <button type="button" onClick={()=>setShowStarred(v=>!v)} title="Yıldızlı mesajlar"><Star size={16}/>{showStarred?' Tümü':' Yıldızlı'}</button>
       </div>
+      {peerTyping && <div className="vexa8-typing" role="status">{peerName||'Kişi'} yazıyor…</div>}
       {showSearch && <div className="enhanced-preview">
         <input aria-label="Sohbette ara" placeholder="Mesajlarda ara..." value={chatSearch}
           onChange={e => setChatSearch(e.target.value)} />
@@ -289,6 +331,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
           return <div className={`message ${mine ? 'mine' : ''}`} key={m.id} onContextMenu={e => { e.preventDefault(); if (!deleted) setOpenActions(openActions === m.id ? null : m.id); }}>
             <div className="message-body" onClick={() => { if (!deleted && !m.media_path) setOpenActions(openActions === m.id ? null : m.id); }}>
               {deleted ? <i>Bu mesaj silindi</i> : <>
+                {m.reply_to_message_id && <div className="vexa8-reply-quote">↳ {messages.find(x=>x.id===m.reply_to_message_id)?.body?.slice(0,110)||'Yanıtlanan mesaj'}</div>}
                 {m.body && <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{m.body}</div>}
                 {m.media_path && urls[m.media_path] && (m.media_type === 'image'
                   ? <img className="enhanced-media" src={urls[m.media_path]} alt="Gönderilen fotoğraf" />
@@ -301,6 +344,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
             </div>
             <time>{time(m.created_at)}{m.edited_at ? ' · düzenlendi' : ''}{mine&&!deleted ? <span title={m.read_at?'Görüldü':'Gönderildi'} style={{marginLeft:6,color:m.read_at?'var(--accent)':'var(--muted)'}}>{m.read_at?'✓✓':'✓'}</span>:null}</time>
             {!deleted && <>
+              {starred.includes(m.id)&&<Star size={12} className="vexa8-star-mark" fill="currentColor"/>}
               <div className="enhanced-reactions">
                 {rs.map((r, i) => <button type="button" key={`${r.user_id}-${r.emoji}-${i}`}
                   className={r.user_id === userId ? 'own' : ''}
@@ -315,6 +359,8 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
                   <button type="button" onClick={() => { setReply(m); setEdit(null); setOpenActions(null); }}>
                     <CornerUpLeft size={14} /> Yanıtla
                   </button>
+                  <button type="button" onClick={()=>void toggleStar(m)}><Star size={14}/>{starred.includes(m.id)?'Yıldızı kaldır':'Yıldızla'}</button>
+                  <button type="button" onClick={()=>{setForwarding(m);setOpenActions(null);}}><Forward size={14}/> İlet</button>
                   {mine && <>
                     <button type="button" onClick={() => { setEdit(m); setReply(null); setDraft(m.body || ''); setOpenActions(null); }}>
                       <Pencil size={14} /> Düzenle
@@ -333,6 +379,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         {showSearch && chatSearch && timeline.length === 0 && <div className="enhanced-preview">Eşleşen mesaj bulunamadı.</div>}
         <div ref={bottom} />
       </div>
+      {forwarding && <div className="vexa8-forward-box"><span>İletilecek: {forwarding.body?.slice(0,60)||'Medya'}</span><input aria-label="Alıcı kullanıcı kimliği" placeholder="Arkadaşın kullanıcı UUID'si" value={forwardTarget} onChange={e=>setForwardTarget(e.target.value)}/><button type="button" onClick={()=>void forwardMessage()}>İlet</button><button type="button" onClick={()=>setForwarding(null)}>İptal</button></div>}
       {(reply || edit || file) && <div className="enhanced-preview">
         <span>{edit ? 'Düzenleniyor: ' : reply ? 'Yanıt: ' : 'Ek: '}
           {edit?.body || reply?.body || file?.name || 'Medya'}</span>
@@ -349,7 +396,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         <button type="button" title={recording ? 'Kaydı bitir' : 'Ses kaydı'} onClick={() => void record()}>
           {recording ? <Square size={19} /> : <Mic size={19} />}
         </button>
-        <input value={draft} onChange={e => setDraft(e.target.value)}
+        <input value={draft} onChange={e => {setDraft(e.target.value); if(e.target.value.trim())void typingChannel.current?.send({type:'broadcast',event:'typing',payload:{sender:userId}});}}
           placeholder={recording ? 'Ses kaydediliyor...' : edit ? 'Mesajı düzenle…' : 'Mesaj yaz…'} />
         <button type="submit" disabled={busy || (!draft.trim() && !file)} title="Gönder"><Send size={19} /></button>
       </form>
