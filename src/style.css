@@ -94,3 +94,400 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .chat-header .vexa101-presence{display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:11px}
 .chat-header .vexa101-presence p{margin:0}.muted-icon{margin-left:auto;color:var(--muted)}
 .back{display:none}
+.welcome{margin:auto;text-align:center;padding:25px;color:var(--muted)}
+.welcome h1{color:var(--text);font-size:25px}.welcome-icon{display:grid;place-items:center;width:86px;height:86px;margin:auto;background:var(--panel2);color:var(--accent);border-radius:25px}
+.message-list{display:flex;flex-direction:column;gap:12px;flex:1 1 0;min-height:0;overflow-x:hidden;overflow-y:auto;padding:20px clamp(14px,3vw,42px);overscroll-behavior:contain}
+.message{align-self:flex-start;max-width:min(78%,570px);min-width:0}.message.mine{align-self:flex-end;margin-left:auto}
+.message-body{width:fit-content;max-width:100%;padding:11px 14px;background:var(--bubble);border:1px solid var(--line);border-radius:18px 18px 18px 6px;color:var(--text);font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.message.mine .message-body{margin-left:auto;background:var(--bubble-own);border-color:color-mix(in srgb,var(--accent) 25%,var(--line));border-radius:18px 18px 6px 18px}
+.message time{display:block;margin:4px;font-size:10px;color:var(--muted)}.message.mine time{text-align:right}
+.composer{display:flex;align-items:center;gap:8px;flex:none;min-width:0;padding:11px 14px;background:var(--panel);border-top:1px solid var(--line)}
+.composer input:not([type=file]){flex:1;width:0;min-width:0;height:45px}
+.composer button{display:grid;place-items:center;flex:none;min-width:43px;height:43px;padding:9px;border-radius:12px;background:var(--accent);color:var(--accentText)}
+.enhanced-chat{display:flex;flex-direction:column;flex:1 1 0;min-width:0;min-height:0;overflow:hidden}
+.enhanced-toolbar{display:flex;align-items:center;justify-content:flex-end;flex:none;min-height:42px;padding:5px 14px;border-bottom:1px solid var(--line)}
+.enhanced-toolbar button{display:flex;align-items:center;gap:7px;background:transparent;color:var(--muted);border-radius:8px;padding:7px 10px;font-size:12px}
+.enhanced-toolbar button:hover{background:var(--hover)}
+.enhanced-list{flex:1 1 0;min-height:0;overflow-y:auto}
+.enhanced-list.message-list{gap:10px;padding:18px clamp(12px,3vw,34px)}
+.enhanced-list .message{position:relative;display:flex;flex-direction:column;align-items:flex-start;align-self:flex-start;width:fit-content;min-width:0;max-width:min(78%,540px);margin:0 34px 0 0;isolation:isolate}
+.enhanced-list .message.mine{align-self:flex-end;align-items:flex-end;margin:0 0 0 34px}
+.enhanced-list .message .message-body{display:block;box-sizing:border-box;min-width:55px;max-width:100%;padding:10px 13px 21px;margin:0;background:var(--bubble);border:1px solid var(--line);border-radius:18px 18px 18px 6px;box-shadow:0 2px 6px #0002}
+.enhanced-list .message.mine .message-body{background:var(--bubble-own);border-radius:18px 18px 6px 18px}
+.enhanced-list .message>time{position:absolute;right:10px;bottom:8px;margin:0;z-index:1;pointer-events:none;color:var(--muted);font-size:10px;white-space:nowrap}
+.enhanced-list .message .enhanced-reactions{position:relative;z-index:2;display:flex;align-self:flex-start;flex-wrap:wrap;gap:3px;margin:-7px 0 0 8px;padding:0}
+.enhanced-list .message.mine .enhanced-reactions{align-self:flex-end;margin:-7px 8px 0 0}
+.enhanced-list .message .enhanced-reactions:empty{display:none}
+.enhanced-reactions button{display:inline-flex;align-items:center;justify-content:center;min-width:27px;min-height:24px;padding:2px 6px;border:1px solid var(--line);border-radius:99px;background:var(--panel2);color:var(--text);font-size:14px}
+.enhanced-reactions button.own{border-color:var(--accent)}
+.enhanced-list .message .enhanced-actions{position:absolute;z-index:5;top:5px;left:calc(100% + 6px);width:30px;margin:0}
+.enhanced-list .message.mine .enhanced-actions{left:auto;right:calc(100% + 6px)}
+.enhanced-actions-trigger{display:grid;place-items:center;width:29px;height:29px;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--muted);opacity:.3}
+.enhanced-actions-trigger span{display:none}
+.enhanced-list .message:hover .enhanced-actions-trigger,.enhanced-actions-trigger:focus-visible,.enhanced-actions-trigger[aria-expanded='true']{opacity:1}
+.enhanced-actions-menu{position:absolute;z-index:30;top:33px;left:0;display:flex;flex-direction:column;gap:4px;width:max-content;min-width:165px;max-width:min(260px,80vw);padding:7px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);box-shadow:0 12px 30px #0008}
+.enhanced-list .message.mine .enhanced-actions-menu{left:auto;right:0}
+.enhanced-actions-menu>button{display:flex;align-items:center;gap:7px;justify-content:flex-start;width:100%;padding:9px 10px;background:transparent;color:var(--text);border-radius:8px;text-align:left}
+.enhanced-actions-menu>button:hover{background:var(--hover)}
+.enhanced-emoji{display:flex;flex-wrap:wrap;gap:4px}.enhanced-emoji button{padding:5px;background:transparent;color:var(--text);font-size:16px}
+.enhanced-quote{max-width:100%;margin-bottom:5px;padding:7px 10px;background:var(--panel2);border-left:2px solid var(--accent);border-radius:8px;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.enhanced-media{display:block;max-width:100%;max-height:320px;object-fit:contain;margin-top:8px;border-radius:10px}
+.enhanced-list audio{display:block;width:min(280px,100%);max-width:100%;margin-top:8px}
+.enhanced-download{display:inline-flex;align-items:center;gap:5px;margin-top:7px;font-size:11px}
+.enhanced-preview{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:none;min-width:0;max-height:100px;overflow:auto;padding:9px 14px;background:var(--panel2);font-size:12px;overflow-wrap:anywhere}
+.enhanced-preview span{flex:1;min-width:0}.enhanced-preview button{background:transparent;color:var(--text)}
+.enhanced-error{flex:none;padding:7px 14px;background:#482c31}
+.enhanced-compose{flex:none}.enhanced-compose button{width:42px;min-width:42px;height:42px;padding:8px}
+.enhanced-compose input:not([type=file]){flex:1;width:0;min-width:0}
+.vexa-typing-indicator{display:flex;align-items:center;gap:8px;min-height:30px;padding:7px 15px;color:var(--muted);font-size:12px}
+.vexa-typing-dots{letter-spacing:3px;animation:vexa-typing-pulse 1.1s ease-in-out infinite}
+@keyframes vexa-typing-pulse{0%,100%{opacity:.3}50%{opacity:1}}
+
+/* Gruplar: listede normal akisa dahil, sohbet ayri ekranda */
+.vexa92-groups-in-chats{margin-top:18px;padding-top:12px;border-top:1px solid var(--line);min-height:0}
+.vexa92-groups-in-chats .vexa91-mode-list,.vexa92-groups-in-chats .vexa-groups-sidebar{height:auto;min-height:0;overflow:visible;width:100%;background:transparent;border:0}
+.vexa92-groups-in-chats .vexa-groups-list{height:auto;max-height:none;overflow:visible;padding:0}
+.vexa92-groups-in-chats .vexa-groups-list-header{height:auto;min-height:48px;padding:7px 2px 11px;border:0}
+.vexa-groups-panel{display:flex;flex-direction:column;flex:1;min-height:0;gap:12px;width:100%;overflow-y:auto;padding:16px}
+.vexa-groups-layout{display:grid;grid-template-columns:350px minmax(0,1fr);width:100%;height:100%;min-height:0;overflow:hidden;background:var(--bg)}
+.vexa-groups-sidebar{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;background:var(--panel);border-right:1px solid var(--line)}
+.vexa-groups-list-header{display:flex;align-items:center;gap:10px;flex:none;min-height:65px;padding:0 15px;border-bottom:1px solid var(--line)}
+.vexa-groups-list-header h2{flex:1;margin:0;font-size:20px}
+.vexa-groups-list-header button,.vexa-groups-chat-header button:not(.vexa-group-chat-title){display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:11px;background:transparent;color:var(--text)}
+.vexa-groups-list{flex:1;min-height:0;overflow-y:auto;padding:10px}
+.vexa-group-row{display:flex;align-items:center;gap:11px;width:100%;min-height:66px;margin:3px 0;padding:10px 12px;border-radius:13px;background:transparent;color:var(--text);text-align:left}
+.vexa-group-row:hover,.vexa-group-row.active{background:var(--hover)}
+.vexa-group-avatar{display:grid;place-items:center;flex:none;width:45px;height:45px;border-radius:50%;object-fit:cover}
+.vexa-group-avatar-fallback{background:#355c42;color:#d8f8e0}
+.vexa-group-row-text{display:flex;flex-direction:column;gap:5px;min-width:0}
+.vexa-group-row-text strong,.vexa-group-row-text small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vexa-group-row-text small{font-size:11px;color:var(--muted)}
+.vexa-group-create{display:grid;gap:9px;margin-top:12px;padding:12px}
+.vexa-group-create input{width:100%}.vexa-group-create button{display:flex;align-items:center;justify-content:center;gap:7px}
+.vexa-group-heading{display:flex;align-items:center;gap:10px}.vexa-group-heading button{background:transparent;color:var(--text)}
+.vexa-groups-conversation{display:flex;flex-direction:column;position:relative;flex:1 1 0;min-width:0;min-height:0;overflow:hidden;background:var(--bg)}
+.vexa-groups-chat-header{display:flex;align-items:center;gap:11px;flex:none;min-height:65px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.vexa-group-chat-title{display:flex;flex:1;flex-direction:column;gap:5px;min-width:0;text-align:left;padding:6px 0;background:transparent;color:var(--text)}
+.vexa-group-chat-title strong,.vexa-group-chat-title small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vexa-group-chat-title small{color:var(--muted);font-size:11px}
+.vexa-group-back{display:none}
+.vexa-group-full-messages,.vexa-group-messages{display:flex;flex-direction:column;gap:12px;flex:1 1 0;min-height:0;overflow-y:auto;padding:20px clamp(14px,3vw,42px)}
+.vexa-group-message{align-self:flex-start;width:fit-content;max-width:min(76%,570px);padding:11px 14px;border:1px solid var(--line);border-radius:18px 18px 18px 6px;background:var(--bubble);color:var(--text);line-height:1.5;overflow-wrap:anywhere}
+.vexa-group-message.mine{align-self:flex-end;margin-left:auto;background:var(--bubble-own);border-radius:18px 18px 6px 18px}
+.vexa-group-message small{display:block;margin-bottom:5px;color:var(--accent);font-weight:750;font-size:11px}
+.vexa-group-message time{display:block;text-align:right;margin-top:5px;font-size:10px;color:var(--muted)}
+.vexa-group-compose,.vexa-group-full-compose{display:flex;align-items:center;gap:8px;flex:none;min-width:0;padding:11px 14px;background:var(--panel);border-top:1px solid var(--line)}
+.vexa-group-compose input,.vexa-group-full-compose input{flex:1;width:0;min-width:0;height:44px}
+.vexa-group-compose button,.vexa-group-full-compose button{display:grid;place-items:center;flex:none;width:44px;height:44px;padding:8px}
+.vexa-groups-settings{display:grid;align-content:start;gap:13px;flex:1;min-height:0;overflow-y:auto;padding:20px}
+.vexa-groups-settings label{display:grid;gap:8px;color:var(--muted)}
+.vexa-group-member{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)}
+.vexa-groups-welcome{margin:auto;text-align:center;color:var(--muted);padding:20px}.vexa-groups-welcome h2{color:var(--text)}
+.vexa-group-alert{position:absolute;bottom:75px;left:18px;right:18px;z-index:5;padding:10px 12px;border-radius:10px;background:var(--panel2)}
+.vexa91-mode-list{display:block;width:100%;height:auto;min-height:0}
+.vexa91-mode-chat{display:flex;flex-direction:column;flex:1 1 0;width:100%;height:100%;min-height:0;overflow:hidden}
+.vexa91-mode-chat .vexa-groups-conversation{display:flex;flex:1 1 0;width:100%;height:100%;min-height:0}
+.vexa91-mode-chat .vexa-group-back{display:none}
+.vexa-groups-layout.vexa91-mode-chat{display:flex;flex-direction:column;grid-template-columns:none}
+.vexa-groups-layout.vexa91-mode-chat>.vexa-groups-conversation{flex:1 1 0;width:100%;height:100%;min-height:0}
+
+/* Aramalar */
+.call-inbox{position:fixed;z-index:80;top:14px;right:18px;pointer-events:none}
+.call-inbox>*{pointer-events:auto}.call-inbox:not(.call-visible) .call-actions{display:none}
+.call-actions{display:flex;align-items:center;gap:7px}
+.call-actions button{display:grid;place-items:center;width:39px;height:39px;padding:8px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}
+.incoming-call{position:fixed;z-index:101;top:15px;right:15px;width:min(365px,calc(100vw - 30px));display:grid;gap:11px;padding:18px;background:var(--panel);border:1px solid var(--line);border-radius:17px;box-shadow:0 20px 65px #000a}
+.incoming-call strong{font-size:19px}.incoming-call span{color:var(--muted)}.incoming-call>div{display:flex;gap:9px}
+.incoming-call button,.call-controls button{display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:11px;background:var(--accent);color:var(--accentText);font-weight:700}
+.incoming-call button.danger,.call-controls button.danger{background:#d65360;color:white}
+.call-overlay{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:30px 15px;background:radial-gradient(ellipse at top,#284c43,#0b1618 70%)}
+.call-overlay h2{font-size:24px;margin:5px}.call-overlay p{color:var(--muted)}
+.call-videos{position:relative;display:flex;align-items:center;justify-content:center;flex:1;min-height:0;width:min(900px,100%)}
+.call-videos>video{width:100%;max-height:65vh;object-fit:contain;border-radius:16px}
+.call-local{position:absolute;right:10px;bottom:10px;width:min(150px,28vw)}.call-local video{width:100%;max-height:180px;object-fit:cover;border-radius:11px}
+.call-controls{display:flex;gap:14px;padding:13px;border-radius:18px;background:#ffffff18}.call-controls button{width:56px;height:56px;border-radius:50%}
+.call-error{position:fixed;z-index:120;top:18px;left:50%;transform:translateX(-50%);max-width:90vw;padding:12px;border-radius:12px;background:#5a3038;color:white}.call-error button{margin-left:9px;padding:6px;border-radius:6px;background:#854b55;color:white}
+.vexa14-history{padding:24px;max-width:850px;margin:auto;width:100%;color:var(--text)}
+.vexa14-history header{display:flex;align-items:center;justify-content:space-between}
+.vexa14-history header button{background:var(--panel2);color:var(--text);padding:10px;border-radius:12px}
+.vexa14-history article{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:15px;padding:14px;margin:10px 0;background:var(--panel2)}
+.vexa14-history article>div{display:grid;gap:4px;flex:1;min-width:0}.vexa14-history article small{color:var(--muted)}.vexa14-history time{font-size:12px;color:var(--muted)}
+.vexa14-group-call{display:inline-flex;align-items:center;gap:5px;padding:8px 10px;border-radius:10px;background:var(--panel2);color:var(--text);text-decoration:none;font-size:12px}
+.vexa101-presence{font-size:12px;display:flex;gap:5px;flex-direction:column}.vexa101-presence p{margin:0}
+
+/* Durumlar */
+.vexa-status-panel{padding:8px 2px 30px}.vexa-status-title{display:flex;align-items:center;justify-content:space-between}
+.vexa-status-title button,.vexa-status-meta button{background:transparent;color:var(--muted);padding:8px}
+.vexa-status-compose{display:grid;gap:9px;margin-bottom:18px}.vexa-status-compose textarea,.vexa-status-compose input{width:100%}
+.vexa-status-compose button{display:flex;align-items:center;justify-content:center;gap:7px}
+.vexa-status-card{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px;margin:11px 0;overflow:hidden}
+.vexa-status-card p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}.vexa-status-card img{display:block;max-width:100%;max-height:350px;object-fit:contain;border-radius:10px}
+.vexa-status-meta{display:flex;align-items:center;gap:8px}.vexa-status-meta strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.vexa-status-meta small{color:var(--muted);font-size:10px}
+
+/* Profil, ayarlar, kimlik, QR */
+.vexa9-settings,.vexa101-section{display:grid;gap:12px;margin:15px 0;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--panel2)}
+.vexa9-settings h3,.vexa101-section h3,.vexa101-section h4{display:flex;align-items:center;gap:8px;margin:0}
+.vexa9-settings input,.vexa9-settings select,.vexa101-section input,.vexa101-section select{width:100%}
+.vexa9-premium-badge{display:inline-flex;align-items:center;gap:5px;width:fit-content;padding:5px 10px;border-radius:20px;background:var(--hover);color:var(--accent);font-size:11px;font-weight:800}
+.vexa9-avatar-preview,.vexa9-public-avatar{width:90px;height:90px;object-fit:cover;border-radius:50%;border:2px solid var(--accent)}
+.vexa9-public-profile{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}.vexa9-public-profile p{overflow-wrap:anywhere;white-space:pre-wrap}.vexa9-tag{color:var(--accent);font-weight:700}
+.vexa9-ad-area{margin:20px 0}.vexa9-ad{display:flex;flex-direction:column;gap:9px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel2)}
+.vexa9-ad small{color:var(--muted);font-size:10px}.vexa9-ad img{max-width:100%;max-height:180px;object-fit:cover;border-radius:10px}.vexa9-ad p{color:var(--muted);margin:0}.vexa9-ad a{display:flex;align-items:center;gap:5px;text-decoration:none}
+.vexa91-profile{width:100%}.vexa91-profile img{object-fit:cover;border-radius:50%;width:96px;height:96px}
+.vexa91-profile .vexa91-meta{display:grid;gap:8px;width:100%;text-align:left;margin:12px 0}.vexa91-profile .vexa91-meta span{padding:10px;border:1px solid var(--line);border-radius:10px}
+.vexa91-upload{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}.vexa91-upload input{max-width:100%;font-size:12px}
+.vexa101-section label{display:flex;flex-direction:column;gap:6px;font-size:13px;margin:0}.vexa101-section .vexa101-check{flex-direction:row;align-items:center}
+.vexa101-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.vexa101-actions button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 12px;border-radius:10px;background:var(--hover);color:var(--text)}.vexa101-actions input{flex:1 1 170px}
+.vexa101-qr{width:220px;max-width:100%;height:auto;align-self:center;border-radius:12px;background:#fff}
+.vexa102-backdrop{position:fixed;inset:0;z-index:9999;background:#000b;display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(5px)}
+.vexa102-dialog{width:min(480px,100%);max-height:92dvh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:22px;box-shadow:0 25px 90px #000a;color:var(--text)}
+.vexa102-card{position:relative;text-align:center;overflow:hidden}
+.vexa102-cover{height:125px;background:linear-gradient(130deg,#24574c,#163139 55%,#36795b);display:flex;align-items:flex-start;justify-content:space-between;padding:18px}
+.vexa102-brand{font-size:13px;letter-spacing:.05em;font-weight:700;color:#c5e5ce}
+.vexa102-close{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:#0d1c15b8;color:#fff}
+.vexa102-avatar{position:relative;margin:-58px auto 0;width:112px;height:112px;border-radius:50%;border:5px solid var(--panel);background:#326b4d;display:grid;place-items:center;font-size:38px;font-weight:800;overflow:hidden}
+.vexa102-avatar img{width:100%;height:100%;object-fit:cover}
+.vexa102-body{padding:8px 25px 28px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.vexa102-body h2{font-size:25px;line-height:1.2;margin:6px 0 0;overflow-wrap:anywhere}
+.vexa102-body .vexa9-tag{margin:0;font-size:15px}.vexa102-body .vexa101-presence{font-size:13px}.vexa102-body .vexa101-presence p{margin:4px 0}
+.vexa102-bio{background:var(--panel2);padding:13px 15px;border-radius:12px;width:100%;white-space:pre-wrap;overflow-wrap:anywhere;margin:5px 0;text-align:left}
+.vexa102-details{width:100%;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding:15px 0;color:var(--muted);font-size:12px}
+.vexa102-details span{display:flex;align-items:center;gap:6px}.vexa102-details .hint{margin:0;font-size:12px}
+.vexa102-buttons{display:flex;gap:9px;width:100%;flex-wrap:wrap}.vexa102-buttons button{flex:1 1 145px;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:11px;background:var(--panel2);color:var(--text);font-weight:700}
+.vexa102-buttons .vexa102-primary{background:var(--accent);color:var(--accentText)}
+.vexa102-file-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--panel2);color:var(--text);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:14px}
+.vexa102-file-btn input{display:none}.vexa102-qr-video{display:block;width:100%;max-height:270px;object-fit:cover;border-radius:13px;background:var(--bg)}
+.vexa12-settings{padding:18px 16px 45px;display:grid;gap:14px;max-width:750px;margin:auto;color:var(--text)}
+.vexa12-heading h2{margin:0 0 6px}.vexa12-heading p,.vexa12-panel p{color:var(--muted);font-size:13px}
+.vexa12-panel{padding:18px;background:var(--panel2);border:1px solid var(--line);border-radius:18px;display:grid;gap:12px}
+.vexa12-panel h3{margin:0;font-size:17px}.vexa12-swatches{display:flex;gap:9px;flex-wrap:wrap}
+.vexa12-swatches button{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 10px;border-radius:12px;display:flex;gap:8px;align-items:center}
+.vexa12-swatches button[aria-pressed='true']{outline:2px solid var(--accent)}.vexa12-swatches button span{width:17px;height:17px;border-radius:50%}
+.vexa12-field{display:grid;gap:6px;font-size:13px}.vexa12-settings input,.vexa12-settings select{width:100%}
+.vexa12-settings button:not(.vexa12-swatches button){border:1px solid var(--line);padding:10px 13px;border-radius:11px;background:var(--panel);color:var(--text)}
+.vexa12-actions{display:flex;gap:8px;flex-wrap:wrap}.vexa12-actions input{flex:1 1 160px}
+.vexa12-result{border-top:1px solid var(--line);padding-top:10px;overflow-wrap:anywhere}.vexa12-result p{white-space:pre-wrap}.vexa12-notice{padding:12px;border-radius:12px;border:1px solid var(--line)}
+.vexa13-profile{padding-bottom:28px}.vexa13-profile-head{display:flex;gap:13px;align-items:center;margin:-26px 12px 18px;position:relative}
+.vexa13-profile-head .avatar{box-shadow:0 0 0 4px var(--panel),0 9px 22px #0003}
+.vexa13-profile-head h2{margin:0;font-size:20px;overflow-wrap:anywhere}.vexa13-profile-head p{font-size:12px;color:var(--muted);margin:4px 0 0}
+.vexa13-category{border:1px solid var(--line);border-radius:15px;background:var(--panel2);margin:9px 5px;overflow:hidden}
+.vexa13-category[open]{border-color:var(--accent)}
+.vexa13-category>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:23px 1fr 16px;column-gap:10px;align-items:center;padding:15px 13px;font-weight:650;font-size:14px}
+.vexa13-category>summary::-webkit-details-marker{display:none}.vexa13-category>summary svg{color:var(--accent)}
+.vexa13-category>summary span{grid-column:2;font-weight:400;font-size:11px;color:var(--muted);margin-top:3px}
+.vexa13-category>summary:after{content:'⌄';grid-column:3;grid-row:1/3;font-size:19px;color:var(--muted)}
+.vexa13-category[open]>summary:after{transform:rotate(180deg)}
+.vexa13-category-body{padding:4px 13px 16px;min-width:0}.vexa13-category-body input,.vexa13-category-body textarea{max-width:100%}
+.vexa13-category-body .vexa12-settings{padding:0;max-width:100%;gap:10px}.vexa13-category-body .vexa12-heading{display:none}.vexa13-category-body .vexa12-panel{padding:12px;border-radius:12px}
+.vexa13-logout{margin:16px 5px;width:calc(100% - 10px)}
+
+/* Vexa 11 arayuzu */
+.vexa11-hub{padding:18px;display:grid;gap:14px;color:var(--text)}
+.vexa11-tabs{display:flex;flex-wrap:wrap;gap:7px}
+.vexa11-tabs button,.vexa11-hub button{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--panel2);color:var(--text)}
+.vexa11-tabs button.active{outline:2px solid var(--accent)}
+.vexa11-hub input,.vexa11-hub textarea,.vexa11-hub select{width:100%}
+.vexa11-hub label{display:grid;gap:6px;margin:12px 0}
+.vexa11-actions{display:flex;gap:8px;margin:10px 0}
+.vexa11-item{border:1px solid var(--line);border-radius:12px;padding:12px;margin:9px 0;overflow-wrap:anywhere}
+.vexa11-item p{white-space:pre-wrap}.vexa11-messages{max-height:350px;overflow:auto}.vexa11-hub form{display:flex;gap:8px}
+:root[data-vexa-wallpaper='dots'] .conversation{background-image:radial-gradient(color-mix(in srgb,var(--accent) 16%,transparent) 1px,transparent 1px);background-size:22px 22px}
+:root[data-vexa-wallpaper='grid'] .conversation{background-image:linear-gradient(color-mix(in srgb,var(--accent) 8%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--accent) 8%,transparent) 1px,transparent 1px);background-size:28px 28px}
+
+/* 701-1000px: dar masaustu */
+@media (min-width:701px) and (max-width:1000px){
+  .shell{grid-template-columns:290px minmax(0,1fr)}
+  .sidebar-header{padding:0 14px}.nav{padding:8px 4px}.nav button{font-size:9px}
+  .vexa-groups-layout{grid-template-columns:290px minmax(0,1fr)}
+}
+
+/* Mobil: ekranin alt menusu sidebar'in cocugu DEGIL.
+   Fixed konum ve ayri DOM dugumu sayesinde scroll menuyu hareket ettiremez. */
+@media (max-width:700px){
+  :root{--mobile-nav-height:calc(70px + env(safe-area-inset-bottom,0px))}
+  .shell{position:fixed;inset:0;display:block;width:100vw;height:100%;height:100dvh;min-height:0;overflow:hidden}
+  .sidebar{position:absolute;inset:0;display:flex;flex-direction:column;width:100%;height:100%;min-height:0;overflow:hidden;border:0;padding-bottom:var(--mobile-nav-height)}
+  .sidebar-header{flex:0 0 58px;min-height:58px;padding:0 16px}
+  .sidebar-header .logo{font-size:27px}
+  .nav{display:none}
+  .panel-scroll{flex:1 1 0;min-height:0;max-height:none;overflow-y:auto;overflow-x:hidden;padding:14px 15px 22px;-webkit-overflow-scrolling:touch}
+  .panel-scroll h2{font-size:23px;margin:9px 2px 17px}
+  .contact{min-height:70px;padding:10px 8px}
+  .vexa92-groups-in-chats{min-height:0;margin-top:16px}
+  .vexa92-groups-in-chats .vexa91-mode-list,.vexa92-groups-in-chats .vexa-groups-sidebar{height:auto;min-height:0;overflow:visible}
+  .mobile-nav{
+    position:fixed;left:0;right:0;bottom:0;top:auto;z-index:70;
+    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;
+    gap:2px;width:100%;height:var(--mobile-nav-height);min-height:0;
+    margin:0;padding:5px 5px calc(6px + env(safe-area-inset-bottom,0px));
+    background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -8px 30px #0002;
+  }
+  .mobile-nav.hidden-in-chat{display:none}
+  .mobile-nav>button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;height:56px;padding:6px 1px;border-radius:13px;background:transparent;color:var(--muted)}
+  .mobile-nav>button.active{background:color-mix(in srgb,var(--accent) 14%,var(--panel));color:var(--accent)}
+  .mobile-nav>button small{font-size:10px;line-height:1.1;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vexa18-more-menu{position:absolute;right:8px;bottom:calc(100% + 8px);z-index:75;display:grid;gap:4px;width:min(230px,calc(100vw - 16px));padding:8px;border:1px solid var(--line);border-radius:16px;background:var(--panel2);box-shadow:0 15px 40px #0008}
+  .vexa18-more-menu button{display:flex;align-items:center;gap:11px;min-height:46px;padding:10px 12px;border-radius:10px;background:transparent;color:var(--text);text-align:left}
+  .vexa18-more-menu button:hover{background:var(--hover)}
+  .conversation{display:none;position:fixed;inset:0;z-index:60;width:100%;height:100%;height:100dvh;min-height:0;overflow:hidden}
+  .conversation.show{display:flex;flex-direction:column}
+  .chat-header{flex:0 0 61px;gap:8px;padding:0 10px}
+  .chat-header .avatar{flex-basis:38px;width:38px;height:38px}
+  .back{display:grid;place-items:center;flex:none;width:36px;height:40px;padding:6px;background:transparent;color:var(--text)}
+  .message-list{padding:13px 11px;gap:11px}.message,.enhanced-list .message{max-width:89%}
+  .enhanced-list .message{max-width:calc(88% - 30px)}
+  .enhanced-list .message .enhanced-actions-trigger{opacity:.75}
+  .message-body{font-size:14px;padding:10px 12px}.enhanced-media{max-height:240px}
+  .composer{gap:5px;padding:8px 7px calc(8px + env(safe-area-inset-bottom,0px))}
+  .composer input:not([type=file]){height:43px;font-size:14px}
+  .composer button,.enhanced-compose button{min-width:37px;width:37px;height:43px;padding:6px}
+  .enhanced-toolbar{min-height:38px;padding:4px 10px}
+  .vexa-groups-layout.vexa91-mode-chat{display:flex;flex-direction:column;width:100%;height:100%;min-height:0}
+  .vexa91-mode-chat .vexa-groups-conversation{display:flex;width:100%;height:100%;min-height:0}
+  .vexa-group-back,.vexa91-mode-chat .vexa-group-back{display:grid}
+  .vexa-group-full-messages,.vexa-group-messages{padding:14px 11px}
+  .vexa-group-message{max-width:87%;padding:10px 12px}
+  .vexa-group-compose,.vexa-group-full-compose{padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}
+  .vexa-groups-settings{padding:14px}
+  .vexa102-backdrop{padding:8px}.vexa102-dialog{max-height:94dvh}.vexa102-body{padding:8px 16px 22px}
+  .vexa12-settings{padding:12px}.vexa12-panel{padding:13px}
+  .vexa14-history{padding:12px}.vexa14-history article{gap:8px}
+  .call-inbox{top:56px;right:9px}.call-actions button{width:34px;height:34px;padding:6px}
+  .call-overlay{padding:22px 10px}.call-controls{margin-bottom:env(safe-area-inset-bottom,0px)}
+  .welcome{display:none}
+}
+@media (max-width:370px){.mobile-nav>button small{font-size:9px}.mobile-nav{gap:1px;padding-left:2px;padding-right:2px}}
+@media (prefers-reduced-motion:reduce){.vexa-typing-dots{animation:none}}
+.vexa18-call-history-scroll{flex:1;min-height:0;overflow-y:auto}
+
+.vexa-group-overlay{position:fixed;inset:0;z-index:45;background:var(--bg)}
+.enhanced-actions{position:relative;max-width:100%;font-size:12px}
+.enhanced-actions summary{list-style:none;cursor:pointer;padding:4px 8px;border-radius:8px;color:var(--muted)}
+.enhanced-actions summary::-webkit-details-marker{display:none}
+.enhanced-actions[open]>div{display:flex;flex-wrap:wrap;gap:5px;padding:7px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.enhanced-actions button{color:var(--text)}
+import {useCallback,useEffect,useState} from 'react';
+import {PhoneIncoming,PhoneOutgoing,PhoneMissed,RefreshCw} from 'lucide-react';
+import {supabase} from './supabase';
+type CallRow={id:string;caller_id:string;callee_id:string;kind:'audio'|'video';status:string;created_at:string;connected_at:string|null;duration_seconds:number|null};
+export default function Vexa14CallHistory({userId,lookupName}:{userId:string;lookupName:(id:string)=>string}){
+ const [rows,setRows]=useState<CallRow[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ const load=useCallback(async()=>{setBusy(true);const {data,error:e}=await supabase.from('vexa_calls').select('id,caller_id,callee_id,kind,status,created_at,connected_at,duration_seconds').or(`caller_id.eq.${userId},callee_id.eq.${userId}`).order('created_at',{ascending:false}).limit(100);setBusy(false);if(e)setError(e.message);else{setRows((data||[]) as CallRow[]);setError('')}},[userId]);
+ useEffect(()=>{void load();const timer=setInterval(()=>void load(),30000);return()=>clearInterval(timer)},[load]);
+ return <section className="vexa14-history"><header><h2>Son aramalar</h2><button onClick={()=>void load()} disabled={busy} title="Yenile"><RefreshCw size={18}/></button></header><p>Sesli ve görüntülü görüşmelerinin kayıtları.</p>{error&&<p role="alert">{error}</p>}{!rows.length&&!busy&&<p>Henüz arama kaydı yok.</p>}{rows.map(r=>{
+ const outgoing=r.caller_id===userId;
+ const answered=!!r.connected_at;
+ const pending=!answered&&['ringing','accepted'].includes(r.status)&&Date.now()-new Date(r.created_at).getTime()<90000;
+ const ongoing=answered&&['ringing','accepted'].includes(r.status);
+ const missed=!answered&&!pending;
+ const Icon=missed?PhoneMissed:outgoing?PhoneOutgoing:PhoneIncoming;
+ const seconds=r.duration_seconds??0;
+ const duration=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;
+ return <article key={r.id} className={missed?'vexa16-history-missed':answered?'vexa16-history-answered':'vexa16-history-pending'}>
+ <Icon size={20}/><div><strong>{lookupName(outgoing?r.callee_id:r.caller_id)}</strong>
+ <small>{outgoing?'Giden':'Gelen'} · {r.kind==='video'?'Görüntülü':'Sesli'} · {pending?'Aranıyor':ongoing?'Görüşme sürüyor':answered?`Görüşme ${duration}`:'Cevapsız'}</small></div>
+ <time>{new Date(r.created_at).toLocaleString('tr-TR')}</time></article>;
+})}</section>
+}
+
+
+/* Vexa 7 mobile chat layout repair */
+.enhanced-chat,.enhanced-list,.conversation{min-width:0}
+.enhanced-list.message-list{gap:13px;padding:16px clamp(12px,3vw,30px)}
+.enhanced-list .message,.enhanced-list .message.mine{max-width:min(82%,540px);margin:0}
+.enhanced-list .message .message-body{padding:10px 13px 24px;cursor:pointer}
+.enhanced-list .message>time{bottom:7px;right:11px;font-size:10px}
+.enhanced-list .message .enhanced-actions{width:26px;top:5px;pointer-events:none}
+.enhanced-actions-trigger{width:26px;height:26px;opacity:0;pointer-events:none;transition:opacity .15s}
+.enhanced-list .message:hover .enhanced-actions,.enhanced-list .message:focus-within .enhanced-actions,.enhanced-list .message .enhanced-actions:has([aria-expanded='true']){pointer-events:auto}
+.enhanced-list .message:hover .enhanced-actions-trigger,.enhanced-list .message:focus-within .enhanced-actions-trigger,.enhanced-actions-trigger[aria-expanded='true']{opacity:1;pointer-events:auto}
+.vexa16-call-event{align-self:center;display:flex;align-items:center;gap:10px;width:fit-content;max-width:min(100%,390px);min-width:0;padding:10px 13px;border:1px solid var(--line);border-radius:15px;background:var(--panel);color:var(--text);font-size:12px;line-height:1.35}
+.vexa16-call-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:11px;background:var(--panel2);color:var(--muted)}
+.vexa16-call-event.missed .vexa16-call-icon{color:#ff858a;background:#ff858a15}
+.vexa16-call-event.answered .vexa16-call-icon{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.vexa16-call-copy{display:flex;flex-direction:column;gap:3px;min-width:0;overflow-wrap:anywhere}
+.vexa16-call-copy strong{font-size:12px;font-weight:650}
+.vexa16-call-copy small{font-size:11px;color:var(--muted)}
+.vexa16-call-video{flex:none;color:var(--muted)}
+.vexa16-call-event time{flex:none;align-self:center;margin-left:auto;font-size:10px;color:var(--muted)}
+.enhanced-toolbar{gap:6px;min-width:0}
+.enhanced-toolbar button{flex:none;white-space:nowrap}
+@media(max-width:700px){
+ .chat-header{gap:7px;padding:0 10px;overflow:hidden}
+ .chat-header strong{font-size:15px}
+ .chat-header .muted-icon{margin-left:auto}
+ .enhanced-list .message,.enhanced-list .message.mine{max-width:85%}
+ .enhanced-list .message .enhanced-actions-trigger{opacity:0;pointer-events:none}
+ .enhanced-list .message .enhanced-actions-trigger[aria-expanded='true']{opacity:1;pointer-events:auto}
+ .enhanced-toolbar{min-height:40px;justify-content:flex-start;padding:4px 12px}
+ .enhanced-toolbar button{font-size:12px;padding:7px 9px}
+ .vexa16-call-event{max-width:96%;padding:9px 10px;gap:8px}
+ .vexa16-call-copy small{font-size:10px}
+ .vexa16-call-event time{font-size:10px}
+}
+
+/* Mobil sohbet: yazma alanini ekranda tut, alt menuyu gizle */
+@media (max-width:700px){
+ .shell:has(.conversation.show) .mobile-nav{display:none!important}
+ .conversation.show{height:100dvh;max-height:100dvh;bottom:0}
+ .conversation.show>.enhanced-chat{flex:1 1 0;min-height:0;height:0}
+ .conversation.show .enhanced-list{flex:1 1 0;min-height:0;overflow-y:auto}
+ .conversation.show .enhanced-compose{display:flex!important;flex:0 0 auto;position:relative;z-index:2;width:100%;box-sizing:border-box;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));background:var(--panel)}
+ .conversation.show .enhanced-compose input:not([type=file]){display:block;flex:1 1 0;min-width:0}
+ .enhanced-list.message-list{gap:9px;padding:12px 12px 16px}
+ .vexa16-call-event{padding:7px 10px;max-width:calc(100% - 24px)}
+}
+
+/* Vexa 8.0 - mevcut çalışan stil dosyasının sonuna eklenir */
+.enhanced-chat {min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.enhanced-chat .enhanced-list {flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.enhanced-chat .enhanced-compose {flex-shrink:0;position:relative;z-index:3}
+.enhanced-toolbar {flex-wrap:wrap}
+.vexa8-reply-quote {border-left:3px solid var(--accent,#48b68c);padding:5px 9px;margin-bottom:6px;border-radius:4px;background:rgba(127,127,127,.12);font-size:.83em;overflow-wrap:anywhere}
+.vexa8-star-mark {color:#e7bb55;display:inline-block;margin-left:6px}
+.vexa8-typing {padding:4px 14px;font-size:12px;opacity:.8}
+.vexa8-forward-box {display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px}
+.vexa8-forward-box input {min-width:140px;flex:1}
+.enhanced-actions-menu {z-index:30}
+@media(max-width:600px){.enhanced-chat .enhanced-compose{padding-bottom:max(8px,env(safe-area-inset-bottom))}.vexa8-forward-box span{width:100%}}
+
+/* Vexa birleşik güncelleme: medya galerisi ve çıkartmalar */
+.vexa-media-gallery{padding:12px;background:var(--panel,#18231f);border:1px solid var(--border,#345);border-radius:16px;margin:8px;max-height:40vh;overflow:auto}
+.vexa-gallery-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.vexa-gallery-heading button{background:transparent;color:inherit;border:0}
+.vexa-gallery-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.vexa-gallery-filters button{border-radius:999px;padding:6px 10px}.vexa-gallery-filters .active{background:var(--accent,#2ca96c);color:#fff}
+.vexa-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}.vexa-gallery-grid a{min-height:86px;aspect-ratio:1;display:grid;place-items:center;background:#22352d;border-radius:10px;overflow:hidden;color:inherit;text-decoration:none}.vexa-gallery-grid img{width:100%;height:100%;object-fit:cover}.vexa-gallery-grid a span{display:flex;gap:6px;align-items:center;flex-direction:column;font-size:13px}
+.vexa-document{display:flex;align-items:center;gap:8px;padding:10px;color:inherit}.vexa-sticker-picker{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;padding:10px;background:var(--panel,#18231f);max-height:160px;overflow:auto}.vexa-sticker-picker button{font-size:25px;min-width:0;border:0;background:transparent;padding:6px;cursor:pointer}
+@media(max-width:520px){.vexa-sticker-picker{grid-template-columns:repeat(6,minmax(0,1fr))}.vexa-gallery-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* Vexa mobil alt menuyu 14px yukari tasir; 5 esit sutunu korur. */
+@media (max-width: 700px) {
+  :root { --vexa-nav-lift: 14px; }
+  .mobile-nav:not(.hidden-in-chat) {
+    position: fixed !important;
+    top: auto !important;
+    bottom: calc(var(--vexa-nav-lift) + env(safe-area-inset-bottom, 0px)) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    transform: none !important;
+    padding: 4px 6px !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    border-radius: 14px;
+  }
+  .mobile-nav > button { height: 52px; }
+  .sidebar { padding-bottom: calc(60px + var(--vexa-nav-lift) + env(safe-area-inset-bottom, 0px)) !important; }
+  .shell:has(.conversation.show) .mobile-nav { display: none !important; }
+}
+
+/* Vexa profil fotografi kirpma */
+.vexa-cropper{display:grid;gap:12px;margin:14px 0;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--panel2);min-width:0}
+.vexa-cropper-top{display:flex;align-items:center;justify-content:space-between;gap:12px}.vexa-cropper-current{width:58px;height:58px;border-radius:50%;object-fit:cover}
+.vexa-cropper-button,.vexa-cropper-actions button,.vexa-cropper-remove{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 14px;border-radius:12px;background:var(--hover);color:var(--text)}
+.vexa-cropper-editor{display:grid;gap:12px;min-width:0}.vexa-cropper-editor p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.vexa-cropper-stage{position:relative;width:min(280px,100%);aspect-ratio:1;margin:auto;overflow:hidden;background:#0b1416;touch-action:none;user-select:none;cursor:grab;border-radius:12px}
+.vexa-cropper-stage:active{cursor:grabbing}.vexa-cropper-stage img{position:absolute;left:50%;top:50%;max-width:none;max-height:none;pointer-events:none;user-select:none}
+.vexa-cropper-mask{position:absolute;inset:0;pointer-events:none;border-radius:50%;border:2px solid #ffffffa8;outline:100px solid #0008;outline-offset:0}
+.vexa-cropper-zoom{display:grid!important;gap:7px;margin:0!important;color:var(--text)!important}.vexa-cropper-zoom input{width:100%;accent-color:var(--accent);padding:0}
+.vexa-cropper-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.vexa-cropper-actions button:last-child{background:var(--accent);color:var(--accentText);font-weight:700}.vexa-cropper-remove{justify-self:start;color:#ffb7bd}
