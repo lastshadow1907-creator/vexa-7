@@ -189,10 +189,12 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     try {
       if (edit) {
         if (!body) throw new Error('Düzenlenen mesaj boş olamaz.');
-        const { error: e } = await supabase.from('messages')
+        const { data: changed, error: e } = await supabase.from('messages')
           .update({ body, edited_at: new Date().toISOString() })
-          .eq('id', edit.id).eq('sender_id', userId);
+          .eq('id', edit.id).eq('sender_id', userId).is('deleted_at', null)
+          .select('id');
         if (e) throw e;
+        if (!changed?.length) throw new Error('Mesaj düzenlenemedi. Supabase UPDATE iznini ve mesaj sahibini kontrol et.');
         setEdit(null);
       } else {
         let mediaType: string | null = null;
@@ -229,9 +231,12 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
 
   async function remove(m: Msg) {
     if (!window.confirm('Bu mesaj herkesten silinsin mi?')) return;
-    const { error: e } = await supabase.from('messages')
-      .update({ deleted_at: new Date().toISOString() }).eq('id', m.id).eq('sender_id', userId);
+    setError('');
+    const { data: changed, error: e } = await supabase.from('messages')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', m.id).eq('sender_id', userId).is('deleted_at', null).select('id');
     if (e) setError(e.message);
+    else if (!changed?.length) setError('Mesaj silinemedi. Supabase UPDATE iznini ve mesaj sahibini kontrol et.');
     else { setOpenActions(null); await load(); }
   }
 
