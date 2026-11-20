@@ -65,9 +65,11 @@ export default function App(){
     if(!response.ok)throw new Error('GitHub Releases: '+response.status);
     const release=(await response.json()) as VexaRelease;
     const apk=release.assets?.find(asset=>/\.apk$/i.test(asset.name));
-    if(active&&apk&&compareVersions(release.tag_name,VEXA_INSTALLED_VERSION)>0){
+    if(!active)return;
+    if(apk&&compareVersions(release.tag_name,VEXA_INSTALLED_VERSION)>0){
+     setUpdateDismissed(localStorage.getItem('vexa-update-dismissed-'+VEXA_INSTALLED_VERSION)===release.tag_name);
      setAvailableUpdate({version:release.tag_name,url:apk.browser_download_url,notes:(release.body||'').slice(0,250)});
-    }
+    }else{setAvailableUpdate(null);setUpdateDismissed(false);}
    }catch(e){console.warn('Vexa guncelleme kontrolu:',e);}
   };
   void check();
@@ -186,9 +188,21 @@ export default function App(){
  const accepted=useMemo(()=>friends.filter(f=>f.status==='accepted').map(f=>profiles.find(p=>p.id===(f.sender_id===uid?f.recipient_id:f.sender_id))).filter((p):p is Profile=>!!p),[friends,profiles,uid]);
  const summaries=useMemo(()=>{const map=new Map<string,{last:ChatRow|null;unread:number}>();accepted.forEach(p=>map.set(p.id,{last:null,unread:0}));for(const m of chatRows){const id=m.sender_id===uid?m.recipient_id:m.sender_id;if(clearAt[id]&&new Date(m.created_at).getTime()<=new Date(clearAt[id]).getTime())continue;const row=map.get(id);if(!row)continue;if(!row.last)row.last=m;if(m.recipient_id===uid&&!m.deleted_at&&!m.read_at&&(!lastRead[id]||new Date(m.created_at)>new Date(lastRead[id])))row.unread++}return map},[accepted,chatRows,uid,lastRead,clearAt]);
  const ordered=useMemo(()=>accepted.filter(p=>(showArchived?archived.includes(p.id):!archived.includes(p.id))&&name(p).toLocaleLowerCase('tr').includes(chatSearch.toLocaleLowerCase('tr'))).sort((a,b)=>Number(pinned.includes(b.id))-Number(pinned.includes(a.id))||(new Date(summaries.get(b.id)?.last?.created_at||0).getTime()-new Date(summaries.get(a.id)?.last?.created_at||0).getTime())),[accepted,showArchived,archived,chatSearch,pinned,summaries]);
+ const updateDialog=availableUpdate&&!updateDismissed&&<div className="vexa102-backdrop" role="presentation" style={{zIndex:9999}}>
+   <div className="vexa102-dialog" role="dialog" aria-modal="true" aria-label="Vexa guncellemesi" style={{maxWidth:420,padding:24}}>
+    <h2 style={{marginTop:0}}>Vexa güncellemesi mevcut</h2>
+    <p>Yeni sürüm: <strong>{availableUpdate.version}</strong></p>
+    {availableUpdate.notes&&<p style={{whiteSpace:'pre-wrap',maxHeight:110,overflow:'auto'}}>{availableUpdate.notes}</p>}
+    <p style={{fontSize:13,opacity:.75}}>APK telefonun İndirilenler klasörüne kaydedilir. Android yükleme için ayrıca onay ister.</p>
+    <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+     <a href={availableUpdate.url} style={{...subtleBtn,background:'var(--accent)',color:'var(--accentText)',textDecoration:'none',fontWeight:700}}>Güncellemeyi indir</a>
+     <button type="button" style={subtleBtn} onClick={()=>{if(VEXA_INSTALLED_VERSION)localStorage.setItem('vexa-update-dismissed-'+VEXA_INSTALLED_VERSION,availableUpdate.version);setUpdateDismissed(true)}}>Daha sonra</button>
+    </div>
+   </div>
+  </div>;
  if(!configured)return <main className="auth"><h1>Vexa</h1><p>Önce .env dosyasına Supabase URL ve anon anahtarını ekle.</p></main>;
  if(!ready)return <main className="auth">Yükleniyor…</main>;
- if(!session)return <main className="auth"><div className="logo">Vexa<span>●</span></div><h1>{resetMode?'Şifremi unuttum':register?'Hesap oluştur':'Tekrar hoş geldin'}</h1><p>{resetMode?'Şifre sıfırlama bağlantısını e-postana gönderelim.':'Vexa hesabınla devam et.'}</p>{resetMode?<form onSubmit={e=>{e.preventDefault();void sendReset()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/><button disabled={busy}>Sıfırlama bağlantısı gönder</button></form>:<form onSubmit={e=>{e.preventDefault();void auth()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/>{register&&<><input type="text" placeholder="Kullanıcı adı (3–20 karakter)" aria-label="Kullanıcı adı" value={username} onChange={e=>setUsername(e.target.value.toLowerCase())} minLength={3} maxLength={20} pattern="[a-z0-9_]{3,20}" title="3–20 karakter: küçük harf, rakam veya alt çizgi" autoComplete="username" required/><small className="hint">Etiketin (#1234 gibi) otomatik ve benzersiz atanır.</small></>}<input type="password" placeholder="Şifre" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}/><button disabled={busy}>{register?'Kaydol':'Giriş yap'}</button></form>}<button className="link" onClick={()=>{setResetMode(false);setRegister(resetMode?false:!register);setError('');setResetNotice('');setSignupNotice('')}}>{register||resetMode?'Giriş yap':'Yeni hesap oluştur'}</button>{!register&&!resetMode&&<button className="link" onClick={()=>{setResetMode(true);setRegister(false);setError('');setSignupNotice('')}}>Şifremi unuttum</button>}<button type="button" className="vexa-google-login" disabled={busy} onClick={()=>void googleLogin()}>Google ile giriş yap</button>{signupNotice&&<p role="status" className="hint">{signupNotice}</p>}{resetNotice&&<p role="status" className="hint">{resetNotice}</p>}{error&&<p className="error">{error}</p>}</main>;
+ if(!session)return <><main className="auth"><div className="logo">Vexa<span>●</span></div><h1>{resetMode?'Şifremi unuttum':register?'Hesap oluştur':'Tekrar hoş geldin'}</h1><p>{resetMode?'Şifre sıfırlama bağlantısını e-postana gönderelim.':'Vexa hesabınla devam et.'}</p>{resetMode?<form onSubmit={e=>{e.preventDefault();void sendReset()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/><button disabled={busy}>Sıfırlama bağlantısı gönder</button></form>:<form onSubmit={e=>{e.preventDefault();void auth()}}><input type="email" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} required/>{register&&<><input type="text" placeholder="Kullanıcı adı (3–20 karakter)" aria-label="Kullanıcı adı" value={username} onChange={e=>setUsername(e.target.value.toLowerCase())} minLength={3} maxLength={20} pattern="[a-z0-9_]{3,20}" title="3–20 karakter: küçük harf, rakam veya alt çizgi" autoComplete="username" required/><small className="hint">Etiketin (#1234 gibi) otomatik ve benzersiz atanır.</small></>}<input type="password" placeholder="Şifre" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}/><button disabled={busy}>{register?'Kaydol':'Giriş yap'}</button></form>}<button className="link" onClick={()=>{setResetMode(false);setRegister(resetMode?false:!register);setError('');setResetNotice('');setSignupNotice('')}}>{register||resetMode?'Giriş yap':'Yeni hesap oluştur'}</button>{!register&&!resetMode&&<button className="link" onClick={()=>{setResetMode(true);setRegister(false);setError('');setSignupNotice('')}}>Şifremi unuttum</button>}<button type="button" className="vexa-google-login" disabled={busy} onClick={()=>void googleLogin()}>Google ile giriş yap</button>{signupNotice&&<p role="status" className="hint">{signupNotice}</p>}{resetNotice&&<p role="status" className="hint">{resetNotice}</p>}{error&&<p className="error">{error}</p>}</main>{updateDialog}</>;
  const nav=[{id:'chats',icon:MessageCircle,label:'Sohbetler'},{id:'calls14',icon:PhoneCall,label:'Aramalar'},{id:'ai',icon:MessageCircle,label:'Vexa AI'},{id:'statuses',icon:Camera,label:'Durumlar'},{id:'find',icon:Search,label:'Kişi Ara'},{id:'requests',icon:Users,label:'İstekler'},{id:'profile',icon:UserRound,label:'Profilim'},{id:'vexa11',icon:Settings,label:'Vexa 11'}] as const;
  const mobileNav=nav.filter(n=>['chats','calls14','ai','find','profile'].includes(n.id));
  const go=(t:Tab)=>{setTab(t);setSelected(null);setActiveGroupId(null);setActiveGroup(null);setError('');setMenuId(null)};
@@ -216,18 +230,8 @@ export default function App(){
  
  {uid&&<div className={"call-inbox"+(tab==='chats'&&!activeGroupId&&selected?" call-visible":"")}><Calls userId={uid} peer={tab==='chats'&&!activeGroupId?selected?.id||null:null} peerName={selected?name(selected):''} lookupName={id=>name(profiles.find(p=>p.id===id))}/></div>}
  {inspect&&<div role="presentation" onClick={()=>setInspect(null)} className="vexa102-backdrop"><div role="dialog" aria-modal="true" aria-label="Kişi profili" onClick={e=>e.stopPropagation()} className="vexa102-dialog"><Vexa102ProfileCard profile={inspect} selfId={uid!} isFriend={accepted.some(p=>p.id===inspect.id)} onClose={()=>setInspect(null)} onAdd={()=>void addFriend(inspect.id)} onMessage={()=>{setSelected(inspect);setTab('chats');setInspect(null)}}/></div></div>}
-  {availableUpdate&&!updateDismissed&&<div className="vexa102-backdrop" role="presentation" style={{zIndex:9999}}>
-   <div className="vexa102-dialog" role="dialog" aria-modal="true" aria-label="Vexa guncellemesi" style={{maxWidth:420,padding:24}}>
-    <h2 style={{marginTop:0}}>Vexa güncellemesi mevcut</h2>
-    <p>Yeni sürüm: <strong>{availableUpdate.version}</strong></p>
-    {availableUpdate.notes&&<p style={{whiteSpace:'pre-wrap',maxHeight:110,overflow:'auto'}}>{availableUpdate.notes}</p>}
-    <p style={{fontSize:13,opacity:.75}}>APK telefonun İndirilenler klasörüne kaydedilir. Android yükleme için ayrıca onay ister.</p>
-    <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-     <a href={availableUpdate.url} style={{...subtleBtn,background:'var(--accent)',color:'var(--accentText)',textDecoration:'none',fontWeight:700}}>Güncellemeyi indir</a>
-     <button type="button" style={subtleBtn} onClick={()=>setUpdateDismissed(true)}>Daha sonra</button>
-    </div>
-   </div>
-  </div>}
+
+ {updateDialog}
  </div>;
 }
 const iconBtn:CSSProperties={display:'grid',placeItems:'center',width:36,height:36,borderRadius:10,background:'transparent',color:'var(--muted)',flexShrink:0};
