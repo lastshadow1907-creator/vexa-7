@@ -66,6 +66,11 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;const c=capture.current;if(c){c.cancelled=true;if(c.frame)cancelAnimationFrame(c.frame);c.stream.getTracks().forEach(t=>t.stop());void c.ctx?.close();if(recorder.current&&recorder.current.state!=='inactive')recorder.current.stop();}}},[]);
 
   const [draft, setDraft] = useState('');
+  const [aiPanel,setAiPanel]=useState<{text:string; incoming:boolean}|null>(null);
+  const [aiResult,setAiResult]=useState(''); const [aiBusy,setAiBusy]=useState(false); const [aiError,setAiError]=useState('');
+  function openAI(text:string,incoming=false){setAiResult('');setAiError('');setAiPanel({text,incoming});}
+  async function askAI(task:string){if(!aiPanel||aiBusy)return;setAiBusy(true);setAiError('');setAiResult('');try{const {data,error}=await supabase.functions.invoke('vexa-gemini',{body:{messages:[{role:'user',content:task+'\nMetin:\n'+aiPanel.text.slice(0,3500)}]}});if(error||!data?.reply)throw Error(data?.error||'AI bağlantısı kurulamadı.');setAiResult(data.reply);}catch(e){setAiError((e as Error).message)}finally{setAiBusy(false)}}
+
   const [reply, setReply] = useState<Msg | null>(null);
   const [edit, setEdit] = useState<Msg | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -490,6 +495,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
                       onClick={() => void react(m, e)}>{e}</button>)}
                   </div>
                       <div className="v95-action-buttons">
+                  {m.body&&<button type="button" onClick={()=>{openAI(m.body!,!mine);setOpenActions(null)}}>✦ Vexa AI</button>}
                   <button type="button" onClick={() => { setReply(m); setEdit(null); setOpenActions(null); }}>
                     <CornerUpLeft size={14} /> Yanıtla
                   </button>
@@ -527,10 +533,12 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
       {recording&&<div className="v10-record" role="status"><span>{paused?'Duraklatıldı':'● Kayıt'} {callDuration(recordSeconds)}</span><div className="v10-wave">{levels.map((v,i)=><i key={i} style={{height:`${v*100}%`}}/>)}</div><button type="button" onClick={togglePause}>{paused?'Devam':'Duraklat'}</button><button type="button" onClick={()=>void record()}>Dinle</button><button type="button" onClick={()=>{if(capture.current)capture.current.cancelled=true;recorder.current?.stop()}}>İptal</button></div>}
       {audioPreview&&!recording&&<div className="v10-preview"><VoicePlayer src={audioPreview}/><button type="button" onClick={()=>setFile(null)}>Kaydı sil</button></div>}
       {showEffects&&<div className="v10-theme-picker">{[['','Normal'],['heart','♥ Kalpler'],['confetti','🎉 Konfeti'],['spark','✦ Işıltı']].map(([id,label])=><button key={id} type="button" aria-pressed={effect===id} onClick={()=>{setEffect(id);setShowEffects(false)}}>{label}</button>)}</div>}
+      {aiPanel&&createPortal(<div className="v95-action-overlay" onClick={e=>{if(e.target===e.currentTarget&&!aiBusy)setAiPanel(null)}}><section className="v95-action-sheet" role="dialog" aria-modal="true" aria-label="Vexa AI"><header className="v95-action-header"><strong>✦ Vexa AI</strong><button type="button" disabled={aiBusy} onClick={()=>setAiPanel(null)}><X size={20}/></button></header><p>Seçtiğin metin Google Gemini'ye gönderilir. Hassas bilgi paylaşma.</p><textarea aria-label="AI metni" value={aiPanel.text} maxLength={3500} disabled={aiBusy} onChange={e=>setAiPanel({...aiPanel,text:e.target.value})} rows={3} style={{width:'100%',boxSizing:'border-box'}}/><div className="v95-action-buttons">{(aiPanel.incoming?['Bu mesaja doğal bir cevap öner','Türkçeye çevir','İngilizceye çevir']:['Yazım hatalarını düzelt','Samimi bir mesaj yaz','Romantik bir mesaj yaz','Resmi bir mesaj yaz','Türkçeye çevir','İngilizceye çevir']).map(task=><button type="button" key={task} disabled={aiBusy||!aiPanel.text.trim()} onClick={()=>void askAI(task)}>{task}</button>)}</div>{aiBusy&&<p>Yanıt hazırlanıyor…</p>}{aiError&&<p role="alert">{aiError}</p>}{aiResult&&<><div style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{aiResult}</div><button type="button" onClick={()=>{setEdit(null);setDraft(aiResult);setAiPanel(null)}}>Mesaj alanına ekle</button></>}</section></div>,document.body)}
       <form className="composer enhanced-compose" onSubmit={e => { e.preventDefault(); void send(); }}>
         <input ref={fileRef} type="file" hidden accept="image/*,video/mp4,video/webm,audio/*,application/pdf"
           onChange={e => setFile(e.target.files?.[0] || null)} />
         
+        <button type="button" title="Vexa AI" disabled={recording||aiBusy} onClick={()=>openAI(draft)}>AI</button>
         <button type="button" title="Mesaj efekti" aria-pressed={!!effect} disabled={!!edit||recording} onClick={()=>setShowEffects(v=>!v)}>✦</button>
         <button type="button" title="Ekler" aria-expanded={attachments} onClick={() => setAttachments(v=>!v)}><Paperclip size={19} /></button>
         <button type="button" title={recording ? 'Kaydı bitir' : 'Ses kaydı'} onClick={() => void record()}>
