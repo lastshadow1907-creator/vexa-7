@@ -530,3 +530,10 @@ button:active:not(:disabled){transform:scale(.97)}
 }
 
 .vexa9-ai-back{display:none}@media(max-width:700px){.vexa9-ai-back{display:flex;flex:none;padding:5px 12px;background:var(--panel);border-bottom:1px solid var(--line)}.conversation.show>.vexa-ai{flex:1 1 0;height:auto}}
+
+/* Vexa 9.1 — sade sohbet kutusu */
+.vexa91-inbox-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:16px}.vexa91-inbox-head h2{margin:0;font-size:24px}.vexa91-new{display:flex;align-items:center;gap:5px;background:var(--accent);color:var(--accentText);border-radius:13px;padding:11px 12px;font-weight:700;white-space:nowrap}.vexa91-search{display:flex;align-items:center;gap:9px;color:var(--muted);margin-bottom:8px}.vexa91-search input{flex:1;min-width:0}.vexa91-archive{display:flex;align-items:center;gap:7px;background:transparent;color:var(--muted);padding:8px 4px;font-size:13px;margin-bottom:8px}.vexa91-picker{max-width:440px;max-height:85dvh;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:10px}.vexa91-picker-action{display:flex;align-items:center;gap:12px;background:var(--panel2);color:var(--text);padding:14px;border-radius:12px;text-align:left}.vexa91-picker .contact{min-height:62px;margin:0}.vexa91-picker input{width:100%}@media(max-width:700px){.mobile-nav:not(.hidden-in-chat){grid-template-columns:repeat(4,minmax(0,1fr))}.vexa91-inbox-head h2{font-size:22px}}
+
+/* Vexa 9.2: three primary navigation destinations */
+@media(min-width:701px){.nav{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.mobile-nav:not(.hidden-in-chat){grid-template-columns:repeat(3,minmax(0,1fr))}}
