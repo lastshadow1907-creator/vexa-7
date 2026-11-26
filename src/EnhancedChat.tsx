@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Star, Forward, Images, FileText } from 'lucide-react';
 import { supabase } from './supabase';
@@ -39,6 +40,12 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const [chatSearch, setChatSearch] = useState('');
   const [pinned, setPinned] = useState(false);
   const [openActions, setOpenActions] = useState<number | null>(null);
+  useEffect(() => {
+    if (openActions === null) return;
+    const close = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenActions(null); };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [openActions]);
   const [starred, setStarred] = useState<number[]>([]);
   const [showStarred, setShowStarred] = useState(false);
   const [forwarding, setForwarding] = useState<Msg | null>(null);
@@ -383,7 +390,17 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
                 <button type="button" className="enhanced-actions-trigger"
                   onClick={() => setOpenActions(openActions === m.id ? null : m.id)}
                   aria-expanded={openActions === m.id}>••• <span>İşlemler</span></button>
-                {openActions === m.id && <div className="enhanced-actions-menu">
+                {openActions === m.id && createPortal(
+                  <div className="v95-action-overlay" onClick={e => { e.stopPropagation(); if(e.target===e.currentTarget) setOpenActions(null); }} onTouchStart={e=>e.stopPropagation()} onTouchMove={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} onTouchCancel={e=>e.stopPropagation()} onContextMenu={e=>{e.preventDefault();e.stopPropagation();}}>
+                    <section className="v95-action-sheet" role="dialog" aria-modal="true" aria-label="Mesaj işlemleri">
+                      <header className="v95-action-header"><strong>Mesaj işlemleri</strong><button type="button" aria-label="Kapat" onClick={()=>setOpenActions(null)}><X size={20}/></button></header>
+                      <div className="v95-action-preview">{m.body || 'Medya mesajı'}</div>
+                      <div className="v95-reaction-label"><Smile size={16}/> Tepki ver</div>
+                  <div className="enhanced-emoji">
+                    {emojis.map(e => <button type="button" key={e} aria-label={`${e} tepkisi`} aria-pressed={rs.some(r => r.user_id === userId && r.emoji === e)}
+                      onClick={() => void react(m, e)}>{e}</button>)}
+                  </div>
+                      <div className="v95-action-buttons">
                   <button type="button" onClick={() => { setReply(m); setEdit(null); setOpenActions(null); }}>
                     <CornerUpLeft size={14} /> Yanıtla
                   </button>
@@ -395,11 +412,10 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
                     </button>
                     <button type="button" onClick={() => void remove(m)}><Trash2 size={14} /> Sil</button>
                   </>}
-                  <div className="enhanced-emoji"><Smile size={14} />
-                    {emojis.map(e => <button type="button" key={e} title={`${e} tepkisi`}
-                      onClick={() => void react(m, e)}>{e}</button>)}
-                  </div>
-                </div>}
+                      </div>
+                      {error && <div className="enhanced-error" role="alert">{error}</div>}
+                    </section>
+                  </div>, document.body)}
               </div>
             </>}
           </div>;
