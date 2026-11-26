@@ -366,31 +366,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .enhanced-actions summary::-webkit-details-marker{display:none}
 .enhanced-actions[open]>div{display:flex;flex-wrap:wrap;gap:5px;padding:7px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
 .enhanced-actions button{color:var(--text)}
-import {useCallback,useEffect,useState} from 'react';
-import {PhoneIncoming,PhoneOutgoing,PhoneMissed,RefreshCw} from 'lucide-react';
-import {supabase} from './supabase';
-type CallRow={id:string;caller_id:string;callee_id:string;kind:'audio'|'video';status:string;created_at:string;connected_at:string|null;duration_seconds:number|null};
-export default function Vexa14CallHistory({userId,lookupName}:{userId:string;lookupName:(id:string)=>string}){
- const [rows,setRows]=useState<CallRow[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(false);
- const load=useCallback(async()=>{setBusy(true);const {data,error:e}=await supabase.from('vexa_calls').select('id,caller_id,callee_id,kind,status,created_at,connected_at,duration_seconds').or(`caller_id.eq.${userId},callee_id.eq.${userId}`).order('created_at',{ascending:false}).limit(100);setBusy(false);if(e)setError(e.message);else{setRows((data||[]) as CallRow[]);setError('')}},[userId]);
- useEffect(()=>{void load();const timer=setInterval(()=>void load(),30000);return()=>clearInterval(timer)},[load]);
- return <section className="vexa14-history"><header><h2>Son aramalar</h2><button onClick={()=>void load()} disabled={busy} title="Yenile"><RefreshCw size={18}/></button></header><p>Sesli ve görüntülü görüşmelerinin kayıtları.</p>{error&&<p role="alert">{error}</p>}{!rows.length&&!busy&&<p>Henüz arama kaydı yok.</p>}{rows.map(r=>{
- const outgoing=r.caller_id===userId;
- const answered=!!r.connected_at;
- const pending=!answered&&['ringing','accepted'].includes(r.status)&&Date.now()-new Date(r.created_at).getTime()<90000;
- const ongoing=answered&&['ringing','accepted'].includes(r.status);
- const missed=!answered&&!pending;
- const Icon=missed?PhoneMissed:outgoing?PhoneOutgoing:PhoneIncoming;
- const seconds=r.duration_seconds??0;
- const duration=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;
- return <article key={r.id} className={missed?'vexa16-history-missed':answered?'vexa16-history-answered':'vexa16-history-pending'}>
- <Icon size={20}/><div><strong>{lookupName(outgoing?r.callee_id:r.caller_id)}</strong>
- <small>{outgoing?'Giden':'Gelen'} · {r.kind==='video'?'Görüntülü':'Sesli'} · {pending?'Aranıyor':ongoing?'Görüşme sürüyor':answered?`Görüşme ${duration}`:'Cevapsız'}</small></div>
- <time>{new Date(r.created_at).toLocaleString('tr-TR')}</time></article>;
-})}</section>
-}
-
-
 /* Vexa 7 mobile chat layout repair */
 .enhanced-chat,.enhanced-list,.conversation{min-width:0}
 .enhanced-list.message-list{gap:13px;padding:16px clamp(12px,3vw,30px)}
@@ -458,29 +433,6 @@ export default function Vexa14CallHistory({userId,lookupName}:{userId:string;loo
 .vexa-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}.vexa-gallery-grid a{min-height:86px;aspect-ratio:1;display:grid;place-items:center;background:#22352d;border-radius:10px;overflow:hidden;color:inherit;text-decoration:none}.vexa-gallery-grid img{width:100%;height:100%;object-fit:cover}.vexa-gallery-grid a span{display:flex;gap:6px;align-items:center;flex-direction:column;font-size:13px}
 .vexa-document{display:flex;align-items:center;gap:8px;padding:10px;color:inherit}.vexa-sticker-picker{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;padding:10px;background:var(--panel,#18231f);max-height:160px;overflow:auto}.vexa-sticker-picker button{font-size:25px;min-width:0;border:0;background:transparent;padding:6px;cursor:pointer}
 @media(max-width:520px){.vexa-sticker-picker{grid-template-columns:repeat(6,minmax(0,1fr))}.vexa-gallery-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-/* Vexa mobil alt menuyu 14px yukari tasir; 5 esit sutunu korur. */
-@media (max-width: 700px) {
-  :root { --vexa-nav-lift: 14px; }
-  .mobile-nav:not(.hidden-in-chat) {
-    position: fixed !important;
-    top: auto !important;
-    bottom: calc(var(--vexa-nav-lift) + env(safe-area-inset-bottom, 0px)) !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    transform: none !important;
-    padding: 4px 6px !important;
-    height: 60px !important;
-    min-height: 60px !important;
-    border-radius: 14px;
-  }
-  .mobile-nav > button { height: 52px; }
-  .sidebar { padding-bottom: calc(60px + var(--vexa-nav-lift) + env(safe-area-inset-bottom, 0px)) !important; }
-  .shell:has(.conversation.show) .mobile-nav { display: none !important; }
-}
-
 /* Vexa profil fotografi kirpma */
 .vexa-cropper{display:grid;gap:12px;margin:14px 0;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--panel2);min-width:0}
 .vexa-cropper-top{display:flex;align-items:center;justify-content:space-between;gap:12px}.vexa-cropper-current{width:58px;height:58px;border-radius:50%;object-fit:cover}
@@ -525,7 +477,7 @@ export default function Vexa14CallHistory({userId,lookupName}:{userId:string;loo
 /* Vexa 8.0: akıcı ve erişilebilir mobil geçişler */
 html { -webkit-text-size-adjust:100%; }
 body { overscroll-behavior:none; }
-#root { padding-top:env(safe-area-inset-top,0px); }
+
 button { transition:transform .16s ease,opacity .16s ease,background-color .18s ease; }
 button:active:not(:disabled){transform:scale(.97)}
 .vexa8-incoming { animation:vexa8-call-enter .32s cubic-bezier(.2,.9,.2,1) both; }
@@ -534,3 +486,47 @@ button:active:not(:disabled){transform:scale(.97)}
 @keyframes vexa8-call-enter{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes vexa8-call-pulse{0%,100%{box-shadow:0 0 0 0 rgba(100,217,155,.2)}55%{box-shadow:0 0 0 22px rgba(100,217,155,0)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Vexa 9 — tek ekran yerleşimi, doğal alt menü ve geniş dokunma alanları */
+:root{--mobile-nav-height:72px;--radius:18px}
+.shell{position:fixed;inset:0;width:auto;height:auto;max-height:none;grid-template-rows:minmax(0,1fr);padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.sidebar-header{flex:0 0 76px;min-height:76px;padding:0 22px}
+.edition{background:var(--panel2);border:1px solid var(--line);padding:5px 9px;border-radius:20px}
+.panel-scroll,.conversation.show{animation:none;transform:none}
+.panel-scroll{padding:20px 18px 24px}
+.panel-scroll h2{font-size:25px;margin:10px 0 20px}
+.contact{min-height:80px;padding:12px;border-radius:16px;margin:4px 0}
+.contact strong{font-size:15px}.contact small{font-size:12px}
+.chat-header{flex:0 0 76px;min-height:76px;padding-right:110px}
+.chat-header strong{font-size:16px}
+.enhanced-chat .enhanced-list{flex:1 1 0;min-height:0}
+.enhanced-list.message-list{padding:22px clamp(14px,3vw,38px);gap:13px}
+.enhanced-list .message .message-body{font-size:15px;line-height:1.55;padding:12px 15px 25px}
+.enhanced-chat .enhanced-compose{padding:12px;gap:7px}
+.enhanced-compose input:not([type=file]){height:48px;font-size:16px}
+.vexa16-profile-shortcuts{display:grid;gap:8px;margin:16px 0}
+.vexa16-profile-shortcuts button{display:flex;align-items:center;gap:10px;text-align:left;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:13px;padding:14px;min-height:48px}
+.vexa16-mobile-history{display:none}.vexa16-desktop-history{overflow:auto;min-height:0;flex:1}
+.call-inbox{top:calc(18px + env(safe-area-inset-top,0px));right:calc(14px + env(safe-area-inset-right,0px))}
+@media(min-width:701px){.shell{grid-template-columns:clamp(300px,30vw,400px) minmax(0,1fr)}.nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:10px}.nav button{font-size:11px;min-height:58px}}
+@media(max-width:700px){
+ .shell{display:flex;flex-direction:column;width:auto;height:auto;max-height:none}
+ .sidebar{position:relative;inset:auto;flex:1 1 0;width:100%;height:auto;padding:0;min-height:0}
+ .sidebar.chat-open{display:none}
+ .sidebar-header{flex:0 0 70px;min-height:70px;padding:0 20px}
+ .panel-scroll{padding:14px 16px 20px}
+ .mobile-nav:not(.hidden-in-chat){position:relative;inset:auto;flex:0 0 72px;height:72px;min-height:72px;width:100%;padding:6px 8px;border-radius:0;box-shadow:none;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+ .mobile-nav>button{height:58px;gap:6px}.mobile-nav>button small{font-size:11px}
+ .conversation.show{position:relative;inset:auto;flex:1 1 0;height:auto;max-height:none;width:100%;min-height:0}
+ .conversation.show>.enhanced-chat{height:auto;flex:1 1 0}
+ .chat-header{flex:0 0 70px;min-height:70px;padding:0 86px 0 10px;gap:7px}
+ .call-inbox{top:calc(17px + env(safe-area-inset-top,0px));right:calc(8px + env(safe-area-inset-right,0px))}
+ .call-actions{gap:4px}.call-actions button{width:36px;height:36px}
+ .conversation.show .enhanced-compose{padding:10px 8px;gap:5px}
+ .enhanced-list.message-list{padding:16px 12px;gap:12px}
+ .vexa-group-compose,.vexa-group-full-compose,.vexa-ai-compose{padding-bottom:10px}
+ .vexa16-mobile-history{display:block}.vexa16-desktop-history{display:none}
+ .vexa14-history time{font-size:10px;max-width:90px;overflow-wrap:anywhere}
+}
+
+.vexa9-ai-back{display:none}@media(max-width:700px){.vexa9-ai-back{display:flex;flex:none;padding:5px 12px;background:var(--panel);border-bottom:1px solid var(--line)}.conversation.show>.vexa-ai{flex:1 1 0;height:auto}}
