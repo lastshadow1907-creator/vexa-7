@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Star, Forward, Images, FileText, Sticker } from 'lucide-react';
+import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Star, Forward, Images, FileText } from 'lucide-react';
 import { supabase } from './supabase';
 
 type Msg = {
@@ -20,6 +20,10 @@ const emojis = ['❤️', '😂', '👍', '😮', '😢', '🔥'];
 const time = (date: string) => new Date(date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
 export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { userId: string; peerId: string; clearedAt?: string|null; peerName?:string }) {
+  const gesture=useRef<{x:number;y:number;timer:ReturnType<typeof setTimeout>}|null>(null);
+  const suppress=useRef(0);
+  const [attachments,setAttachments]=useState(false);
+  useEffect(()=>()=>{if(gesture.current)clearTimeout(gesture.current.timer)},[]);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [callRows,setCallRows]=useState<CallRow[]>([]);
   const [reactions, setReactions] = useState<Reaction[]>([]);
@@ -350,8 +354,8 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
           const mine = m.sender_id === userId;
           const deleted = !!m.deleted_at;
           const rs = reactions.filter(r => r.message_id === m.id);
-          return <div className={`message ${mine ? 'mine' : ''}`} key={m.id} onContextMenu={e => { e.preventDefault(); if (!deleted) setOpenActions(openActions === m.id ? null : m.id); }}>
-            <div className="message-body" onClick={() => { if (!deleted && !m.media_path) setOpenActions(openActions === m.id ? null : m.id); }}>
+          return <div className={`message ${mine ? 'mine' : ''}`} key={m.id} onTouchStart={e=>{if(deleted|| (e.target as HTMLElement).closest("button,a,video,audio"))return;if(gesture.current)clearTimeout(gesture.current.timer);const t=e.touches[0];gesture.current={x:t.clientX,y:t.clientY,timer:setTimeout(()=>{suppress.current=Date.now()+1000;setOpenActions(m.id)},500)}}} onTouchMove={e=>{const g=gesture.current;if(g&&(Math.abs(e.touches[0].clientX-g.x)>12||Math.abs(e.touches[0].clientY-g.y)>12))clearTimeout(g.timer)}} onTouchCancel={()=>{if(gesture.current)clearTimeout(gesture.current.timer);gesture.current=null}} onTouchEnd={e=>{const g=gesture.current;gesture.current=null;if(!g)return;clearTimeout(g.timer);if(e.changedTouches[0].clientX-g.x>70&&Math.abs(e.changedTouches[0].clientY-g.y)<40){suppress.current=Date.now()+500;setReply(m);setEdit(null);setOpenActions(null)}}} onContextMenu={e => { e.preventDefault(); if (!deleted) setOpenActions(openActions === m.id ? null : m.id); }}>
+            <div className="message-body" onClick={() => { if (Date.now()>suppress.current && !deleted && !m.media_path) setOpenActions(openActions === m.id ? null : m.id); }}>
               {deleted ? <i>Bu mesaj silindi</i> : <>
                 {m.reply_to_message_id && <div className="vexa8-reply-quote">↳ {messages.find(x=>x.id===m.reply_to_message_id)?.body?.slice(0,110)||'Yanıtlanan mesaj'}</div>}
                 {m.body && <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{m.body}</div>}
@@ -383,7 +387,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
                   <button type="button" onClick={() => { setReply(m); setEdit(null); setOpenActions(null); }}>
                     <CornerUpLeft size={14} /> Yanıtla
                   </button>
-                  <button type="button" onClick={()=>void toggleStar(m)}><Star size={14}/>{starred.includes(m.id)?'Yıldızı kaldır':'Yıldızla'}</button>
+                  {m.body&&<button type="button" onClick={()=>{void navigator.clipboard.writeText(m.body!).then(()=>setOpenActions(null)).catch(()=>setError("Mesaj kopyalanamadı."))}}>Kopyala</button>}<button type="button" onClick={()=>void toggleStar(m)}><Star size={14}/>{starred.includes(m.id)?'Yıldızı kaldır':'Yıldızla'}</button>
                   <button type="button" onClick={()=>{setForwarding(m);setOpenActions(null);}}><Forward size={14}/> İlet</button>
                   {mine && <>
                     <button type="button" onClick={() => { setEdit(m); setReply(null); setDraft(m.body || ''); setOpenActions(null); }}>
@@ -414,11 +418,12 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
       </div>}
       {error && <div className="enhanced-error" role="alert">{error}</div>}
       {showStickers&&<div className="vexa-sticker-picker" aria-label="Çıkartmalar">{stickers.map(st=><button type="button" key={st} onClick={()=>void sendSticker(st)} disabled={busy} aria-label={`${st} çıkartması`}>{st}</button>)}</div>}
+      {attachments&&<div className="v93-attachments"><button type="button" onClick={()=>{setAttachments(false);fileRef.current?.click()}}>Fotoğraf, video veya dosya</button><button type="button" onClick={()=>{setAttachments(false);setShowStickers(v=>!v)}}>Çıkartmalar</button></div>}
       <form className="composer enhanced-compose" onSubmit={e => { e.preventDefault(); void send(); }}>
         <input ref={fileRef} type="file" hidden accept="image/*,video/mp4,video/webm,audio/*,application/pdf"
           onChange={e => setFile(e.target.files?.[0] || null)} />
-        <button type="button" title="Çıkartmalar" onClick={()=>setShowStickers(v=>!v)}><Sticker size={19}/></button>
-        <button type="button" title="Medya ekle" onClick={() => fileRef.current?.click()}><Paperclip size={19} /></button>
+        
+        <button type="button" title="Ekler" aria-expanded={attachments} onClick={() => setAttachments(v=>!v)}><Paperclip size={19} /></button>
         <button type="button" title={recording ? 'Kaydı bitir' : 'Ses kaydı'} onClick={() => void record()}>
           {recording ? <Square size={19} /> : <Mic size={19} />}
         </button>
