@@ -1,0 +1,19 @@
+.enhanced-chat .v114-chatbar{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:5px 12px;flex:0 0 auto;border-bottom:1px solid var(--line);background:var(--panel)}
+.v114-chatbar button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:6px 10px;border-radius:10px;background:transparent;color:var(--muted);font-size:12px}
+.v114-chatbar button:hover,.v114-chatbar button:focus-visible{background:var(--panel2);color:var(--text)}
+.enhanced-chat .enhanced-compose{gap:8px!important;padding:8px 12px max(8px,env(safe-area-inset-bottom))!important;align-items:center}
+.enhanced-chat .enhanced-compose>button{width:44px!important;min-width:44px!important;height:44px!important;border-radius:50%;padding:0!important}
+.enhanced-chat .enhanced-compose>button.v114-add{position:relative;background:var(--panel2);color:var(--text)}
+.v114-add i{position:absolute;right:2px;top:2px;background:var(--accent);width:9px;height:9px;border-radius:50%}
+.enhanced-chat .enhanced-compose input:not([type=file]){min-width:0;flex:1 1 0;height:44px;border-radius:22px;padding-inline:14px}
+.enhanced-list .message .message-body{box-shadow:none;min-width:76px;padding:10px 13px 22px;border-radius:17px 17px 17px 5px}
+.enhanced-list .message.mine .message-body{border-radius:17px 17px 5px 17px}
+.enhanced-list .message .enhanced-actions-trigger{display:none!important}
+.enhanced-list .message .enhanced-reactions[hidden]{display:none!important}
+.enhanced-list .message .message-body:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.v114-tools .v95-action-buttons{margin-top:12px}
+.v95-action-sheet .v112-media-ai{padding:8px 10px;overflow-wrap:anywhere}
+.v95-action-sheet .v112-media-ai button{white-space:normal;max-width:100%}
+.v95-action-sheet .enhanced-download{display:flex;padding:10px;gap:8px;align-items:center}
+.v95-action-sheet .v10-replay{position:static;width:auto;display:block;text-align:left}
+@media(max-width:380px){.enhanced-chat .enhanced-compose{gap:5px!important;padding-inline:7px!important}.enhanced-chat .enhanced-compose>button{width:40px!important;min-width:40px!important;height:40px!important}}
