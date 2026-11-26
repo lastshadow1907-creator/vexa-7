@@ -4,6 +4,7 @@ import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin,
 import { supabase } from './supabase';
 
 type Msg = {
+  effect?: string | null;
   id: number; sender_id: string; recipient_id: string; body: string | null;
   created_at: string; read_at: string | null; deleted_at: string | null; edited_at: string | null;
   media_path: string | null; media_type: string | null; reply_to_message_id?: number | null;
@@ -29,10 +30,29 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const [callRows,setCallRows]=useState<CallRow[]>([]);
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
+  const themeKey=`vexa10-theme:${userId}:${peerId}`;
+  const [theme,setTheme]=useState(()=>{try{return localStorage.getItem(themeKey)||'default'}catch{return 'default'}});
+  const [showTheme,setShowTheme]=useState(false);
+  const [effect,setEffect]=useState('');
+  const [showEffects,setShowEffects]=useState(false);
+  const [playingEffect,setPlayingEffect]=useState<{id:number;kind:string}|null>(null);
+  const seenEffects=useRef(new Set<number>());
+  const firstLoad=useRef(true);
+  const signedCache=useRef(new Map<string,{url:string;until:number}>());
+  const loadVersion=useRef(0);
+  const [recordSeconds,setRecordSeconds]=useState(0);
+  const [levels,setLevels]=useState<number[]>(Array(20).fill(0.12));
+  const [audioPreview,setAudioPreview]=useState('');
+  const capture=useRef<{stream:MediaStream;ctx?:AudioContext;frame?:number;cancelled:boolean}|null>(null);
+  const requesting=useRef(false);
+  const mounted=useRef(true);
+  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;const c=capture.current;if(c){c.cancelled=true;if(c.frame)cancelAnimationFrame(c.frame);c.stream.getTracks().forEach(t=>t.stop());void c.ctx?.close();if(recorder.current?.state==='recording')recorder.current.stop();}}},[]);
+  useEffect(()=>{if(!recording)return;const start=Date.now();setRecordSeconds(0);const timer=setInterval(()=>setRecordSeconds(Math.floor((Date.now()-start)/1000)),250);return()=>clearInterval(timer)},[recording]);
   const [draft, setDraft] = useState('');
   const [reply, setReply] = useState<Msg | null>(null);
   const [edit, setEdit] = useState<Msg | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  useEffect(()=>{if(!file?.type.startsWith('audio/')){setAudioPreview('');return}const url=URL.createObjectURL(file);setAudioPreview(url);return()=>URL.revokeObjectURL(url)},[file]);
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
   const [error, setError] = useState('');
@@ -72,16 +92,19 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   currentChat.current = `${userId}:${peerId}`;
 
   const load = useCallback(async () => {
+    const version=++loadVersion.current;
     const chatKey = `${userId}:${peerId}`;
     const { data, error: loadError } = await supabase
       .from('messages')
-      .select('id,sender_id,recipient_id,body,created_at,read_at,deleted_at,edited_at,media_path,media_type,reply_to_message_id')
+      .select('id,sender_id,recipient_id,body,created_at,read_at,deleted_at,edited_at,media_path,media_type,reply_to_message_id,effect')
       .or(`and(sender_id.eq.${userId},recipient_id.eq.${peerId}),and(sender_id.eq.${peerId},recipient_id.eq.${userId})`)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(250);
-    if (currentChat.current !== chatKey) return;
+    if (currentChat.current !== chatKey || version!==loadVersion.current) return;
     if (loadError) { setError(loadError.message); return; }
-    const rows = (data || []) as Msg[];
+    const rows = ((data || []) as Msg[]).reverse();
+    if(!firstLoad.current){const fresh=rows.filter(m=>!seenEffects.current.has(m.id)&&!m.deleted_at&&m.effect&&['heart','confetti','spark'].includes(m.effect));const last=fresh[fresh.length-1];if(last)setPlayingEffect({id:last.id,kind:last.effect!});}
+    rows.forEach(m=>seenEffects.current.add(m.id));firstLoad.current=false;
     setMessages(rows);
     const fav = await supabase.from('vexa8_starred_messages').select('message_id').eq('user_id',userId);
     if (!fav.error && currentChat.current === chatKey) setStarred((fav.data || []).map(x=>Number(x.message_id)));
@@ -104,17 +127,20 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     if (ids.length) {
       const result = await supabase.from('vexa_message_reactions')
         .select('message_id,user_id,emoji').in('message_id', ids);
-      if (currentChat.current !== chatKey) return;
+      if (currentChat.current !== chatKey || version!==loadVersion.current) return;
       setReactions(result.error ? [] : (result.data || []) as Reaction[]);
     } else setReactions([]);
     const paths = [...new Set(rows.map(m => m.media_path).filter((p): p is string => !!p))];
     const signed = await Promise.all(paths.map(async path => {
+      const cached=signedCache.current.get(path);if(cached&&cached.until>Date.now())return [path,cached.url] as const;
       const { data: media } = await supabase.storage.from('vexa-media').createSignedUrl(path, 3600);
+      if(media?.signedUrl)signedCache.current.set(path,{url:media.signedUrl,until:Date.now()+3300000});
       return [path, media?.signedUrl || ''] as const;
     }));
-    if (currentChat.current === chatKey) setUrls(Object.fromEntries(signed));
+    if (currentChat.current === chatKey && version===loadVersion.current) setUrls(Object.fromEntries(signed));
   }, [userId, peerId]);
 
+  useEffect(()=>{if(!playingEffect)return;const t=setTimeout(()=>setPlayingEffect(null),1700);return()=>clearTimeout(t)},[playingEffect]);
   const loadCalls = useCallback(async()=>{
     const {data,error:e}=await supabase.from('vexa_calls')
       .select('id,caller_id,callee_id,kind,status,created_at,connected_at,ended_at,duration_seconds')
@@ -138,11 +164,12 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     setDraft(''); setReply(null); setEdit(null); setFile(null);
     setError(''); setChatSearch(''); setShowSearch(false); setOpenActions(null); setShowStarred(false);
     void load();
+    let debounce:ReturnType<typeof setTimeout>|undefined;const refresh=()=>{clearTimeout(debounce);debounce=setTimeout(()=>void load(),120)};
     const channel = supabase.channel(`vexa-chat-${[userId, peerId].sort().join('-')}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => { void load(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'vexa_message_reactions' }, () => { void load(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vexa_message_reactions' }, refresh)
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => { clearTimeout(debounce);void supabase.removeChannel(channel); };
   }, [load, userId, peerId]);
 
   useEffect(() => {
@@ -203,7 +230,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   }, [messages.length, callRows.length, chatSearch]);
 
   async function send() {
-    if (busy) return;
+    if (busy || recording) return;
     const body = draft.trim();
     if (!body && !file) return;
     setBusy(true); setError('');
@@ -236,7 +263,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         const text = body;
         const { error: e } = await supabase.from('messages').insert({
           sender_id: userId, recipient_id: peerId, body: text || null,
-          media_path: uploadedPath, media_type: mediaType, reply_to_message_id: reply?.id ?? null
+          media_path: uploadedPath, media_type: mediaType, reply_to_message_id: reply?.id ?? null, effect: effect || null
         });
         if (e) {
           if (uploadedPath) await supabase.storage.from('vexa-media').remove([uploadedPath]);
@@ -245,7 +272,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         setReply(null); setFile(null);
         if (fileRef.current) fileRef.current.value = '';
       }
-      setDraft('');
+      setDraft('');setEffect('');setShowEffects(false);
       await load();
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
@@ -284,10 +311,13 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
 
   async function record() {
     if (recorder.current?.state === 'recording') { recorder.current.stop(); return; }
+    if(requesting.current)return;requesting.current=true;
     try {
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined')
         throw new Error('Bu tarayıcıda ses kaydı desteklenmiyor.');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if(!mounted.current){stream.getTracks().forEach(t=>t.stop());return;}
+      const c:{stream:MediaStream;ctx?:AudioContext;frame?:number;cancelled:boolean}={stream,cancelled:false};capture.current=c;
       const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find(t => MediaRecorder.isTypeSupported(t));
       const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
       recorder.current = rec; chunks.current = [];
@@ -296,12 +326,14 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         const type = rec.mimeType || 'audio/webm';
         const blob = new Blob(chunks.current, { type });
         const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
-        setFile(new File([blob], `sesli-mesaj.${ext}`, { type }));
+        if(mounted.current&&!c.cancelled)setFile(new File([blob], `sesli-mesaj.${ext}`, { type:type.split(';')[0] }));
+        if(c.frame)cancelAnimationFrame(c.frame);void c.ctx?.close();capture.current=null;
         stream.getTracks().forEach(t => t.stop());
         recorder.current = null; setRecording(false); setError('');
       };
       rec.start(); setRecording(true); setError('');
-    } catch (e) { setError((e as Error).message); setRecording(false); }
+      try{const ctx=new AudioContext();c.ctx=ctx;const analyser=ctx.createAnalyser();analyser.fftSize=256;ctx.createMediaStreamSource(stream).connect(analyser);const samples=new Uint8Array(analyser.fftSize);let prev=0;const draw=(now:number)=>{if(c.cancelled||rec.state!=='recording')return;if(now-prev>80){prev=now;analyser.getByteTimeDomainData(samples);const rms=Math.sqrt(samples.reduce((a,v)=>a+((v-128)/128)**2,0)/samples.length);setLevels(old=>[...old.slice(1),Math.min(1,Math.max(.12,rms*5))]);}c.frame=requestAnimationFrame(draw)};c.frame=requestAnimationFrame(draw)}catch{/* timer still works */}
+    } catch (e) { capture.current?.stream.getTracks().forEach(t=>t.stop());capture.current=null;setError((e as Error).message); setRecording(false); }finally{requesting.current=false;}
   }
 
   const visible = messages.filter(m => (!showStarred || starred.includes(m.id)) && (!clearedAt || new Date(m.created_at).getTime() > new Date(clearedAt).getTime()) && (!chatSearch.trim() ||
@@ -316,7 +348,8 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
 
 
   return (
-    <div className="enhanced-chat">
+    <div className={`enhanced-chat v10-theme-${theme}`}>
+      {playingEffect&&createPortal(<div className={`v10-effect v10-effect-${playingEffect.kind}`} aria-hidden="true" key={playingEffect.id}>{Array.from({length:22},(_,i)=><span key={i} style={{left:`${(i*37)%100}%`,animationDelay:`${(i%7)*.09}s`}}>{playingEffect.kind==='heart'?'♥':playingEffect.kind==='confetti'?['●','◆','■'][i%3]:'✦'}</span>)}</div>,document.body)}
       <div className="enhanced-toolbar">
         <button type="button" onClick={() => setShowSearch(v => !v)} title="Sohbette ara">
           <Search size={16} /> Ara
@@ -326,7 +359,9 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         </button>
         <button type="button" onClick={()=>setShowStarred(v=>!v)} title="Yıldızlı mesajlar"><Star size={16}/>{showStarred?' Tümü':' Yıldızlı'}</button>
         <button type="button" onClick={()=>setShowGallery(v=>!v)} title="Medya galerisi"><Images size={16}/> Medya</button>
+        <button type="button" onClick={()=>setShowTheme(v=>!v)}>◉ Tema</button>
       </div>
+      {showTheme&&<div className="v10-theme-picker">{[['default','Vexa'],['ocean','Okyanus'],['rose','Gül'],['violet','Gece'],['sand','Kum']].map(([id,label])=><button key={id} type="button" aria-pressed={theme===id} onClick={()=>{setTheme(id);try{localStorage.setItem(themeKey,id)}catch{}setShowTheme(false)}} className={`v10-swatch-${id}`}>{label}</button>)}</div>}
       {showGallery && <section className="vexa-media-gallery" aria-label="Sohbet medyası">
         <div className="vexa-gallery-heading"><strong>Paylaşılan medya</strong><button type="button" onClick={()=>setShowGallery(false)} aria-label="Galeriyi kapat"><X size={17}/></button></div>
         <div className="vexa-gallery-filters">{(['all','image','video','document'] as const).map(t=><button key={t} type="button" className={galleryFilter===t?'active':''} onClick={()=>setGalleryFilter(t)}>{({all:'Tümü',image:'Fotoğraf',video:'Video',document:'PDF'} as const)[t]}</button>)}</div>
@@ -365,14 +400,15 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
             <span className="v94-reply-reveal" aria-hidden="true">↩</span><div className="message-body" onClick={() => { if (Date.now()>suppress.current && !deleted && !m.media_path) setOpenActions(openActions === m.id ? null : m.id); }}>
               {deleted ? <i>Bu mesaj silindi</i> : <>
                 {m.reply_to_message_id && <div className="vexa8-reply-quote">↳ {messages.find(x=>x.id===m.reply_to_message_id)?.body?.slice(0,110)||'Yanıtlanan mesaj'}</div>}
+                {m.effect&&['heart','confetti','spark'].includes(m.effect)&&<button type="button" className="v10-replay" onClick={e=>{e.stopPropagation();setPlayingEffect({id:m.id,kind:m.effect!})}}>✦ Efekti oynat</button>}
                 {m.body && <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{m.body}</div>}
                 {m.media_path && urls[m.media_path] && (m.media_type === 'image'
-                  ? <img className="enhanced-media" src={urls[m.media_path]} alt="Gönderilen fotoğraf" />
+                  ? <img className="enhanced-media" src={urls[m.media_path]} alt="Gönderilen fotoğraf" loading="lazy" decoding="async" />
                   : m.media_type === 'video'
                     ? <video className="enhanced-media" controls src={urls[m.media_path]} />
                     : m.media_type === 'document'
                       ? <a href={urls[m.media_path]} target="_blank" rel="noopener noreferrer" className="vexa-document"><FileText size={18}/> PDF dosyasını aç</a>
-                      : <audio controls src={urls[m.media_path]} />)}
+                      : <VoicePlayer src={urls[m.media_path]} />)}
                 {m.media_path && urls[m.media_path] && <a href={urls[m.media_path]} target="_blank"
                   rel="noopener noreferrer" className="enhanced-download"><Download size={13} /> Dosyayı aç</a>}
               </>}
@@ -435,18 +471,24 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
       {error && <div className="enhanced-error" role="alert">{error}</div>}
       {showStickers&&<div className="vexa-sticker-picker" aria-label="Çıkartmalar">{stickers.map(st=><button type="button" key={st} onClick={()=>void sendSticker(st)} disabled={busy} aria-label={`${st} çıkartması`}>{st}</button>)}</div>}
       {attachments&&<div className="v93-attachments"><button type="button" onClick={()=>{setAttachments(false);fileRef.current?.click()}}>Fotoğraf, video veya dosya</button><button type="button" onClick={()=>{setAttachments(false);setShowStickers(v=>!v)}}>Çıkartmalar</button></div>}
+      {recording&&<div className="v10-record" role="status"><span>● {callDuration(recordSeconds)}</span><div className="v10-wave">{levels.map((v,i)=><i key={i} style={{height:`${v*100}%`}}/>)}</div><button type="button" onClick={()=>{if(capture.current)capture.current.cancelled=true;recorder.current?.stop()}}>İptal</button></div>}
+      {audioPreview&&!recording&&<div className="v10-preview"><VoicePlayer src={audioPreview}/><button type="button" onClick={()=>setFile(null)}>Kaydı sil</button></div>}
+      {showEffects&&<div className="v10-theme-picker">{[['','Normal'],['heart','♥ Kalpler'],['confetti','🎉 Konfeti'],['spark','✦ Işıltı']].map(([id,label])=><button key={id} type="button" aria-pressed={effect===id} onClick={()=>{setEffect(id);setShowEffects(false)}}>{label}</button>)}</div>}
       <form className="composer enhanced-compose" onSubmit={e => { e.preventDefault(); void send(); }}>
         <input ref={fileRef} type="file" hidden accept="image/*,video/mp4,video/webm,audio/*,application/pdf"
           onChange={e => setFile(e.target.files?.[0] || null)} />
         
+        <button type="button" title="Mesaj efekti" aria-pressed={!!effect} disabled={!!edit||recording} onClick={()=>setShowEffects(v=>!v)}>✦</button>
         <button type="button" title="Ekler" aria-expanded={attachments} onClick={() => setAttachments(v=>!v)}><Paperclip size={19} /></button>
         <button type="button" title={recording ? 'Kaydı bitir' : 'Ses kaydı'} onClick={() => void record()}>
           {recording ? <Square size={19} /> : <Mic size={19} />}
         </button>
         <input value={draft} onChange={e => {setDraft(e.target.value); if(e.target.value.trim())void typingChannel.current?.send({type:'broadcast',event:'typing',payload:{sender:userId}});}}
           placeholder={recording ? 'Ses kaydediliyor...' : edit ? 'Mesajı düzenle…' : 'Mesaj yaz…'} />
-        <button type="submit" disabled={busy || (!draft.trim() && !file)} title="Gönder"><Send size={19} /></button>
+        <button type="submit" disabled={busy || recording || (!draft.trim() && !file)} title="Gönder"><Send size={19} /></button>
       </form>
     </div>
   );
 }
+
+function VoicePlayer({src}:{src:string}){const ref=useRef<HTMLAudioElement>(null);const [speed,setSpeed]=useState(1);return <div className="v10-audio"><audio ref={ref} controls preload="none" src={src}/><button type="button" aria-label="Oynatma hızını değiştir" onClick={()=>{const next=speed===1?1.5:speed===1.5?2:1;setSpeed(next);if(ref.current)ref.current.playbackRate=next}}>{speed}×</button></div>}
