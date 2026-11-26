@@ -592,3 +592,6 @@ button:active:not(:disabled){transform:scale(.97)}
 @keyframes v10-call-breathe{50%{transform:scale(1.045)}}
 @media(max-width:380px){.enhanced-chat .enhanced-compose{gap:3px;padding-inline:5px}.enhanced-chat .enhanced-compose>button{width:32px;min-width:32px;padding:4px}.v10-call .call-controls button{width:42px;height:42px}}
 @media(prefers-reduced-motion:reduce){.v10-effect span{animation:none;display:none}.v10-call-avatar,.v10-incoming .vexa8-ring-avatar{animation:none}.v10-wave i{transition:none}}
+
+/* Vexa 10.1 audio controls */
+.v10-record{flex-wrap:wrap;gap:8px;min-width:0}.v10-record .v10-wave{min-width:65px;flex:1}.v10-record button{min-height:40px;padding:7px 10px;border-radius:10px;white-space:nowrap}.v10-preview{min-width:0;flex-wrap:wrap}.v10-audio{display:flex;align-items:center;max-width:100%;gap:6px;min-width:0}.v10-audio audio{min-width:0;width:100%;max-width:240px}.v10-audio button{flex-shrink:0;min-width:38px;min-height:36px}.v101-offline{padding:8px;text-align:center;font-size:12px;background:#73561d;color:#fff}.v10-call .call-controls button[aria-pressed=true]{background:#a23b46;color:white}
