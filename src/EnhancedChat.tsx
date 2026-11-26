@@ -52,6 +52,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const [effect,setEffect]=useState('');
   const [showEffects,setShowEffects]=useState(false);
   const [playingEffect,setPlayingEffect]=useState<{id:number;kind:string}|null>(null);
+  useEffect(()=>{if(!playingEffect)return;const timer=setTimeout(()=>setPlayingEffect(null),3500);return()=>clearTimeout(timer)},[playingEffect]);
   const seenEffects=useRef(new Set<number>());
   const firstLoad=useRef(true);
   const signedCache=useRef(new Map<string,{url:string;until:number}>());
@@ -62,8 +63,8 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const capture=useRef<{stream:MediaStream;ctx?:AudioContext;frame?:number;cancelled:boolean}|null>(null);
   const requesting=useRef(false);
   const mounted=useRef(true);
-  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;const c=capture.current;if(c){c.cancelled=true;if(c.frame)cancelAnimationFrame(c.frame);c.stream.getTracks().forEach(t=>t.stop());void c.ctx?.close();if(recorder.current?.state==='recording')recorder.current.stop();}}},[]);
-  useEffect(()=>{if(!recording)return;const start=Date.now();setRecordSeconds(0);const timer=setInterval(()=>setRecordSeconds(Math.floor((Date.now()-start)/1000)),250);return()=>clearInterval(timer)},[recording]);
+  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;const c=capture.current;if(c){c.cancelled=true;if(c.frame)cancelAnimationFrame(c.frame);c.stream.getTracks().forEach(t=>t.stop());void c.ctx?.close();if(recorder.current&&recorder.current.state!=='inactive')recorder.current.stop();}}},[]);
+
   const [draft, setDraft] = useState('');
   const [reply, setReply] = useState<Msg | null>(null);
   const [edit, setEdit] = useState<Msg | null>(null);
@@ -71,6 +72,13 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   useEffect(()=>{if(!(file && mediaMime(file).startsWith('audio/'))){setAudioPreview('');return}const url=URL.createObjectURL(file);setAudioPreview(url);return()=>URL.revokeObjectURL(url)},[file]);
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [paused,setPaused]=useState(false);
+  const [online,setOnline]=useState(navigator.onLine);
+  const typingSent=useRef(0);
+  const sendLock=useRef(false);
+  useEffect(()=>{if(!recording||paused)return;const timer=setInterval(()=>setRecordSeconds(v=>v+1),1000);return()=>clearInterval(timer)},[recording,paused]);
+  useEffect(()=>{const update=()=>setOnline(navigator.onLine);window.addEventListener('online',update);window.addEventListener('offline',update);return()=>{window.removeEventListener('online',update);window.removeEventListener('offline',update)}},[]);
+  function togglePause(){const r=recorder.current;if(r?.state==='recording'){r.pause();setPaused(true)}else if(r?.state==='paused'){r.resume();setPaused(false);void capture.current?.ctx?.resume().catch(()=>{})}}
   const [error, setError] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [chatSearch, setChatSearch] = useState('');
@@ -120,7 +128,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     if (loadError) { setError(loadError.message); return; }
     const rows = ((data || []) as Msg[]).reverse();
     if(!firstLoad.current){const fresh=rows.filter(m=>!seenEffects.current.has(m.id)&&!m.deleted_at&&m.effect&&['heart','confetti','spark'].includes(m.effect));const last=fresh[fresh.length-1];if(last)setPlayingEffect({id:last.id,kind:last.effect!});}
-    rows.forEach(m=>seenEffects.current.add(m.id));firstLoad.current=false;
+    seenEffects.current=new Set(rows.map(m=>m.id));firstLoad.current=false;
     setMessages(rows);
     const fav = await supabase.from('vexa8_starred_messages').select('message_id').eq('user_id',userId);
     if (!fav.error && currentChat.current === chatKey) setStarred((fav.data || []).map(x=>Number(x.message_id)));
@@ -147,6 +155,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
       setReactions(result.error ? [] : (result.data || []) as Reaction[]);
     } else setReactions([]);
     const paths = [...new Set(rows.map(m => m.media_path).filter((p): p is string => !!p))];
+    for(const key of signedCache.current.keys())if(!paths.includes(key))signedCache.current.delete(key);
     const signed = await Promise.all(paths.map(async path => {
       const cached=signedCache.current.get(path);if(cached&&cached.until>Date.now())return [path,cached.url] as const;
       const { data: media } = await supabase.storage.from('vexa-media').createSignedUrl(path, 3600);
@@ -170,7 +179,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     setCallRows([]);
     void loadCalls();
     // Mevcut arama altyapisi polling kullandigindan kayitlari da yenile.
-    const timer=window.setInterval(()=>{void loadCalls()},5000);
+    const timer=window.setInterval(()=>{if(document.visibilityState==='visible'&&navigator.onLine)void loadCalls()},10000);
     const onFocus=()=>{void loadCalls()};
     window.addEventListener('focus',onFocus);
     return()=>{window.clearInterval(timer);window.removeEventListener('focus',onFocus)};
@@ -184,8 +193,9 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     const channel = supabase.channel(`vexa-chat-${[userId, peerId].sort().join('-')}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'vexa_message_reactions' }, refresh)
-      .subscribe();
-    return () => { clearTimeout(debounce);void supabase.removeChannel(channel); };
+      .subscribe(status=>{if(status==='SUBSCRIBED')refresh()});
+    window.addEventListener('online',refresh);
+    return () => { window.removeEventListener('online',refresh);clearTimeout(debounce);void supabase.removeChannel(channel); };
   }, [load, userId, peerId]);
 
   useEffect(() => {
@@ -246,10 +256,12 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   }, [messages.length, callRows.length, chatSearch]);
 
   async function send() {
-    if (busy || recording) return;
+    if (busy || recording || sendLock.current) return;
+    if(!navigator.onLine){setError('İnternet bağlantısı yok. Mesajın korunuyor; bağlantı gelince tekrar gönder.');return;}
     const body = draft.trim();
     if (!body && !file) return;
     setBusy(true); setError('');
+    sendLock.current=true;
     let uploadedPath: string | null = null;
     try {
       if (edit) {
@@ -292,7 +304,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
       setDraft('');setEffect('');setShowEffects(false);
       await load();
     } catch (e) { setError((e as Error).message); }
-    finally { setBusy(false); }
+    finally { sendLock.current=false;setBusy(false); }
   }
 
   async function remove(m: Msg) {
@@ -327,7 +339,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   }
 
   async function record() {
-    if (recorder.current?.state === 'recording') { recorder.current.stop(); return; }
+    if (recorder.current && recorder.current.state !== 'inactive') { recorder.current.stop(); return; }
     if(requesting.current)return;requesting.current=true;
     try {
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined')
@@ -348,11 +360,11 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         if(mounted.current&&!c.cancelled&&blob.size)setFile(new File([blob], `sesli-mesaj.${ext}`, { type:base }));
         if(c.frame)cancelAnimationFrame(c.frame);void c.ctx?.close();capture.current=null;
         stream.getTracks().forEach(t => t.stop());
-        recorder.current = null; setRecording(false); setError(!c.cancelled&&!blob.size?'Ses kaydı boş. Tekrar deneyin.':'');
+        recorder.current = null; if(!mounted.current)return;setPaused(false);setRecording(false); setError(!c.cancelled&&!blob.size?'Ses kaydı boş. Tekrar deneyin.':'');
       };
-      rec.start(); setRecording(true); setError('');
-      try{const ctx=new AudioContext();c.ctx=ctx;const analyser=ctx.createAnalyser();analyser.fftSize=256;ctx.createMediaStreamSource(stream).connect(analyser);const samples=new Uint8Array(analyser.fftSize);let prev=0;const draw=(now:number)=>{if(c.cancelled||rec.state!=='recording')return;if(now-prev>80){prev=now;analyser.getByteTimeDomainData(samples);const rms=Math.sqrt(samples.reduce((a,v)=>a+((v-128)/128)**2,0)/samples.length);setLevels(old=>[...old.slice(1),Math.min(1,Math.max(.12,rms*5))]);}c.frame=requestAnimationFrame(draw)};c.frame=requestAnimationFrame(draw)}catch{/* timer still works */}
-    } catch (e) { capture.current?.stream.getTracks().forEach(t=>t.stop());capture.current=null;setError((e as Error).message); setRecording(false); }finally{requesting.current=false;}
+      rec.start(); setRecordSeconds(0);setPaused(false);setLevels(Array(20).fill(.12));setRecording(true); setError('');
+      try{const ctx=new AudioContext();c.ctx=ctx;void ctx.resume().catch(()=>{});const analyser=ctx.createAnalyser();analyser.fftSize=256;ctx.createMediaStreamSource(stream).connect(analyser);const samples=new Uint8Array(analyser.fftSize);let prev=0;const draw=(now:number)=>{if(c.cancelled||rec.state==='inactive')return;if(rec.state==='recording'&&document.visibilityState==='visible'&&now-prev>100){prev=now;analyser.getByteTimeDomainData(samples);const rms=Math.sqrt(samples.reduce((a,v)=>a+((v-128)/128)**2,0)/samples.length);setLevels(old=>[...old.slice(1),Math.min(1,Math.max(.12,rms*5))]);}c.frame=requestAnimationFrame(draw)};c.frame=requestAnimationFrame(draw)}catch{/* timer still works */}
+    } catch (e) { capture.current?.stream.getTracks().forEach(t=>t.stop());capture.current=null;setError((e as Error).message); setRecording(false);setPaused(false); }finally{requesting.current=false;}
   }
 
   const visible = messages.filter(m => (!showStarred || starred.includes(m.id)) && (!clearedAt || new Date(m.created_at).getTime() > new Date(clearedAt).getTime()) && (!chatSearch.trim() ||
@@ -369,6 +381,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   return (
     <div className={`enhanced-chat v10-theme-${theme}`}>
       {playingEffect&&createPortal(<div className={`v10-effect v10-effect-${playingEffect.kind}`} aria-hidden="true" key={playingEffect.id}>{Array.from({length:22},(_,i)=><span key={i} style={{left:`${(i*37)%100}%`,animationDelay:`${(i%7)*.09}s`}}>{playingEffect.kind==='heart'?'♥':playingEffect.kind==='confetti'?['●','◆','■'][i%3]:'✦'}</span>)}</div>,document.body)}
+      {!online&&<div className="v101-offline" role="status">Bağlantı yok · internet gelince sohbet yenilenecek</div>}
       <div className="enhanced-toolbar">
         <button type="button" onClick={() => setShowSearch(v => !v)} title="Sohbette ara">
           <Search size={16} /> Ara
@@ -490,7 +503,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
       {error && <div className="enhanced-error" role="alert">{error}</div>}
       {showStickers&&<div className="vexa-sticker-picker" aria-label="Çıkartmalar">{stickers.map(st=><button type="button" key={st} onClick={()=>void sendSticker(st)} disabled={busy} aria-label={`${st} çıkartması`}>{st}</button>)}</div>}
       {attachments&&<div className="v93-attachments"><button type="button" onClick={()=>{setAttachments(false);fileRef.current?.click()}}>Fotoğraf, video veya dosya</button><button type="button" onClick={()=>{setAttachments(false);setShowStickers(v=>!v)}}>Çıkartmalar</button></div>}
-      {recording&&<div className="v10-record" role="status"><span>● {callDuration(recordSeconds)}</span><div className="v10-wave">{levels.map((v,i)=><i key={i} style={{height:`${v*100}%`}}/>)}</div><button type="button" onClick={()=>{if(capture.current)capture.current.cancelled=true;recorder.current?.stop()}}>İptal</button></div>}
+      {recording&&<div className="v10-record" role="status"><span>{paused?'Duraklatıldı':'● Kayıt'} {callDuration(recordSeconds)}</span><div className="v10-wave">{levels.map((v,i)=><i key={i} style={{height:`${v*100}%`}}/>)}</div><button type="button" onClick={togglePause}>{paused?'Devam':'Duraklat'}</button><button type="button" onClick={()=>void record()}>Dinle</button><button type="button" onClick={()=>{if(capture.current)capture.current.cancelled=true;recorder.current?.stop()}}>İptal</button></div>}
       {audioPreview&&!recording&&<div className="v10-preview"><VoicePlayer src={audioPreview}/><button type="button" onClick={()=>setFile(null)}>Kaydı sil</button></div>}
       {showEffects&&<div className="v10-theme-picker">{[['','Normal'],['heart','♥ Kalpler'],['confetti','🎉 Konfeti'],['spark','✦ Işıltı']].map(([id,label])=><button key={id} type="button" aria-pressed={effect===id} onClick={()=>{setEffect(id);setShowEffects(false)}}>{label}</button>)}</div>}
       <form className="composer enhanced-compose" onSubmit={e => { e.preventDefault(); void send(); }}>
@@ -502,7 +515,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         <button type="button" title={recording ? 'Kaydı bitir' : 'Ses kaydı'} onClick={() => void record()}>
           {recording ? <Square size={19} /> : <Mic size={19} />}
         </button>
-        <input value={draft} onChange={e => {setDraft(e.target.value); if(e.target.value.trim())void typingChannel.current?.send({type:'broadcast',event:'typing',payload:{sender:userId}});}}
+        <input value={draft} onChange={e => {setDraft(e.target.value); if(e.target.value.trim()&&Date.now()-typingSent.current>900){typingSent.current=Date.now();void typingChannel.current?.send({type:'broadcast',event:'typing',payload:{sender:userId}});}}}
           placeholder={recording ? 'Ses kaydediliyor...' : edit ? 'Mesajı düzenle…' : 'Mesaj yaz…'} />
         <button type="submit" disabled={busy || recording || (!draft.trim() && !file)} title="Gönder"><Send size={19} /></button>
       </form>
@@ -510,4 +523,4 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   );
 }
 
-function VoicePlayer({src}:{src:string}){const ref=useRef<HTMLAudioElement>(null);const [speed,setSpeed]=useState(1);return <div className="v10-audio"><audio ref={ref} controls preload="none" src={src}/><button type="button" aria-label="Oynatma hızını değiştir" onClick={()=>{const next=speed===1?1.5:speed===1.5?2:1;setSpeed(next);if(ref.current)ref.current.playbackRate=next}}>{speed}×</button></div>}
+function VoicePlayer({src}:{src:string}){const ref=useRef<HTMLAudioElement>(null);const [speed,setSpeed]=useState(1);return <div className="v10-audio"><audio ref={ref} controls preload="metadata" src={src} onLoadedMetadata={()=>{if(ref.current)ref.current.playbackRate=speed}}/><button type="button" aria-label="Oynatma hızını değiştir" onClick={()=>{const next=speed===1?1.5:speed===1.5?2:1;setSpeed(next);if(ref.current)ref.current.playbackRate=next}}>{speed}×</button></div>}
