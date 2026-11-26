@@ -18,6 +18,22 @@ const callDuration = (seconds:number) => {
   return h?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
 };
 
+// Normalize browser MIME parameters without changing the encoded audio bytes.
+const audioAliases: Record<string,string> = {
+  'audio/x-m4a':'audio/mp4', 'audio/m4a':'audio/mp4', 'audio/x-wav':'audio/wav',
+  'audio/wave':'audio/wav', 'audio/vnd.wave':'audio/wav', 'audio/mp3':'audio/mpeg',
+  'audio/x-aac':'audio/aac', 'audio/x-flac':'audio/flac', 'audio/opus':'audio/ogg'
+};
+const audioExtensions: Record<string,string> = {
+  webm:'audio/webm', m4a:'audio/mp4', ogg:'audio/ogg', oga:'audio/ogg', opus:'audio/ogg',
+  mp3:'audio/mpeg', wav:'audio/wav', aac:'audio/aac', flac:'audio/flac', '3gp':'audio/3gpp', amr:'audio/amr'
+};
+function mediaMime(file: File) {
+  const raw = file.type.split(';')[0].trim().toLowerCase();
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  return (!raw || raw === 'application/octet-stream') ? (audioExtensions[ext] || raw) : (audioAliases[raw] || raw);
+}
+
 const emojis = ['❤️', '😂', '👍', '😮', '😢', '🔥'];
 const time = (date: string) => new Date(date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
@@ -52,7 +68,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const [reply, setReply] = useState<Msg | null>(null);
   const [edit, setEdit] = useState<Msg | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  useEffect(()=>{if(!file?.type.startsWith('audio/')){setAudioPreview('');return}const url=URL.createObjectURL(file);setAudioPreview(url);return()=>URL.revokeObjectURL(url)},[file]);
+  useEffect(()=>{if(!(file && mediaMime(file).startsWith('audio/'))){setAudioPreview('');return}const url=URL.createObjectURL(file);setAudioPreview(url);return()=>URL.revokeObjectURL(url)},[file]);
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
   const [error, setError] = useState('');
@@ -249,16 +265,17 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         let mediaType: string | null = null;
         if (file) {
           if (file.size > 25 * 1024 * 1024) throw new Error('Dosya en fazla 25 MB olabilir.');
+          const mime = mediaMime(file);
           const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif',
             'video/mp4', 'video/webm', 'video/quicktime', 'audio/webm',
-            'audio/mp4', 'audio/ogg', 'audio/mpeg', 'application/pdf'];
-          if (!allowed.includes(file.type)) throw new Error('Bu dosya türü desteklenmiyor.');
-          mediaType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : file.type==='application/pdf' ? 'document' : 'audio';
+            'audio/mp4', 'audio/ogg', 'audio/mpeg', 'audio/wav', 'audio/aac', 'audio/flac', 'audio/3gpp', 'audio/amr', 'application/pdf'];
+          if (!allowed.includes(mime)) throw new Error(`Bu dosya türü desteklenmiyor: ${mime || 'bilinmiyor'}`);
+          mediaType = mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : mime==='application/pdf' ? 'document' : 'audio';
           const ext = file.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '').slice(0, 8) || 'bin';
           uploadedPath = `${userId}/${crypto.randomUUID()}.${ext}`;
           const { error: e } = await supabase.storage.from('vexa-media')
-            .upload(uploadedPath, file, { contentType: file.type });
-          if (e) throw e;
+            .upload(uploadedPath, file, { contentType: mime });
+          if (e) throw new Error(`Medya yüklenemedi (${mime}): ${e.message}`);
         }
         const text = body;
         const { error: e } = await supabase.from('messages').insert({
@@ -323,13 +340,15 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
       recorder.current = rec; chunks.current = [];
       rec.ondataavailable = e => { if (e.data.size) chunks.current.push(e.data); };
       rec.onstop = () => {
-        const type = rec.mimeType || 'audio/webm';
+        const type = chunks.current.find(chunk=>chunk.type)?.type || rec.mimeType || mime || ''; 
         const blob = new Blob(chunks.current, { type });
-        const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
-        if(mounted.current&&!c.cancelled)setFile(new File([blob], `sesli-mesaj.${ext}`, { type:type.split(';')[0] }));
+        const raw = type.split(';')[0].trim().toLowerCase();
+        const base = audioAliases[raw] || raw;
+        const ext = base === 'audio/mp4' ? 'm4a' : Object.keys(audioExtensions).find(key=>audioExtensions[key]===base) || 'bin';
+        if(mounted.current&&!c.cancelled&&blob.size)setFile(new File([blob], `sesli-mesaj.${ext}`, { type:base }));
         if(c.frame)cancelAnimationFrame(c.frame);void c.ctx?.close();capture.current=null;
         stream.getTracks().forEach(t => t.stop());
-        recorder.current = null; setRecording(false); setError('');
+        recorder.current = null; setRecording(false); setError(!c.cancelled&&!blob.size?'Ses kaydı boş. Tekrar deneyin.':'');
       };
       rec.start(); setRecording(true); setError('');
       try{const ctx=new AudioContext();c.ctx=ctx;const analyser=ctx.createAnalyser();analyser.fftSize=256;ctx.createMediaStreamSource(stream).connect(analyser);const samples=new Uint8Array(analyser.fftSize);let prev=0;const draw=(now:number)=>{if(c.cancelled||rec.state!=='recording')return;if(now-prev>80){prev=now;analyser.getByteTimeDomainData(samples);const rms=Math.sqrt(samples.reduce((a,v)=>a+((v-128)/128)**2,0)/samples.length);setLevels(old=>[...old.slice(1),Math.min(1,Math.max(.12,rms*5))]);}c.frame=requestAnimationFrame(draw)};c.frame=requestAnimationFrame(draw)}catch{/* timer still works */}
