@@ -1,3 +1,4 @@
+import {useLook,MediaAI,premiumAI} from './Vexa112';
 import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Paperclip, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Star, Forward, Images, FileText } from 'lucide-react';
@@ -42,6 +43,8 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const suppress=useRef(0);
   const [attachments,setAttachments]=useState(false);
   useEffect(()=>()=>{if(gesture.current)clearTimeout(gesture.current.timer)},[]);
+  const plus=useLook(userId);
+  const [summary,setSummary]=useState(''),[summaryBusy,setSummaryBusy]=useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [callRows,setCallRows]=useState<CallRow[]>([]);
   const [reactions, setReactions] = useState<Reaction[]>([]);
@@ -132,7 +135,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     if (currentChat.current !== chatKey || version!==loadVersion.current) return;
     if (loadError) { setError(loadError.message); return; }
     const rows = ((data || []) as Msg[]).reverse();
-    if(!firstLoad.current){const fresh=rows.filter(m=>!seenEffects.current.has(m.id)&&!m.deleted_at&&m.effect&&['heart','confetti','spark'].includes(m.effect));const last=fresh[fresh.length-1];if(last)setPlayingEffect({id:last.id,kind:last.effect!});}
+    if(!firstLoad.current){const fresh=rows.filter(m=>!seenEffects.current.has(m.id)&&!m.deleted_at&&m.effect&&['heart','confetti','spark','gold','aurora'].includes(m.effect));const last=fresh[fresh.length-1];if(last)setPlayingEffect({id:last.id,kind:last.effect!});}
     seenEffects.current=new Set(rows.map(m=>m.id));firstLoad.current=false;
     setMessages(rows);
     // Mark only messages belonging to the authenticated recipient, via a narrow RPC.
@@ -318,7 +321,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         const text = body;
         const { error: e } = await supabase.from('messages').insert({
           sender_id: userId, recipient_id: peerId, body: text || null,
-          media_path: uploadedPath, media_type: mediaType, reply_to_message_id: reply?.id ?? null, effect: effect || null
+          media_path: uploadedPath, media_type: mediaType, reply_to_message_id: reply?.id ?? null, effect: (!plus?.premium&&['gold','aurora'].includes(effect))?null:effect||null
         });
         if (e) {
           if (uploadedPath) await supabase.storage.from('vexa-media').remove([uploadedPath]);
@@ -405,7 +408,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
 
 
   return (
-    <div className={`enhanced-chat v10-theme-${theme}`}>
+    <div className={`enhanced-chat v10-theme-${(['gold','aurora'].includes(theme)&&!plus?.premium)?'default':theme}`}>
       {playingEffect&&createPortal(<div className={`v10-effect v10-effect-${playingEffect.kind}`} aria-hidden="true" key={playingEffect.id}>{Array.from({length:22},(_,i)=><span key={i} style={{left:`${(i*37)%100}%`,animationDelay:`${(i%7)*.09}s`}}>{playingEffect.kind==='heart'?'♥':playingEffect.kind==='confetti'?['●','◆','■'][i%3]:'✦'}</span>)}</div>,document.body)}
       {!online&&<div className="v101-offline" role="status">Bağlantı yok · internet gelince sohbet yenilenecek</div>}
       <div className="enhanced-toolbar">
@@ -417,9 +420,9 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         </button>
         <button type="button" onClick={()=>setShowStarred(v=>!v)} title="Yıldızlı mesajlar"><Star size={16}/>{showStarred?' Tümü':' Yıldızlı'}</button>
         <button type="button" onClick={()=>setShowGallery(v=>!v)} title="Medya galerisi"><Images size={16}/> Medya</button>
-        <button type="button" onClick={()=>setShowTheme(v=>!v)}>◉ Tema</button>
+        <button type="button" onClick={()=>setShowTheme(v=>!v)}>◉ Tema</button>{plus?.premium&&<button type="button" disabled={summaryBusy} onClick={()=>{if(!confirm('Son 30 mesajın metni Google Gemini’ye gönderilecek. Devam edilsin mi?'))return;setSummaryBusy(true);void premiumAI('summary',messages.filter(m=>!m.deleted_at&&m.body).slice(-30).map(m=>(m.sender_id===userId?'Ben: ':'Arkadaş: ')+m.body).join('\n').slice(-3900)).then(setSummary).catch(e=>setSummary(e.message)).finally(()=>setSummaryBusy(false))}}>♛ {summaryBusy?'Özetleniyor…':'Sohbet özeti'}</button>}
       </div>
-      {showTheme&&<div className="v10-theme-picker">{[['default','Vexa'],['ocean','Okyanus'],['rose','Gül'],['violet','Gece'],['sand','Kum']].map(([id,label])=><button key={id} type="button" aria-pressed={theme===id} onClick={()=>{setTheme(id);try{localStorage.setItem(themeKey,id)}catch{}setShowTheme(false)}} className={`v10-swatch-${id}`}>{label}</button>)}</div>}
+      {summary&&<div className="v112-panel"><button onClick={()=>setSummary('')}>Kapat</button><p>{summary}</p></div>}{showTheme&&<div className="v10-theme-picker">{[['default','Vexa'],['ocean','Okyanus'],['rose','Gül'],['violet','Gece'],['sand','Kum'],...(plus?.premium?[['gold','♛ Altın'],['aurora','♛ Aurora']]:[])].map(([id,label])=><button key={id} type="button" aria-pressed={theme===id} onClick={()=>{setTheme(id);try{localStorage.setItem(themeKey,id)}catch{}setShowTheme(false)}} className={`v10-swatch-${id}`}>{label}</button>)}</div>}
       {showGallery && <section className="vexa-media-gallery" aria-label="Sohbet medyası">
         <div className="vexa-gallery-heading"><strong>Paylaşılan medya</strong><button type="button" onClick={()=>setShowGallery(false)} aria-label="Galeriyi kapat"><X size={17}/></button></div>
         <div className="vexa-gallery-filters">{(['all','image','video','document'] as const).map(t=><button key={t} type="button" className={galleryFilter===t?'active':''} onClick={()=>setGalleryFilter(t)}>{({all:'Tümü',image:'Fotoğraf',video:'Video',document:'PDF'} as const)[t]}</button>)}</div>
@@ -458,7 +461,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
             <span className="v94-reply-reveal" aria-hidden="true">↩</span><div className="message-body" onClick={() => { if (Date.now()>suppress.current && !deleted && !m.media_path) setOpenActions(openActions === m.id ? null : m.id); }}>
               {deleted ? <i>Bu mesaj silindi</i> : <>
                 {m.reply_to_message_id && <div className="vexa8-reply-quote">↳ {messages.find(x=>x.id===m.reply_to_message_id)?.body?.slice(0,110)||'Yanıtlanan mesaj'}</div>}
-                {m.effect&&['heart','confetti','spark'].includes(m.effect)&&<button type="button" className="v10-replay" onClick={e=>{e.stopPropagation();setPlayingEffect({id:m.id,kind:m.effect!})}}>✦ Efekti oynat</button>}
+                {m.effect&&['heart','confetti','spark','gold','aurora'].includes(m.effect)&&<button type="button" className="v10-replay" onClick={e=>{e.stopPropagation();setPlayingEffect({id:m.id,kind:m.effect!})}}>✦ Efekti oynat</button>}
                 {m.body && <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{m.body}</div>}
                 {m.media_path && urls[m.media_path] && (m.media_type === 'image'
                   ? <img className="enhanced-media" src={urls[m.media_path]} alt="Gönderilen fotoğraf" loading="lazy" decoding="async" />
@@ -467,6 +470,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
                     : m.media_type === 'document'
                       ? <a href={urls[m.media_path]} target="_blank" rel="noopener noreferrer" className="vexa-document"><FileText size={18}/> PDF dosyasını aç</a>
                       : <VoicePlayer src={urls[m.media_path]} />)}
+                {plus?.premium&&m.media_path&&urls[m.media_path]&&(m.media_type==='image'||m.media_type==='audio')&&<MediaAI url={urls[m.media_path]} kind={m.media_type}/>}
                 {m.media_path && urls[m.media_path] && <a href={urls[m.media_path]} target="_blank"
                   rel="noopener noreferrer" className="enhanced-download"><Download size={13} /> Dosyayı aç</a>}
               </>}
@@ -532,7 +536,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
       {attachments&&<div className="v93-attachments"><button type="button" onClick={()=>{setAttachments(false);fileRef.current?.click()}}>Fotoğraf, video veya dosya</button><button type="button" onClick={()=>{setAttachments(false);setShowStickers(v=>!v)}}>Çıkartmalar</button></div>}
       {recording&&<div className="v10-record" role="status"><span>{paused?'Duraklatıldı':'● Kayıt'} {callDuration(recordSeconds)}</span><div className="v10-wave">{levels.map((v,i)=><i key={i} style={{height:`${v*100}%`}}/>)}</div><button type="button" onClick={togglePause}>{paused?'Devam':'Duraklat'}</button><button type="button" onClick={()=>void record()}>Dinle</button><button type="button" onClick={()=>{if(capture.current)capture.current.cancelled=true;recorder.current?.stop()}}>İptal</button></div>}
       {audioPreview&&!recording&&<div className="v10-preview"><VoicePlayer src={audioPreview}/><button type="button" onClick={()=>setFile(null)}>Kaydı sil</button></div>}
-      {showEffects&&<div className="v10-theme-picker">{[['','Normal'],['heart','♥ Kalpler'],['confetti','🎉 Konfeti'],['spark','✦ Işıltı']].map(([id,label])=><button key={id} type="button" aria-pressed={effect===id} onClick={()=>{setEffect(id);setShowEffects(false)}}>{label}</button>)}</div>}
+      {showEffects&&<div className="v10-theme-picker">{[['','Normal'],['heart','♥ Kalpler'],['confetti','🎉 Konfeti'],['spark','✦ Işıltı'],...(plus?.premium?[['gold','♛ Altın yağmuru'],['aurora','♛ Aurora']]:[])].map(([id,label])=><button key={id} type="button" aria-pressed={effect===id} onClick={()=>{setEffect(id);setShowEffects(false)}}>{label}</button>)}</div>}
       {aiPanel&&createPortal(<div className="v95-action-overlay" onClick={e=>{if(e.target===e.currentTarget&&!aiBusy)setAiPanel(null)}}><section className="v95-action-sheet" role="dialog" aria-modal="true" aria-label="Vexa AI"><header className="v95-action-header"><strong>✦ Vexa AI</strong><button type="button" disabled={aiBusy} onClick={()=>setAiPanel(null)}><X size={20}/></button></header><p>Seçtiğin metin Google Gemini'ye gönderilir. Hassas bilgi paylaşma.</p><textarea aria-label="AI metni" value={aiPanel.text} maxLength={3500} disabled={aiBusy} onChange={e=>setAiPanel({...aiPanel,text:e.target.value})} rows={3} style={{width:'100%',boxSizing:'border-box'}}/><div className="v95-action-buttons">{(aiPanel.incoming?['Bu mesaja doğal bir cevap öner','Türkçeye çevir','İngilizceye çevir']:['Yazım hatalarını düzelt','Samimi bir mesaj yaz','Romantik bir mesaj yaz','Resmi bir mesaj yaz','Türkçeye çevir','İngilizceye çevir']).map(task=><button type="button" key={task} disabled={aiBusy||!aiPanel.text.trim()} onClick={()=>void askAI(task)}>{task}</button>)}</div>{aiBusy&&<p>Yanıt hazırlanıyor…</p>}{aiError&&<p role="alert">{aiError}</p>}{aiResult&&<><div style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{aiResult}</div><button type="button" onClick={()=>{setEdit(null);setDraft(aiResult);setAiPanel(null)}}>Mesaj alanına ekle</button></>}</section></div>,document.body)}
       <form className="composer enhanced-compose" onSubmit={e => { e.preventDefault(); void send(); }}>
         <input ref={fileRef} type="file" hidden accept="image/*,video/mp4,video/webm,audio/*,application/pdf"
