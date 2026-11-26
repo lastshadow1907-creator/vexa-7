@@ -130,22 +130,17 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     if(!firstLoad.current){const fresh=rows.filter(m=>!seenEffects.current.has(m.id)&&!m.deleted_at&&m.effect&&['heart','confetti','spark'].includes(m.effect));const last=fresh[fresh.length-1];if(last)setPlayingEffect({id:last.id,kind:last.effect!});}
     seenEffects.current=new Set(rows.map(m=>m.id));firstLoad.current=false;
     setMessages(rows);
-    const fav = await supabase.from('vexa8_starred_messages').select('message_id').eq('user_id',userId);
-    if (!fav.error && currentChat.current === chatKey) setStarred((fav.data || []).map(x=>Number(x.message_id)));
-    // Yalnızca gerçekten okunmamış gelen mesajları işaretle.
-    // Gizli okundu bilgisi tercihi açık olsa da yerel okunmamış sayacı
-    // App.tsx içindeki sohbet-açıldı işaretiyle ayrıca sıfırlanır.
-    if (document.visibilityState === 'visible' &&
-        rows.some(m => m.sender_id === peerId && m.recipient_id === userId && !m.read_at)) {
-      const { data: privacy } = await supabase.from('vexa101_privacy')
-        .select('read_receipts').eq('user_id', userId).maybeSingle();
-      if (privacy?.read_receipts !== false && currentChat.current === chatKey) {
-        const { error: readError } = await supabase.from('messages')
-          .update({ read_at: new Date().toISOString() })
-          .eq('sender_id', peerId).eq('recipient_id', userId).is('read_at', null);
-        if (readError) console.warn('Okundu işareti:', readError.message);
+    // Mark only messages belonging to the authenticated recipient, via a narrow RPC.
+    if (document.visibilityState === 'visible' && currentChat.current === chatKey &&
+        rows.some(m => m.sender_id === peerId && m.recipient_id === userId && !m.read_at && !m.deleted_at)) {
+      const { error: readError } = await supabase.rpc('vexa_mark_chat_read', { p_peer: peerId });
+      if (readError && currentChat.current === chatKey) {
+        console.warn('Okundu işareti:', readError.message);
+        setError('Okundu bilgisi güncellenemedi: ' + readError.message);
       }
     }
+    const fav = await supabase.from('vexa8_starred_messages').select('message_id').eq('user_id',userId);
+    if (!fav.error && currentChat.current === chatKey) setStarred((fav.data || []).map(x=>Number(x.message_id)));
 
     const ids = rows.map(m => m.id);
     if (ids.length) {
@@ -197,6 +192,32 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
     window.addEventListener('online',refresh);
     return () => { window.removeEventListener('online',refresh);clearTimeout(debounce);void supabase.removeChannel(channel); };
   }, [load, userId, peerId]);
+
+  // Lightweight receipt refresh when Realtime misses an update.
+  useEffect(() => {
+    let active = true;
+    let pending = false;
+    const refreshReceipts = async () => {
+      if (!active || pending || !navigator.onLine || document.visibilityState !== 'visible') return;
+      pending = true;
+      try {
+        const { data, error } = await supabase.from('messages')
+          .select('id,read_at').eq('sender_id',userId).eq('recipient_id',peerId)
+          .order('created_at',{ascending:false}).limit(250);
+        if (!active || error || !data) return;
+        const receipts = new Map(data.map(m => [m.id,m.read_at]));
+        setMessages(old => {
+          if (!old.some(m => m.sender_id === userId && !m.read_at && receipts.get(m.id))) return old;
+          return old.map(m => m.sender_id === userId && !m.read_at && receipts.get(m.id)
+            ? {...m,read_at: receipts.get(m.id)!} : m);
+        });
+      } finally { pending = false; }
+    };
+    const timer = window.setInterval(() => void refreshReceipts(), 5000);
+    window.addEventListener('online',refreshReceipts);
+    document.addEventListener('visibilitychange',refreshReceipts);
+    return () => { active=false; window.clearInterval(timer); window.removeEventListener('online',refreshReceipts); document.removeEventListener('visibilitychange',refreshReceipts); };
+  }, [userId,peerId]);
 
   useEffect(() => {
     let active = true;
