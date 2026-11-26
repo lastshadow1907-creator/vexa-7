@@ -9,12 +9,12 @@ type Message={id:string;group_id:string;sender_id:string;body:string;created_at:
 type Props={
  userId:string;profiles:Profile[];onClose?:()=>void;mode?:'full'|'list'|'chat';
  activeGroupId?:string|null;onSelectGroup?:(id:string|null)=>void;
- activeGroup?:Group|null;onSelectGroupData?:(group:Group|null)=>void
+ createRequest?:number; activeGroup?:Group|null;onSelectGroupData?:(group:Group|null)=>void
 };
 const name=(p?:Profile)=>p?.display_name?.trim()||'Vexa kullanıcısı';
 let channelIndex=0;
 
-export default function Groups({userId,profiles,onClose,mode='full',activeGroupId,onSelectGroup,activeGroup,onSelectGroupData}:Props){
+export default function Groups({userId,profiles,onClose,mode='full',activeGroupId,onSelectGroup,activeGroup,onSelectGroupData,createRequest=0}:Props){
  const [groups,setGroups]=useState<Group[]>([]);
  const [localGroup,setLocalGroup]=useState<Group|null>(null);
  const [messages,setMessages]=useState<Message[]>([]);
@@ -24,6 +24,7 @@ export default function Groups({userId,profiles,onClose,mode='full',activeGroupI
  const [description,setDescription]=useState('');
  const [avatar,setAvatar]=useState('');
  const [creating,setCreating]=useState(false);
+ useEffect(()=>{if(createRequest>0)setCreating(true)},[createRequest]);
  const [settings,setSettings]=useState(false);
  const [adding,setAdding]=useState(false);
  const [search,setSearch]=useState('');
@@ -107,13 +108,13 @@ export default function Groups({userId,profiles,onClose,mode='full',activeGroupI
   {mode!=='chat'&&<aside className="vexa-groups-sidebar">
    <header className="vexa-groups-list-header">
     {mode==='full'&&<button onClick={onClose} title="Geri"><ArrowLeft size={20}/></button>}
-    <h2>Gruplar</h2><button onClick={()=>setCreating(v=>!v)} title="Grup oluştur"><Plus size={20}/></button>
+    <h2>Gruplar</h2>{mode!=='list'&&<button onClick={()=>setCreating(v=>!v)} title="Grup oluştur"><Plus size={20}/></button>}
    </header>
-   {creating&&<div className="vexa-group-create"><input style={input} value={newName} onChange={e=>setNewName(e.target.value)} maxLength={50} placeholder="Yeni grup adı"/><button style={button} disabled={busy||newName.trim().length<3} onClick={()=>void create()}>Oluştur</button></div>}
+   {creating&&<div className="vexa-group-create" ref={el=>{if(el&&creating&&createRequest>0)el.scrollIntoView({block:"nearest"})}}><input style={input} value={newName} onChange={e=>setNewName(e.target.value)} maxLength={50} placeholder="Yeni grup adı"/><button style={button} disabled={busy||newName.trim().length<3} onClick={()=>void create()}>Oluştur</button></div>}
    <div className="vexa-groups-list">{groups.map(g=><button key={g.id} className={`vexa-group-row ${groupId===g.id?'active':''}`} onClick={()=>select(g)}>
     <span className="vexa-group-avatar vexa-group-avatar-fallback"><Users size={21}/></span>
     <span className="vexa-group-row-text"><strong>{g.title}</strong><small>Grup sohbeti</small></span>
-   </button>)}{!groups.length&&<p className="hint">Henüz grubun yok. + ile oluştur.</p>}</div>
+   </button>)}{!groups.length&&<p className="hint">Henüz grubun yok.</p>}</div>
   </aside>}
   {mode!=='list'&&<main className="vexa-groups-conversation">
    {group?<>
