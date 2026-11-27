@@ -2,11 +2,12 @@ import {useCallback,useEffect,useMemo,useState,useRef} from 'react';
 import {ArrowLeft,Plus,Send,Users,Settings,UserPlus,LogOut,Shield,ShieldOff,UserMinus,Save,X,Search,Camera,Image,ChevronRight,Phone} from 'lucide-react';
 import {supabase} from './supabase';
 import './groups134.css';
+import {GroupPolls140} from './GroupPolls140';
 
 type Profile={id:string;display_name?:string|null;username?:string|null;avatar_path?:string|null};
 type Group={id:string;title:string;created_by:string;avatar_url?:string|null;description?:string|null};
 type Member={user_id:string;role:string};
-type Message={id:string;group_id:string;sender_id:string;body:string;created_at:string};
+type Message={id:string;group_id:string;sender_id:string;body:string;created_at:string;reply_to?:string|null};
 type Props={
  userId:string;profiles:Profile[];friendIds?:string[];onClose?:()=>void;mode?:'full'|'list'|'chat';
  activeGroupId?:string|null;onSelectGroup?:(id:string|null)=>void;
@@ -28,6 +29,7 @@ export default function Groups({userId,profiles,friendIds=[],onClose,mode='full'
  const bottom=useRef<HTMLDivElement>(null), fileInput=useRef<HTMLInputElement>(null);
  const currentGroup=useRef<string|undefined>(undefined);
  const [draft,setDraft]=useState('');
+ const [reply140,setReply140]=useState<Message|null>(null),[poll140,setPoll140]=useState(false),[mentions140,setMentions140]=useState(false);
  const [newName,setNewName]=useState('');
  const [description,setDescription]=useState('');
  const [avatar,setAvatar]=useState('');
@@ -59,7 +61,7 @@ export default function Groups({userId,profiles,friendIds=[],onClose,mode='full'
  const refreshChat=useCallback(async()=>{
   if(!groupId)return;
   const [m,u,ev]=await Promise.all([
-   supabase.from('vexa_group_messages').select('id,group_id,sender_id,body,created_at').eq('group_id',groupId).order('created_at',{ascending:false}).limit(250),
+   supabase.from('vexa_group_messages').select('id,group_id,sender_id,body,created_at,reply_to').eq('group_id',groupId).order('created_at',{ascending:false}).limit(250),
    supabase.rpc('vexa134_group_roster',{p_group_id:groupId}),
    supabase.from('vexa134_group_events').select('id,body,created_at').eq('group_id',groupId).order('created_at',{ascending:false}).limit(100)
   ]);
@@ -72,7 +74,7 @@ export default function Groups({userId,profiles,friendIds=[],onClose,mode='full'
  useEffect(()=>{void refreshGroups();const timer=setInterval(()=>{if(document.visibilityState==='visible')void refreshGroups()},5000);return()=>clearInterval(timer)},[refreshGroups]);
  useEffect(()=>{
   if(!groupId){setMessages([]);setMembers([]);return}
-  setMessages([]);setMembers([]);setMemberProfiles([]);setEvents([]);setMemberLoading(true);setMemberError('');setSettings(false);setAdding(false);setDraft('');
+  setMessages([]);setMembers([]);setMemberProfiles([]);setEvents([]);setMemberLoading(true);setMemberError('');setSettings(false);setAdding(false);setDraft('');setReply140(null);setPoll140(false);setMentions140(false);
   void refreshChat();
   const channel=supabase.channel(`vexa-groups-new-${groupId}-${++channelIndex}`)
    .on('postgres_changes',{event:'*',schema:'public',table:'vexa_group_messages',filter:`group_id=eq.${groupId}`},()=>void refreshChat())
@@ -115,9 +117,9 @@ export default function Groups({userId,profiles,friendIds=[],onClose,mode='full'
  async function send(){
   const body=draft.trim();if(!groupId||!body||busy)return;
   setBusy(true);setError('');
-  const r=await supabase.from('vexa_group_messages').insert({group_id:groupId,sender_id:userId,body});
+  const r=await supabase.from('vexa_group_messages').insert({group_id:groupId,sender_id:userId,body,reply_to:reply140?.id||null});
   setBusy(false);
-  if(r.error)setError(r.error.message);else{setDraft('');await refreshChat()}
+  if(r.error)setError(r.error.message);else{setDraft('');setReply140(null);await refreshChat()}
  }
  async function leave(){
   if(!groupId||!window.confirm('Gruptan ayrılmak istiyor musun?'))return;
@@ -166,11 +168,11 @@ export default function Groups({userId,profiles,friendIds=[],onClose,mode='full'
     </section>:<>
      <div className="vexa-group-messages" style={{flex:1,overflowY:'auto',padding:16}}>
       {[...messages.map(m=>({kind:'message' as const,m,at:m.created_at})),...events.map(e=>({kind:'event' as const,e,at:e.created_at}))].sort((a,b)=>a.at.localeCompare(b.at)).map(item=>item.kind==='event'?<div className='v134-event' key={'event-'+item.e.id}>{item.e.body}</div>:((m:Message)=><div key={m.id} className={`vexa-group-message ${m.sender_id===userId?'mine':''}`} style={{marginBottom:12}}>
-       <strong>{m.sender_id!==userId&&memberAvatar(m.sender_id)}{person(m.sender_id)}</strong><p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{m.body}</p><small>{new Date(m.created_at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</small>
+       <strong>{m.sender_id!==userId&&memberAvatar(m.sender_id)}{person(m.sender_id)}</strong>{m.reply_to&&<blockquote className='v140-group-quote'>{messages.find(x=>x.id===m.reply_to)?.body||'Önceki mesaj'}</blockquote>}<p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{m.body}</p><small>{new Date(m.created_at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</small><button className='v140-group-reply' onClick={()=>setReply140(m)}>Yanıtla</button>
       </div>)(item.m))}<div ref={bottom}/>
       {!messages.length&&!events.length&&<p className="hint">Henüz mesaj yok.</p>}
      </div>
-     <form className="vexa-group-compose" onSubmit={e=>{e.preventDefault();void send()}} style={{display:'flex',gap:8,padding:12}}>
+     {poll140&&<GroupPolls140 groupId={group.id} userId={userId}/ >}{reply140&&<div className='v140-group-quote'>{person(reply140.sender_id)}: {reply140.body.slice(0,100)} <button onClick={()=>setReply140(null)}>×</button></div>}{mentions140&&<div className='v140-tabs'>{members.filter(m=>m.user_id!==userId).map(m=><button key={m.user_id} onClick={()=>{setDraft(v=>v+' @'+person(m.user_id)+' ');setMentions140(false)}}>{person(m.user_id)}</button>)}</div>}<div className='v140-tabs'><button onClick={()=>setPoll140(v=>!v)}>Anketler</button><button onClick={()=>setMentions140(v=>!v)}>@ Üye etiketle</button></div><form className="vexa-group-compose" onSubmit={e=>{e.preventDefault();void send()}} style={{display:'flex',gap:8,padding:12}}>
       <input style={{...input,flex:1}} value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Gruba mesaj yaz..."/>
       <button style={button} disabled={busy||!draft.trim()} title="Gönder"><Send size={19}/></button>
      </form>

@@ -1,3 +1,4 @@
+import {MarketLook140} from './Vexa140';
 import {Live130} from './Vexa130';
 import {useState} from 'react';
 import {useLook,Badge} from './Vexa112';
@@ -14,7 +15,7 @@ export function Vexa102ProfileCard({profile,selfId,isFriend,onClose,onAdd,onMess
  return <div className="vexa102-card">
   <div className="vexa102-cover" style={profile.cover_url?{backgroundImage:`linear-gradient(transparent,rgba(0,0,0,.4)),url(${profile.cover_url})`,backgroundSize:'cover',backgroundPosition:'center'}:undefined}><Live130 userId={profile.id} banner/><span className="vexa102-brand">Vexa / Profil</span><button className="vexa102-close" aria-label="Kapat" onClick={onClose}><X size={20}/></button></div>
   <div className={"vexa102-avatar v112-frame-"+(look?.frame||"none")}>{avatar?<img src={avatar} alt={`${display} profil fotoğrafı`}/>:display.charAt(0).toUpperCase()}</div>
-  <div className="vexa102-body"><h2>{display} <Badge look={look}/></h2><VexaIdentity userId={profile.id}/><VexaPublicPresence userId={profile.id}/>
+  <div className="vexa102-body"><h2>{display} <Badge look={look}/></h2><VexaIdentity userId={profile.id}/><MarketLook140 userId={profile.id}/><VexaPublicPresence userId={profile.id}/>
    {profile.bio&&<div className="v94-bio"><small>HAKKINDA</small><p className="vexa102-bio">{profile.bio}</p></div>}
    <div className="vexa102-details"><span><CalendarDays size={16}/><VexaJoined userId={profile.id}/></span><span><ShieldCheck size={16}/>{isFriend?'Arkadaşın':'Vexa kullanıcısı'}</span></div>
    <div className="vexa102-buttons">{profile.id!==selfId&&(isFriend?<button className="vexa102-primary" onClick={onMessage}><MessageCircle size={17}/> Mesaj gönder</button>:<button className="vexa102-primary" onClick={onAdd}><UserPlus size={17}/> Arkadaş ekle</button>)}<button onClick={()=>void navigator.clipboard.writeText(link).then(()=>setCopied(true))}><Copy size={16}/>{copied?'Kopyalandı':'Profili paylaş'}</button></div>
