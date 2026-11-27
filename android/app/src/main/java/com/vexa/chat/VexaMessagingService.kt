@@ -42,7 +42,7 @@ class VexaMessagingService : FirebaseMessagingService() {
         }
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            if (incoming) putExtra("vexa_call_id", callId)
+            if (incoming) { putExtra("vexa_call_id", callId); putExtra("vexa_incoming", true); putExtra("vexa_notification_id", callNotificationId) }
         }
         val id = if (incoming) callNotificationId else (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
         val pending = PendingIntent.getActivity(this, id, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
@@ -53,6 +53,7 @@ class VexaMessagingService : FirebaseMessagingService() {
         if (incoming) {
             builder.setCategory(NotificationCompat.CATEGORY_CALL).setTimeoutAfter(45000L)
                 .addAction(android.R.drawable.ic_menu_call, "Aramayı aç", pending)
+            if (Build.VERSION.SDK_INT < 34 || manager.canUseFullScreenIntent()) builder.setFullScreenIntent(pending, true)
             if (Build.VERSION.SDK_INT < 26) builder.setSound(ringtone).setVibrate(longArrayOf(0, 500, 250, 500))
         }
         val notification = builder.build()
