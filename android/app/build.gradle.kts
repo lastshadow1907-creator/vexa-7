@@ -12,8 +12,8 @@ android {
         applicationId = "com.vexa.chat"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 13000
+        versionName = "13.0"
     }
 
     buildTypes {
@@ -37,6 +37,5 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-ktx:1.9.3")
     implementation("androidx.webkit:webkit:1.12.1")
-
     implementation("com.google.android.gms:play-services-ads:23.6.0")
 }
