@@ -38,6 +38,10 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Zil seslerini üret
+        working-directory: .
+        run: python3 scripts/vexa-ring141.py
+
       - name: APK derle
         run: gradle --no-daemon :app:assembleDebug
 
