@@ -41,11 +41,11 @@ class VexaMessagingService : FirebaseMessagingService() {
                 val audio = context.getSystemService(android.content.Context.AUDIO_SERVICE) as AudioManager
                 val nm = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as NotificationManager
                 if (audio.ringerMode != AudioManager.RINGER_MODE_NORMAL || nm.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL) return@post
-                if (nm.activeNotifications.any { it.id == id }) return@post
-                val channel = nm.getNotificationChannel("vexa_calls_v133")
-                if (channel == null || channel.importance < NotificationManager.IMPORTANCE_DEFAULT || channel.sound == null) return@post
+                // Notification sound is silent on the new incoming-call channel; the service plays the looping ringtone.
+                val channel = nm.getNotificationChannel("vexa_calls_v141")
+                if (channel == null || channel.importance < NotificationManager.IMPORTANCE_DEFAULT) return@post
                 try {
-                    val r = RingtoneManager.getRingtone(context.applicationContext, channel.sound) ?: return@post
+                    val r = RingtoneManager.getRingtone(context.applicationContext, VexaRing141.uri(context)) ?: return@post
                     r.audioAttributes = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
                     if (Build.VERSION.SDK_INT >= 28) r.isLooping = true
                     ringing = r; ringingId = id; r.play()
@@ -64,16 +64,18 @@ class VexaMessagingService : FirebaseMessagingService() {
         if (kind in listOf("call_ended", "call_cancelled", "call_accepted", "call_rejected")) {
             manager.cancel(callNotificationId)
             stopRinging(callNotificationId)
+            VexaRingService141.stop(this, callNotificationId)
             return
         }
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
+        if (kind == "missed_call") { manager.cancel(callNotificationId); stopRinging(callNotificationId); VexaRingService141.stop(this, callNotificationId) }
         val incoming = kind in listOf("call", "incoming_call", "audio_call", "video_call")
-        val channelId = if (incoming) "vexa_calls_v133" else "vexa_messages"
-        val ringtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+        if (incoming && (message.data["sent_at"]?.toLongOrNull()?.let { System.currentTimeMillis() - it > 45000 } == true)) return
+        val channelId = if (incoming) "vexa_calls_v141" else "vexa_messages"
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(channelId, if (incoming) "Vexa gelen arama zili" else "Mesajlar ve arkadaşlık istekleri", NotificationManager.IMPORTANCE_HIGH)
             if (incoming) {
-                channel.setSound(ringtone, AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+                channel.setSound(null, null)
                 channel.enableVibration(true)
                 channel.vibrationPattern = longArrayOf(0, 500, 250, 500)
                 channel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
@@ -91,13 +93,14 @@ class VexaMessagingService : FirebaseMessagingService() {
             .setContentTitle(title).setContentText(body).setAutoCancel(!incoming).setContentIntent(pending)
             .setPriority(NotificationCompat.PRIORITY_HIGH).setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
         if (incoming) {
-            builder.setCategory(NotificationCompat.CATEGORY_CALL).setTimeoutAfter(45000L).setOngoing(true)
+            builder.setCategory(NotificationCompat.CATEGORY_CALL).setTimeoutAfter(45000L).setOngoing(true).setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
                 .addAction(android.R.drawable.ic_menu_call, "Aramayı aç", pending)
             if (Build.VERSION.SDK_INT < 34 || manager.canUseFullScreenIntent()) builder.setFullScreenIntent(pending, true)
-            if (Build.VERSION.SDK_INT < 26) builder.setSound(ringtone).setVibrate(longArrayOf(0, 500, 250, 500))
+            // minSdk 26: incoming calls use the dedicated channel and ringtone service.
         }
         val notification = builder.build()
-        if (incoming) notification.flags = notification.flags or Notification.FLAG_INSISTENT
-        manager.notify(id, notification)
+        if (incoming) {
+            VexaRingService141.start(this, id, title, notification)
+        } else manager.notify(id, notification)
     }
 }
