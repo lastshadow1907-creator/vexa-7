@@ -1,6 +1,13 @@
 package com.vexa.chat
 
 import android.Manifest
+import android.app.NotificationManager
+import android.media.AudioManager
+import android.media.AudioDeviceInfo
+import android.provider.Settings
+import android.view.WindowManager
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import android.app.DownloadManager
 import android.os.Build
 import com.google.firebase.messaging.FirebaseMessaging
@@ -57,6 +64,68 @@ class MainActivity : ComponentActivity() {
         if (allowed.isNotEmpty()) request.grant(allowed) else request.deny()
     }
 
+    private var previousAudioMode: Int? = null
+    private var previousSpeaker = false
+    private fun releaseAudioRoute() {
+        val old = previousAudioMode ?: return
+        val audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        if (Build.VERSION.SDK_INT >= 31) audio.clearCommunicationDevice()
+        else audio.isSpeakerphoneOn = previousSpeaker
+        audio.mode = old
+        previousAudioMode = null
+    }
+    private fun routeAudio(speaker: Boolean): Boolean {
+        val audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        if (previousAudioMode == null) {
+            previousAudioMode = audio.mode
+            previousSpeaker = audio.isSpeakerphoneOn
+        }
+        audio.mode = AudioManager.MODE_IN_COMMUNICATION
+        if (Build.VERSION.SDK_INT >= 31) {
+            val type = if (speaker) AudioDeviceInfo.TYPE_BUILTIN_SPEAKER else AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
+            val device = audio.availableCommunicationDevices.firstOrNull { it.type == type } ?: return false
+            return audio.setCommunicationDevice(device)
+        }
+        audio.isSpeakerphoneOn = speaker
+        return true
+    }
+    private var incomingNotification: Int? = null
+    private fun handleCallIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra("vexa_incoming", false) != true) return
+        // The notification ID is only used to dismiss the local ringing notification.
+        incomingNotification = intent.getIntExtra("vexa_notification_id", 11901)
+        if (Build.VERSION.SDK_INT >= 27) { setShowWhenLocked(true); setTurnScreenOn(true) }
+        else window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+    }
+    private fun finishIncoming() {
+        incomingNotification?.let { (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(it) }
+        incomingNotification = null
+        if (Build.VERSION.SDK_INT >= 27) { setShowWhenLocked(false); setTurnScreenOn(false) }
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+    }
+    private fun installCallBridge() {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return
+        WebViewCompat.addWebMessageListener(web, "VexaCallNative", setOf("https://vexa-7.vercel.app")) { _, message, _, isMainFrame, reply ->
+            if (!isMainFrame) return@addWebMessageListener
+            try {
+                val req = JSONObject(message.data ?: "{}")
+                val result = when (req.optString("action")) {
+                    "route" -> routeAudio(req.optBoolean("speaker"))
+                    "release" -> { releaseAudioRoute(); true }
+                    "dismiss" -> { finishIncoming(); true }
+                    "fullscreen" -> {
+                        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                        if (Build.VERSION.SDK_INT >= 34 && !nm.canUseFullScreenIntent()) {
+                            startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName")))
+                        }
+                        true
+                    }
+                    else -> false
+                }
+                reply.postMessage(JSONObject().put("id", req.optString("id")).put("ok", result).toString())
+            } catch (_: Exception) { reply.postMessage("{\"ok\":false}") }
+        }
+    }
     private fun downloadApk(url: String, userAgent: String? = null) {
         try {
             val uri = Uri.parse(url)
@@ -92,6 +161,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
+        handleCallIntent(intent)
         handleAuthCallback(intent.data)
     }
 
@@ -111,6 +182,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         web = WebView(this)
         setContentView(web)
+        installCallBridge()
+        handleCallIntent(intent)
 
         WebView.setWebContentsDebuggingEnabled(false)
         val installedVersion = try {
@@ -244,6 +317,8 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         pendingPermission?.deny()
         uploadCallback?.onReceiveValue(null)
+        releaseAudioRoute()
+        finishIncoming()
         web.destroy()
         super.onDestroy()
     }
