@@ -63,7 +63,7 @@ function save132(key:string,rows:Msg[]){chat132Cache.delete(key);chat132Cache.se
 const emojis = ['❤️', '😂', '👍', '😮', '😢', '🔥'];
 const time = (date: string) => new Date(date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
-export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { userId: string; peerId: string; clearedAt?: string|null; peerName?:string }) {
+export default function EnhancedChat({ userId, peerId, clearedAt, peerName,forwardFriends=[] }: { userId: string; peerId: string; clearedAt?: string|null; peerName?:string; forwardFriends?:{id:string;name:string;avatar:string|null}[] }) {
   const gesture=useRef<{x:number;y:number;timer:ReturnType<typeof setTimeout>}|null>(null);
   const suppress=useRef(0);
   const [attachments,setAttachments]=useState(false);
@@ -133,6 +133,9 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const [showStarred, setShowStarred] = useState(false);
   const [forwarding, setForwarding] = useState<Msg | null>(null);
   const [forwardTarget, setForwardTarget] = useState('');
+  const [forwardSearch,setForwardSearch]=useState(''),[forwardBusy,setForwardBusy]=useState(false),[forwardError,setForwardError]=useState(''),[forwardNotice,setForwardNotice]=useState('');
+  const forwardLock=useRef(false);
+  useEffect(()=>{if(!forwardNotice)return;const t=setTimeout(()=>setForwardNotice(''),3000);return()=>clearTimeout(t)},[forwardNotice]);
   const [peerTyping, setPeerTyping] = useState(false);
   const [showGallery,setShowGallery]=useState(false);
   const [galleryFilter,setGalleryFilter]=useState<'all'|'image'|'video'|'document'>('all');
@@ -291,13 +294,30 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   }
 
   async function forwardMessage() {
-    if(!forwarding || !forwardTarget.trim())return;
-    const target = forwardTarget.trim();
-    if(target===userId){setError('Kendine iletemezsin.');return;}
-    const {data:friend,error:friendError}=await supabase.from('friend_requests').select('id').eq('status','accepted').or(`and(sender_id.eq.${userId},recipient_id.eq.${target}),and(sender_id.eq.${target},recipient_id.eq.${userId})`).limit(1);
-    if(friendError || !friend?.length){setError('Alıcıyla arkadaşlık doğrulanamadı. İletme yapılmadı.');return;}
-    const {error:e}=await supabase.from('messages').insert({sender_id:userId,recipient_id:target,body:`↪ İletildi\n${forwarding.body||'Medya'}`,media_path:null,media_type:null});
-    if(e)setError(e.message);else{setForwarding(null);setForwardTarget('');setOpenActions(null);}
+    if(!forwarding||!forwardTarget||forwardLock.current||!forwardFriends.some(x=>x.id===forwardTarget))return;
+    forwardLock.current=true;setForwardBusy(true);setForwardError('');
+    let uploaded:string|null=null;
+    try{
+      const target=forwardTarget;
+      const {data:friend,error:friendError}=await supabase.from('friend_requests').select('id').eq('status','accepted').or(`and(sender_id.eq.${userId},recipient_id.eq.${target}),and(sender_id.eq.${target},recipient_id.eq.${userId})`).limit(1);
+      if(friendError||!friend?.length)throw Error('Arkadaşlık doğrulanamadı.');
+      const {data:source,error:sourceError}=await supabase.from('messages').select('body,media_path,media_type,deleted_at').eq('id',forwarding.id).maybeSingle();
+      if(sourceError||!source||source.deleted_at)throw Error('Mesaj artık kullanılamıyor.');
+      if(source.media_path){
+        const {data:signed,error:signError}=await supabase.storage.from('vexa-media').createSignedUrl(source.media_path,60);
+        if(signError||!signed?.signedUrl)throw Error('Medya açılamadı.');
+        const response=await fetch(signed.signedUrl);if(!response.ok)throw Error('Medya indirilemedi.');
+        const blob=await response.blob();if(blob.size>25*1024*1024)throw Error('Dosya en fazla 25 MB olabilir.');
+        const ext=source.media_path.split('.').pop()?.replace(/[^a-z0-9]/gi,'').slice(0,8)||'bin';
+        const prefix=source.media_path.includes('/vn130-')?'vn130-':source.media_path.includes('/st130-')?'st130-':'';
+        uploaded=`${userId}/${prefix}${crypto.randomUUID()}.${ext}`;
+        const {error:e}=await supabase.storage.from('vexa-media').upload(uploaded,blob,{contentType:blob.type||'application/octet-stream'});if(e){uploaded=null;throw e}
+      }
+      const {error:e}=await supabase.from('messages').insert({sender_id:userId,recipient_id:target,body:source.body?'↪ İletildi\n'+source.body:'↪ İletildi',media_path:uploaded,media_type:source.media_type});
+      if(e)throw e;
+      uploaded=null;setForwardNotice('Mesaj iletildi');setForwarding(null);setForwardTarget('');setOpenActions(null);if(target===peerId)void load();
+    }catch(e){if(uploaded)await supabase.storage.from('vexa-media').remove([uploaded]);setForwardError((e as Error).message)}
+    finally{forwardLock.current=false;setForwardBusy(false)}
   }
 
   // Kullanıcı sekmeye geri döndüğünde açık sohbeti tekrar okundu say.
@@ -542,7 +562,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
                     <CornerUpLeft size={14} /> Yanıtla
                   </button>
                   {m.body&&<button type="button" onClick={()=>{void navigator.clipboard.writeText(m.body!).then(()=>setOpenActions(null)).catch(()=>setError("Mesaj kopyalanamadı."))}}>Kopyala</button>}<button type="button" onClick={()=>void toggleStar(m)}><Star size={14}/>{starred.includes(m.id)?'Yıldızı kaldır':'Yıldızla'}</button>
-                  <button type="button" onClick={()=>{setForwarding(m);setOpenActions(null);}}><Forward size={14}/> İlet</button>
+                  <button type="button" onClick={()=>{setForwarding(m);setForwardTarget('');setForwardSearch('');setForwardError('');setOpenActions(null);}}><Forward size={14}/> İlet</button>
                   {mine && <>
                     <button type="button" onClick={() => { setEdit(m); setReply(null); setDraft(m.body || ''); setOpenActions(null); }}>
                       <Pencil size={14} /> Düzenle
@@ -560,7 +580,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         {showSearch && chatSearch && timeline.length === 0 && <div className="enhanced-preview">Eşleşen mesaj bulunamadı.</div>}
         <div ref={bottom} />
       </div>
-      {forwarding && <div className="vexa8-forward-box"><span>İletilecek: {forwarding.body?.slice(0,60)||'Medya'}</span><input aria-label="Alıcı kullanıcı kimliği" placeholder="Arkadaşın kullanıcı UUID'si" value={forwardTarget} onChange={e=>setForwardTarget(e.target.value)}/><button type="button" onClick={()=>void forwardMessage()}>İlet</button><button type="button" onClick={()=>setForwarding(null)}>İptal</button></div>}
+      {forwardNotice&&<div className="v94-toast" role="status">{forwardNotice}</div>}{forwarding&&createPortal(<div className="v95-action-overlay" onClick={e=>{if(e.target===e.currentTarget&&!forwardBusy)setForwarding(null)}}><section className="v95-action-sheet v133-forward" role="dialog" aria-modal="true" aria-label="Mesaj ilet"><header className="v95-action-header"><strong><Forward size={19}/> İlet</strong><button disabled={forwardBusy} aria-label="Kapat" onClick={()=>setForwarding(null)}><X size={20}/></button></header><p className="v133-preview">{forwarding.body?.slice(0,120)||'Medya mesajı'}</p><input aria-label="Arkadaş ara" placeholder="Arkadaş ara..." value={forwardSearch} onChange={e=>setForwardSearch(e.target.value)}/><div className="v133-friends">{forwardFriends.filter(x=>x.name.toLocaleLowerCase('tr').includes(forwardSearch.toLocaleLowerCase('tr'))).map(x=><button type="button" key={x.id} disabled={forwardBusy} aria-pressed={forwardTarget===x.id} onClick={()=>setForwardTarget(x.id)}><span className="v133-avatar">{x.avatar?<img src={x.avatar} alt=""/>:x.name.slice(0,1).toLocaleUpperCase('tr')}</span><strong>{x.name}</strong><span>{forwardTarget===x.id?'✓':''}</span></button>)}{!forwardFriends.length&&<p>Henüz arkadaşın yok.</p>}</div>{forwardError&&<p role="alert">{forwardError}</p>}<button type="button" disabled={!forwardTarget||forwardBusy} onClick={()=>void forwardMessage()}><Send size={18}/> {forwardBusy?'İletiliyor…':'İlet'}</button></section></div>,document.body)}
       {(reply || edit || file) && <div className="enhanced-preview">
         <span>{edit ? 'Düzenleniyor: ' : reply ? 'Yanıt: ' : 'Ek: '}
           {edit?.body || reply?.body || file?.name || 'Medya'}</span>

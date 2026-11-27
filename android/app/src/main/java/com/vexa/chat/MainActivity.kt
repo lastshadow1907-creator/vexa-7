@@ -99,6 +99,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun finishIncoming() {
         incomingNotification?.let { (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(it) }
+        VexaMessagingService.stopRinging()
         incomingNotification = null
         if (Build.VERSION.SDK_INT >= 27) { setShowWhenLocked(false); setTurnScreenOn(false) }
         else window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
@@ -167,6 +168,7 @@ class MainActivity : ComponentActivity() {
                     "route" -> routeAudio(req.optBoolean("speaker"))
                     "release" -> { releaseAudioRoute(); true }
                     "dismiss" -> { finishIncoming(); true }
+                    "ring" -> { val id = req.optString("callId"); if (id.isNotBlank()) VexaMessagingService.ring(this, ("vexa-call:" + id).hashCode()); true }
                     "fullscreen" -> {
                         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                         if (Build.VERSION.SDK_INT >= 34 && !nm.canUseFullScreenIntent()) {
@@ -234,6 +236,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val callChannel = android.app.NotificationChannel("vexa_calls_v133", "Vexa aramaları", NotificationManager.IMPORTANCE_HIGH)
+        callChannel.setSound(android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE), android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE).setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+        callChannel.enableVibration(true)
+        callChannel.vibrationPattern = longArrayOf(0, 500, 250, 500)
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(callChannel)
         web = WebView(this)
         setContentView(web)
         installCallBridge()
