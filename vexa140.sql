@@ -31,7 +31,7 @@ begin
  if reward>0 then k:='streak:'||a_id||':'||b_id||':'||n;perform public.vexa140_award(a_id,reward,n||' günlük seri',k);perform public.vexa140_award(b_id,reward,n||' günlük seri',k);end if;
  return new;
 exception when others then raise warning 'vexa140 streak: %',sqlstate;return new;
-end $;
+end $$;
 revoke all on function public.vexa140_message_streak() from public,anon,authenticated;
 drop trigger if exists vexa140_message_streak on public.messages;
 create trigger vexa140_message_streak after insert on public.messages for each row execute function public.vexa140_message_streak();
