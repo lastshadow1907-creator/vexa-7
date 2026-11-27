@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState,useRef} from 'react';
-import {ArrowLeft,Plus,Send,Users,Settings,UserPlus,LogOut,Shield,ShieldOff,UserMinus,Save,X,Search,Camera,Image,ChevronRight,Phone,Check} from 'lucide-react';
+import {ArrowLeft,Plus,Send,Users,Settings,UserPlus,LogOut,Shield,ShieldOff,UserMinus,Save,X,Search,Camera,Image,ChevronRight,Phone} from 'lucide-react';
 import {supabase} from './supabase';
 import './groups134.css';
 
