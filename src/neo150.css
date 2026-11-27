@@ -1,0 +1,237 @@
+/* Vexa Neo · final layout layer. Business logic and legacy module-specific styles remain intact. */
+:root{--bg:#101714;--panel:#17221d;--panel2:#202d26;--line:#ffffff13;--text:#edf5ef;--muted:#9bafa3;--accent:#8de2ae;--accentText:#11281a;--hover:#293a30;--bubble:#24332b;--bubble-own:#284e37;--neo-rail:#121c17;--neo-shadow:0 20px 60px #0003;--neo-radius:24px}
+:root[data-vexa-theme=ocean]{--accent:#83baff}:root[data-vexa-theme=violet]{--accent:#bba1fa}:root[data-vexa-theme=rose]{--accent:#ffa8c9}:root[data-vexa-theme=amber]{--accent:#ffc48a}
+:root[data-vexa-mode=light]{--bg:#e8f0eb;--panel:#f9fcfa;--panel2:#eaf2ec;--line:#122d1818;--text:#183225;--muted:#617568;--hover:#e0ece4;--bubble:#f4f8f5;--bubble-own:#c9ebd3;--accentText:#12351f;--neo-rail:#e1ece4;--neo-shadow:0 20px 60px #17392112}
+:root[data-vexa-mode=light][data-vexa-theme=emerald]{--accent:#72cd96}
+html,body,#root{height:100%;min-height:0;overflow:hidden}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.012em}
+button,input,textarea,select{font:inherit}button{touch-action:manipulation}button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+input,textarea,select{border-radius:15px;max-width:100%;min-width:0}
+.neo150 [hidden]{display:none!important}
+.neo150{position:relative;display:grid;grid-template-columns:84px minmax(300px,350px) minmax(0,1fr);width:100%;height:100dvh;max-width:none;max-height:none;margin:0;padding:12px;gap:12px;background:var(--bg);overflow:hidden;border:0;box-shadow:none;border-radius:0;box-sizing:border-box}
+.neo150-rail{grid-column:1;grid-row:1;display:flex;flex-direction:column;align-items:center;gap:26px;background:var(--neo-rail);border:1px solid var(--line);border-radius:26px;padding:18px 7px;min-height:0;overflow-y:auto}
+.neo150-brandmark,.neo150-mobile-mark{display:grid;place-items:center;width:44px;height:44px;flex:none;border-radius:15px;background:var(--accent);color:var(--accentText);font-weight:900;font-size:26px;letter-spacing:-3px;padding-right:3px;box-shadow:0 7px 22px color-mix(in srgb,var(--accent) 20%,transparent)}
+.neo150-rail-items{display:grid;gap:8px;width:100%}
+.neo150-rail-items button,.neo150-rail-me{display:grid;place-items:center;gap:6px;background:transparent;color:var(--muted);border-radius:18px;min-width:0;min-height:65px;padding:8px 2px;position:relative}
+.neo150-rail-items button small{font-size:10px;line-height:1.2;white-space:nowrap}
+.neo150-rail-items button.active{background:var(--panel2);color:var(--accent)}.neo150-rail-items button.active:before{content:"";position:absolute;left:0;width:3px;height:24px;border-radius:4px;background:var(--accent)}
+.neo150-rail-me{margin-top:auto;min-height:50px}
+.neo150 .sidebar{grid-column:2;grid-row:1;display:flex;flex-direction:column;min-width:0;min-height:0;max-height:none;height:100%;width:auto;position:relative;inset:auto;border:1px solid var(--line);border-radius:26px;background:var(--panel);padding:0;overflow:hidden}
+.neo150 .sidebar-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:20px 20px 14px;min-height:72px;flex:none;background:transparent;border:0}
+.neo150-wordmark{display:flex;align-items:center;gap:10px}.neo150 .logo{font-size:26px;font-weight:850;letter-spacing:-1.5px}.neo150 .logo span{color:var(--accent)}
+.neo150-mobile-mark{display:none}.neo150 .edition{font-size:10px;font-weight:750;letter-spacing:.5px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:5px 9px;margin-left:auto}
+.neo150-head-avatar{display:none;border:0;background:none;padding:0;flex:none}
+.neo150 .panel-scroll{flex:1 1 0;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;padding:12px 16px 22px;overscroll-behavior:contain}
+.neo150 .mobile-nav{display:none}
+.neo150 .conversation{grid-column:3;grid-row:1;display:flex;flex-direction:column;min-width:0;min-height:0;height:100%;max-height:none;width:auto;position:relative;inset:auto;border:1px solid var(--line);border-radius:26px;overflow:hidden;background:var(--panel);padding:0}
+.neo150-eyebrow{display:block;font-size:10px;letter-spacing:1.7px;color:var(--muted);font-weight:750;margin-bottom:6px}
+.neo150 .vexa91-inbox-head{margin:5px 0 18px;gap:8px;align-items:flex-end}
+.neo150 .vexa91-inbox-head h2{font-size:28px;letter-spacing:-1px;line-height:1.1;font-weight:780}
+.neo150 .vexa91-new{border-radius:16px;min-height:44px;padding:10px 12px;box-shadow:0 5px 18px color-mix(in srgb,var(--accent) 15%,transparent);font-size:12px;gap:7px}
+.neo150 .vexa91-search{background:var(--panel2);border:1px solid var(--line);border-radius:18px;padding:0 13px;height:48px;margin:0 0 12px}
+.neo150 .vexa91-search input{background:transparent;border:0;padding:12px 0;box-shadow:none;outline:none}
+.neo150 .vexa91-archive{min-height:38px;padding:8px 10px;border-radius:12px;font-size:12px}
+.neo150 .v93-filters{display:flex;flex-wrap:nowrap;gap:6px;margin:6px 0 14px;overflow-x:auto;scrollbar-width:none}
+.neo150 .v93-filters button{white-space:nowrap;border-radius:18px;padding:9px 13px;font-size:12px;font-weight:650}
+.neo150 .v93-filters button[aria-pressed=true]{background:var(--accent);color:var(--accentText)}
+.neo150 .v93-swipe{margin:4px 0;border-radius:18px;overflow:visible}
+.neo150 .v93-swipe>.contact,.neo150 .contact{min-height:72px;width:100%;border-radius:18px;border:1px solid transparent;gap:12px;padding:12px;background:transparent;color:var(--text);text-align:left;min-width:0}
+.neo150 .v93-swipe>.contact{background:var(--panel);padding-right:44px}
+.neo150 .contact.selected,.neo150 .contact:hover{background:var(--panel2);border-color:var(--line)}
+.neo150 .contact strong,.neo150 .contact small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.neo150 .contact strong{font-size:14px;font-weight:700}
+.neo150 .avatar{background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 35%,var(--panel2)),var(--panel2));color:var(--text);font-weight:750;border-radius:50%;flex-shrink:0}
+.neo150 .vexa92-groups-in-chats{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.neo150 .vexa-groups-list{display:grid;gap:6px}
+.neo150 .vexa-group-row{border-radius:17px;padding:12px;min-height:64px;border:1px solid transparent}
+.neo150 .vexa-group-row.active{background:var(--panel2);border-color:var(--line)}
+.neo150 .chat-header{display:flex;align-items:center;position:relative;inset:auto;min-height:76px;flex:0 0 auto;padding:12px 18px;gap:10px;background:var(--panel);border-bottom:1px solid var(--line);z-index:2;backdrop-filter:none}
+.neo150 .chat-header>button:nth-child(2){min-width:0;flex:1!important}
+.neo150 .chat-header>button:nth-child(2)>span:last-child{min-width:0;display:grid;gap:3px;text-align:left}
+.neo150 .chat-header strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.neo150 .chat-header .back{display:none}
+.neo150-header-actions{display:flex;flex:none;align-items:center}
+.neo150 .call-inbox{position:fixed;width:0;height:0;inset:auto;top:0;right:0;z-index:3;overflow:visible;pointer-events:none}
+.neo150 .call-inbox.call-visible{display:block}
+.neo150 .call-inbox .call-error{pointer-events:auto;width:min(300px,90vw);position:fixed;right:15px;top:15px}
+.neo150 .neo150-call-actions{display:flex;align-items:center;gap:7px;position:static;padding:0;transform:none}
+.neo150 .neo150-call-actions button{display:grid;place-items:center;width:42px;height:42px;min-width:0;border:1px solid var(--line);border-radius:15px;background:var(--panel2);color:var(--accent);padding:0}
+.neo150 .enhanced-chat{flex:1 1 0;display:flex;flex-direction:column;min-width:0;min-height:0;height:auto;overflow:hidden;background:var(--panel)}
+.neo150 .v114-chatbar{display:flex;align-items:center;justify-content:flex-end;flex:none;gap:8px;padding:7px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+.neo150-chat-caption{margin-right:auto;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:750}
+.neo150 .v114-chatbar button{display:flex;align-items:center;gap:7px;min-height:35px;padding:7px 11px;border-radius:12px;background:var(--panel2);color:var(--muted);font-size:12px}
+.neo150 .enhanced-list.message-list{display:flex;flex-direction:column;flex:1 1 0;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:22px clamp(16px,4vw,50px);gap:13px;background:radial-gradient(ellipse at 70% 0%,color-mix(in srgb,var(--accent) 5%,transparent),transparent 72%),var(--bg)}
+.neo150 .enhanced-list .message{max-width:min(76%,620px);min-width:0;align-self:flex-start;width:fit-content;padding:0;background:none;box-shadow:none;border:0}
+.neo150 .enhanced-list .message.mine{align-self:flex-end}
+.neo150 .enhanced-list .message-body{background:var(--bubble);color:var(--text);padding:12px 15px;line-height:1.55;font-size:14px;border-radius:20px 20px 20px 7px;min-width:0;max-width:100%;border:1px solid var(--line);box-shadow:0 3px 10px #00000009}
+.neo150 .enhanced-list .message.mine .message-body{background:var(--bubble-own);border-radius:20px 20px 7px 20px;color:var(--text)}
+.neo150 .enhanced-chat:not(.v10-theme-default) .message.mine .message-body{color:white}
+.neo150 .v10-theme-theme-forest{--bubble-own:#285341}.neo150 .v10-theme-theme-cosmos{--bubble-own:#54407b}
+.neo150 .enhanced-list .message time{display:block;margin:4px 5px 0;color:var(--muted);font-size:10px;white-space:normal}
+.neo150 .enhanced-media{border-radius:15px;max-width:100%;height:auto;max-height:360px;object-fit:contain}
+.neo150 .enhanced-reactions{margin-top:3px;position:relative;display:flex;gap:4px;flex-wrap:wrap}
+.neo150 .enhanced-reactions[hidden]{display:none!important}
+.neo150 .enhanced-reactions button{border-radius:20px;background:var(--panel2);border:1px solid var(--line);padding:4px 7px}
+.neo150 .vexa8-reply-quote,.neo150 .enhanced-preview{border-radius:12px;overflow-wrap:anywhere}
+.neo150 .enhanced-preview{flex:none;max-height:100px;overflow:auto;margin:5px 10px;padding:9px 12px}
+.neo150 .enhanced-compose.composer{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:12px 16px;margin:0;border-top:1px solid var(--line);background:var(--panel);min-width:0;position:relative;inset:auto;width:100%}
+.neo150 .enhanced-compose>input:not([type=file]){flex:1 1 0;min-width:0;height:48px;border-radius:24px;background:var(--panel2);padding:12px 16px;border:1px solid var(--line)}
+.neo150 .enhanced-compose>button{flex:0 0 46px;width:46px;min-width:46px;height:46px;display:grid;place-items:center;border-radius:17px;background:var(--accent);color:var(--accentText);padding:0}
+.neo150 .enhanced-compose>button.v114-add{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+.neo150-empty-chat{margin:auto;text-align:center;display:grid;gap:8px;color:var(--muted);padding:24px}.neo150-empty-chat span{font-size:30px;color:var(--accent)}.neo150-empty-chat strong{color:var(--text)}
+.neo150 .vexa-media-gallery,.neo150 .v10-theme-picker,.neo150 .vexa-sticker-picker,.neo150 .v112-panel{max-height:35dvh;overflow:auto;flex:none}
+.neo150-welcome{height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:15px;padding:32px;text-align:center;background:radial-gradient(ellipse at 50% 40%,color-mix(in srgb,var(--accent) 9%,transparent),transparent 58%),var(--panel)}
+.neo150-welcome-orbit{position:relative;border:1px solid var(--line);border-radius:50%;width:146px;height:146px;display:grid;place-items:center;margin-bottom:12px}
+.neo150 .neo150-welcome .welcome-icon{display:grid;place-items:center;border-radius:32px;width:100px;height:100px;background:color-mix(in srgb,var(--accent) 15%,var(--panel2));color:var(--accent);box-shadow:0 12px 50px color-mix(in srgb,var(--accent) 12%,transparent)}
+.neo150-orbit-dot{position:absolute;top:9px;right:22px;width:11px;height:11px;border-radius:50%;background:var(--accent)}
+.neo150-welcome h1{font-size:clamp(26px,4vw,46px);letter-spacing:-1.8px;margin:0;font-weight:790}
+.neo150-welcome p{max-width:360px;line-height:1.6;color:var(--muted);margin:0 0 8px}
+.neo150-start{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--accent);color:var(--accentText);padding:14px 20px;border-radius:19px;font-weight:750}
+.neo150[data-tab=profile] .sidebar,.neo150[data-tab=find] .sidebar,.neo150[data-tab=requests] .sidebar,.neo150[data-tab=vexa11] .sidebar{grid-column:2 / 4}
+.neo150[data-tab=profile] .conversation,.neo150[data-tab=find] .conversation,.neo150[data-tab=requests] .conversation,.neo150[data-tab=vexa11] .conversation{display:none}
+.neo150[data-tab=profile] .panel-scroll{padding:16px 22px 24px}
+.neo150 .neo150-profile{display:grid;grid-template-columns:minmax(260px,360px) minmax(0,1fr);gap:20px;width:100%;max-width:1180px;margin:0 auto;min-width:0;padding:0}
+.neo150-profile-index,.neo150-profile-detail{min-width:0;max-width:100%}
+.neo150-profile-detail{border:1px solid var(--line);border-radius:25px;padding:20px;background:var(--bg);align-self:start;overflow-wrap:anywhere}
+.neo150 .neo150-profile .profile-cover{position:relative;height:132px;border-radius:22px;overflow:hidden;background:linear-gradient(125deg,#1d503a,#345c45,#172b21);border:0}
+.neo150 .vexa13-profile-head{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin:-32px 0 14px;padding:0 15px}
+.neo150 .vexa13-profile-head>.avatar{border:4px solid var(--panel);box-shadow:0 4px 14px #0002}
+.neo150 .vexa13-profile-head h2{font-size:23px;line-height:1.2;letter-spacing:-.6px;overflow-wrap:anywhere;margin:0 0 5px}
+.neo150 .vexa13-profile-head p{font-size:12px;color:var(--muted);margin:0}
+.neo150-plus-teaser{display:flex;align-items:center;gap:12px;width:100%;min-height:78px;padding:14px;border:1px solid #dcb96b44;border-radius:21px;color:#f2d48d;background:linear-gradient(130deg,#403825,#252a22);text-align:left}
+.neo150-plus-teaser>span:nth-child(2){display:grid;gap:5px;flex:1;min-width:0}.neo150-plus-teaser small{font-size:11px;color:#d8c9a8}.neo150-plus-icon{display:grid;place-items:center;width:43px;height:43px;border-radius:15px;background:#e7c37b1f;color:#e7c37b;flex:none}
+.neo150-section-label{font-size:10px;letter-spacing:1.5px;color:var(--muted);font-weight:800;margin:22px 3px 8px}
+.neo150 .v94-profile-menu,.neo150 .v130-profile-nav{display:grid;gap:5px;padding:6px;margin:0;border:1px solid var(--line);background:var(--panel2);border-radius:21px;overflow:hidden}
+.neo150 .v94-profile-menu button,.neo150 .v130-profile-nav button{display:flex;align-items:center;gap:12px;width:100%;min-height:46px;padding:12px;text-align:left;border:0;border-radius:14px;background:transparent;color:var(--text);font-weight:600;font-size:13px}
+.neo150 .v94-profile-menu button:hover,.neo150 .v130-profile-nav button[aria-pressed=true]{background:var(--hover)}
+.neo150 .v130-profile-nav button svg:first-child,.neo150 .v94-profile-menu button svg:first-child{color:var(--accent)}
+.neo150-detail-header{display:flex;align-items:center;gap:12px;margin:0 0 20px;min-width:0}
+.neo150-detail-header button{width:44px;height:44px;display:grid;place-items:center;border-radius:15px;background:var(--panel2);color:var(--text);flex:none}
+.neo150-detail-header h2{font-size:23px;letter-spacing:-.7px;margin:0;overflow-wrap:anywhere}
+.neo150-profile-welcome{min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;text-align:center;padding:20px;color:var(--muted)}
+.neo150-profile-welcome h2{color:var(--text);margin:0}.neo150-profile-welcome p{max-width:330px;line-height:1.6;margin:0}
+.neo150-welcome-mark{display:grid;place-items:center;background:var(--panel2);color:var(--accent);width:82px;height:82px;border-radius:27px}
+.neo150 .vexa13-category,.neo150 .vexa12-panel,.neo150 .v140-card,.neo150 .v130-section,.neo150 .v112-panel{background:var(--panel);border:1px solid var(--line);border-radius:21px;max-width:100%;min-width:0;overflow-wrap:anywhere}
+.neo150-profile-detail .v112-panel{max-height:none;overflow:visible}
+.neo150 .vexa13-category-body{padding:16px;min-width:0}
+.neo150 .vp-page{display:grid;gap:12px;min-width:0;max-width:100%;padding:0}
+.neo150 .vp-hero{position:relative;isolation:isolate;overflow:hidden;border-radius:25px;padding:26px 20px;color:#f7e9c5;background:radial-gradient(ellipse at 100% 0%,#775e2c 0,transparent 62%),linear-gradient(145deg,#2c2c20,#1a241f);border:1px solid #e7c37b44;text-align:center}
+.neo150 .vp-hero .neo150-plus-emblem{display:grid;place-items:center;width:70px;height:70px;margin:0 auto 14px;font-size:40px;background:#e7c37b1e;color:#e7c37b;border-radius:24px;border:1px solid #e7c37b44}
+.neo150 .vp-hero h2{font-size:clamp(22px,3vw,32px);color:#f7e9c5;letter-spacing:-.9px;margin:9px 0;line-height:1.2}
+.neo150 .vp117-hero-price{font-size:36px;color:#f4d891;font-weight:820;letter-spacing:-1.3px}
+.neo150 .vp117-hero-price small{font-size:13px;letter-spacing:0}
+.neo150 .vp-benefit,.neo150 .vp-quota,.neo150 .vp-admin-user,.neo150 .vp-stats>div{border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:14px;min-width:0;overflow-wrap:anywhere}
+.neo150 .vp-benefit b{color:#d6b46f}.neo150 .vp-benefit p{line-height:1.5}
+.neo150 .v131-admin-menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.neo150 .v131-admin-menu button{min-width:0;min-height:54px;border-radius:16px;overflow-wrap:anywhere}
+.neo150 .vp-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.neo150 .v140-shop article,.neo150 .v140-ticket{border-radius:20px;background:var(--panel2);min-width:0}
+.neo150 .v140-shop .v140-item-preview{height:100px;border-radius:16px}
+.neo150 .v140-wallet{border-radius:23px;padding:20px}
+.neo150 .vexa-groups-layout.vexa91-mode-chat,.neo150 .vexa-groups-conversation,.neo150 .vexa-groups-chat{min-width:0;min-height:0;height:100%;overflow:hidden}
+.neo150 .vexa-groups-conversation{display:flex;flex-direction:column;background:var(--panel)}
+.neo150 .vexa-groups-chat-header{flex:none;min-height:70px;padding:12px;gap:9px;background:var(--panel);border-bottom:1px solid var(--line)}
+.neo150 .vexa-group-chat-title{min-width:0;flex:1}.neo150 .vexa-group-chat-title strong,.neo150 .vexa-group-chat-title small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.neo150 .vexa-group-messages{background:var(--bg);min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.neo150 .vexa-group-message{border:1px solid var(--line);border-radius:20px 20px 20px 7px;padding:13px;max-width:85%;background:var(--bubble);min-width:0}
+.neo150 .vexa-group-message.mine{border-radius:20px 20px 7px 20px;background:var(--bubble-own)}
+.neo150 .vexa-group-compose{flex:none;background:var(--panel);border-top:1px solid var(--line);min-width:0;align-items:center}
+.neo150 .vexa-group-compose>input:not([type=file]){min-width:0;flex:1;border-radius:23px}
+.neo150 .vexa-group-compose>button{min-width:38px;min-height:40px;padding:7px;border-radius:15px}
+.neo150 .vexa-groups-settings{min-height:0;overflow-y:auto;padding:16px;overscroll-behavior:contain}
+.neo150 .vexa-group-member-row{min-width:0;border-radius:15px;background:var(--panel2);margin:5px 0;flex-wrap:wrap}
+.neo150 .v134-member-name{min-width:0;overflow-wrap:anywhere}
+.neo150 .v134-tabs{flex-wrap:wrap}
+.neo150 .v140-tabs{flex:none;max-width:100%;overflow-x:auto;padding:6px 10px}
+.neo150 .v140-card:has(.v140-ticket){max-height:none}
+.neo150 .vexa-group-messages~.v140-card{flex:0 1 auto;max-height:38dvh;overflow:auto;margin:5px 10px}
+.neo150 .vexa16-desktop-history{display:block;padding:18px;overflow:auto}
+.neo150[data-tab=calls14] .sidebar{display:none}.neo150[data-tab=calls14] .conversation{grid-column:2 / 4}
+.neo150[data-tab=ai] .sidebar{display:none}.neo150[data-tab=ai] .conversation{grid-column:2 / 4}
+.neo150 .vexa-ai{min-height:0;min-width:0;flex:1 1 0;height:auto;max-width:none;border-radius:0}
+.neo150 .vexa-ai-compose{flex:none;min-width:0}
+.neo150 .vexa14-history{max-width:850px;margin:auto}.neo150 .vexa14-history button{border-radius:16px}
+.auth{border-radius:30px;padding:34px;background:var(--panel);box-shadow:var(--neo-shadow);border:1px solid var(--line)}
+.auth input{height:49px;border-radius:16px}.auth form button{border-radius:17px;min-height:47px}.auth .logo{font-size:36px;letter-spacing:-2px}
+.vexa102-backdrop,.v95-action-overlay{background:#06110bb8;backdrop-filter:blur(6px)}
+.vexa102-dialog,.v95-action-sheet{border-radius:27px;background:var(--panel);box-shadow:0 28px 90px #0005;border:1px solid var(--line);max-width:calc(100vw - 20px)}
+.v95-action-sheet{padding:19px}.v95-action-sheet .v95-action-buttons>button{border-radius:14px;min-height:44px}
+.vexa102-card{border-radius:27px}.vexa102-cover{background:linear-gradient(135deg,#1b5338,#3b7854,#193326);height:155px}
+.vexa102-buttons button{border-radius:17px}.vexa102-body{overflow-wrap:anywhere;min-width:0}
+.v119-incoming,.v10-call.call-overlay:not(.v130-mini){background:radial-gradient(ellipse at 50% 25%,#365e48,#172b22 55%,#0b1510);color:#f3f8f4}
+.v119-ring-avatar,.v10-call-avatar{background:linear-gradient(145deg,#75b88d,#234735);box-shadow:0 0 0 12px #8de2ae10,0 0 0 25px #8de2ae06}
+.v119-answer button,.v10-call .call-controls button{border-radius:20px}
+.v10-call .call-controls{background:#ffffff0d;border:1px solid #ffffff14;border-radius:28px}
+.v10-call .call-controls button.danger,.v119-answer .danger{background:#e45468;color:#fff}
+.v10-call .vexa81-remote video{border-radius:24px}
+@keyframes neo150-rise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@keyframes neo150-chat-in{from{opacity:.55;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes neo150-orbit{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@media(prefers-reduced-motion:no-preference){
+ .neo150 button,.v95-action-sheet button{transition:background .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,scale .15s ease}
+ .neo150 button:active:not(:disabled),.v95-action-sheet button:active:not(:disabled){scale:.97}
+ .neo150 .neo150-profile-detail,.neo150 .enhanced-chat,.neo150 .vexa-groups-conversation,.neo150 .v140-card,.neo150 .vp-page{animation:neo150-rise .24s ease-out both}
+ .neo150 .enhanced-list .message:nth-last-child(2){animation:neo150-rise .2s ease-out both}
+ .neo150-welcome-orbit{animation:neo150-orbit 5s ease-in-out infinite}
+}
+@media(min-width:901px) and (max-width:1080px){.neo150{grid-template-columns:70px minmax(260px,300px) minmax(0,1fr);padding:8px;gap:8px}.neo150 .neo150-profile{grid-template-columns:minmax(230px,280px) minmax(0,1fr);gap:12px}.neo150 .neo150-profile-detail{padding:14px}.neo150 .sidebar-header{padding:16px}.neo150 .vexa91-new span{display:none}}
+@media(max-width:900px){
+ .neo150{display:flex;flex-direction:column;padding:0;gap:0;min-height:0;height:100dvh;width:100%;max-height:none;border-radius:0;padding-top:env(safe-area-inset-top,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);background:var(--panel)}
+ .neo150-rail{display:none}.neo150 .sidebar{display:flex;flex:1 1 0;position:relative;inset:auto;width:100%;height:auto;min-height:0;border:0;border-radius:0}
+ .neo150 .sidebar.chat-open{display:none}
+ .neo150 .sidebar-header{min-height:62px;padding:12px 16px;flex:none}
+ .neo150-mobile-mark{display:grid;width:34px;height:34px;border-radius:12px;font-size:21px}
+ .neo150 .logo{font-size:24px}.neo150-head-avatar{display:block}
+ .neo150 .panel-scroll{padding:10px 15px 16px;flex:1 1 0;min-height:0}
+ .neo150 .mobile-nav:not(.hidden-in-chat){display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;flex:0 0 auto;min-height:64px;height:auto;position:relative;inset:auto;padding:7px 9px calc(7px + env(safe-area-inset-bottom,0px));width:100%;border:0;border-top:1px solid var(--line);border-radius:0;background:var(--panel);box-shadow:none}
+ .neo150 .mobile-nav button{min-width:0;min-height:48px;height:auto;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;border-radius:16px;background:transparent;color:var(--muted);padding:5px 2px}
+ .neo150 .mobile-nav button small{font-size:10px;line-height:1.15;white-space:nowrap}
+ .neo150 .mobile-nav button.active{background:var(--panel2);color:var(--accent)}
+ .neo150 .conversation{display:none;position:relative;inset:auto;flex:1 1 0;width:100%;height:auto;min-height:0;border:0;border-radius:0;overflow:hidden}
+ .neo150 .conversation.show{display:flex;flex:1 1 0;height:auto;min-height:0;max-height:none}
+ .neo150 .chat-header{min-height:64px;flex:0 0 auto;padding:9px 9px;gap:6px}
+ .neo150 .chat-header .back{display:grid;place-items:center;width:32px;flex:0 0 32px;height:42px;border-radius:13px;background:transparent;color:var(--text);padding:0}
+ .neo150 .chat-header>button:nth-child(2){gap:7px!important}
+ .neo150 .chat-header>button:nth-child(2)>.avatar{width:35px!important;height:35px!important;flex-basis:35px!important}
+ .neo150 .chat-header>button:last-child{width:30px!important}
+ .neo150 .chat-header strong{font-size:13px}.neo150 .neo150-call-actions{gap:4px}.neo150 .neo150-call-actions button{width:35px;height:38px;border-radius:12px}
+ .neo150 .v114-chatbar{padding:6px 12px}
+ .neo150 .enhanced-list.message-list{padding:15px 12px;gap:11px}
+ .neo150 .enhanced-list .message{max-width:87%}
+ .neo150 .enhanced-compose.composer{gap:7px;padding:9px 10px calc(9px + env(safe-area-inset-bottom,0px))}
+ .neo150 .enhanced-compose>button{width:42px;height:42px;min-width:42px;flex-basis:42px;border-radius:15px}
+ .neo150 .enhanced-compose>input:not([type=file]){height:45px;font-size:16px;padding:10px 12px}
+ .neo150 .vexa91-inbox-head h2{font-size:27px}
+ .neo150 .vexa91-new{font-size:12px}
+ .neo150[data-tab=profile] .panel-scroll{padding:10px 14px 18px}
+ .neo150 .neo150-profile{display:block;padding:0;max-width:none}
+ .neo150 .neo150-profile-detail{display:none;border:0;border-radius:0;padding:0;background:transparent}
+ .neo150 .neo150-detail-open .neo150-profile-index{display:none}
+ .neo150 .neo150-detail-open .neo150-profile-detail{display:block}
+ .neo150 .neo150-profile-welcome{display:none}
+ .neo150 .neo150-profile .profile-cover{height:142px}
+ .neo150 .neo150-profile-index .vexa13-profile-head{flex-direction:row;align-items:flex-end;gap:13px;margin:-30px 0 18px;padding:0 12px}
+ .neo150 .neo150-profile-index .vexa13-profile-head>div{min-width:0;padding-bottom:1px}
+ .neo150 .neo150-profile-index .vexa13-profile-head h2{font-size:21px}
+ .neo150 .neo150-profile-index .vexa13-profile-head p{font-size:11px}
+ .neo150[data-tab=calls14] .sidebar{display:flex}.neo150[data-tab=calls14] .conversation{display:none}
+ .neo150[data-tab=ai] .sidebar{display:none}.neo150[data-tab=ai] .conversation{display:flex}
+ .neo150 .vexa16-mobile-history{display:block}.neo150 .vexa16-desktop-history{display:none}
+ .neo150 .vexa9-ai-back{display:flex;flex:none}
+ .neo150 .vexa-group-compose{padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))!important;gap:5px!important}
+ .neo150 .vexa-group-compose>input:not([type=file]){font-size:16px}
+ .neo150 .vexa-groups-chat-header{gap:5px;padding:8px}
+ .neo150 .vexa14-group-call span{display:none}
+ .neo150 .vexa-group-message{max-width:90%}
+ .neo150 .v140-shop{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .neo150 .v131-admin-menu{grid-template-columns:1fr}
+ .v95-action-overlay,.vexa102-backdrop{align-items:flex-end;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}
+ .v95-action-sheet,.vexa102-dialog{width:100%;max-width:none;max-height:calc(100dvh - 24px - env(safe-area-inset-bottom,0px));border-radius:26px}
+ .auth{margin:16px auto;padding:24px;max-height:calc(100dvh - 32px)}
+ .auth input{font-size:16px}
+}
+@media(max-width:360px){.neo150 .vexa91-new span{display:none}.neo150 .chat-header{gap:3px;padding-inline:5px}.neo150 .neo150-call-actions button{width:31px}.neo150 .chat-header .back{width:27px;flex-basis:27px}.neo150 .chat-header>button:last-child{width:27px!important}.neo150 .v93-filters button{padding:8px 10px}.neo150 .mobile-nav button small{font-size:9px}.neo150 .vexa-group-compose>button{min-width:32px;padding:5px}.neo150 .v140-shop article{padding:9px}}
+@media(prefers-reduced-motion:reduce){.neo150 *,.v95-action-sheet,.vexa102-dialog,.v119-ring-avatar,.v10-call-avatar{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+.neo150 .vexa-groups-layout.vexa91-mode-chat{display:flex;flex:1 1 0;width:100%;padding:0;border:0;border-radius:0;background:var(--panel)}.neo150 .vexa-groups-layout.vexa91-mode-chat>.vexa-groups-conversation{flex:1 1 0;min-width:0;width:100%}.neo150 .vexa-groups-layout.vexa91-mode-list{display:block;height:auto;min-height:0;max-height:none;overflow:visible}.neo150 .vexa-groups-layout.vexa91-mode-list>.vexa-groups-sidebar{width:100%;height:auto;max-height:none;overflow:visible}.neo150 .vexa-groups-list-header{gap:8px}.neo150 .vexa-groups-list-header button{border-radius:14px}.neo150 .vexa-ai .vexa-ai-messages{min-height:0;overflow-y:auto}.neo150 .vexa-ai-compose input{min-width:0}.neo150 .vexa14-history{width:100%}.neo150 .vexa12-actions{flex-wrap:wrap}.neo150 .vexa12-actions input{flex:1 1 150px}.neo150 .vexa-group-messages~.v140-card{min-height:0}.neo150 .vexa-group-message strong{overflow-wrap:anywhere}.neo150 .vexa-group-message.mine{margin-left:auto}.neo150 .vexa-group-message:not(.mine){margin-right:auto}
+@media(max-width:900px){.neo150 .sidebar.chat-open{display:none}.neo150 .conversation.show>.enhanced-chat{height:auto;min-height:0;flex:1 1 0}.neo150 .vexa-groups-chat-header .vexa-group-back{display:grid}.neo150 .vexa-group-compose{flex-wrap:nowrap}.neo150 .vexa-group-compose input[type=file][hidden]{display:none!important}}
