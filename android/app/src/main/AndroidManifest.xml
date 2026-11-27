@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <application android:icon="@drawable/vexa_icon" android:label="Vexa" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:usesCleartextTraffic="false" android:allowBackup="false">
         <!-- Vexa AdMob uygulama kimligi. Reklam birimleri test modunda. -->
         <meta-data
@@ -20,6 +22,7 @@
                 <data android:scheme="com.vexa.chat" android:host="auth" android:path="/callback" />
             </intent-filter>
         </activity>
+        <service android:name=".VexaScreenService" android:exported="false" android:foregroundServiceType="mediaProjection" />
         <service android:name=".VexaMessagingService" android:exported="false">
             <intent-filter><action android:name="com.google.firebase.MESSAGING_EVENT" /></intent-filter>
         </service>
