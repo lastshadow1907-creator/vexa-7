@@ -472,7 +472,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName,forwa
     <div className={`enhanced-chat v10-theme-${((['gold','aurora'].includes(theme)&&!plus?.premium)||(theme.startsWith('theme-')&&!market140?.items.some(i=>i.id===theme&&i.owned)))?'default':theme}`}>
       {playingEffect&&createPortal(<div className={`v10-effect v10-effect-${playingEffect.kind}`} aria-hidden="true" key={playingEffect.id}>{Array.from({length:22},(_,i)=><span key={i} style={{left:`${(i*37)%100}%`,animationDelay:`${(i%7)*.09}s`}}>{playingEffect.kind==='heart'?'♥':playingEffect.kind==='confetti'?['●','◆','■'][i%3]:'✦'}</span>)}</div>,document.body)}
       {!online&&<div className="v101-offline" role="status">Bağlantı yok · internet gelince sohbet yenilenecek</div>}
-      <div className="v114-chatbar"><button type="button" aria-label="Sohbette ara" onClick={()=>{setShowSearch(v=>!v);setChatSearch('')}}><Search size={17}/></button><button type="button" onClick={()=>setChatTools(true)}><Settings size={17}/> Sohbet araçları</button></div>
+      <div className="v114-chatbar"><span className="neo150-chat-caption">Sohbet</span><button type="button" aria-label="Sohbette ara" onClick={()=>{setShowSearch(v=>!v);setChatSearch('')}}><Search size={17}/></button><button type="button" onClick={()=>setChatTools(true)}><Settings size={17}/> Sohbet araçları</button></div>
       {chatTools&&createPortal(<div className="v95-action-overlay" onClick={e=>{if(e.target===e.currentTarget)setChatTools(false)}}><section className="v95-action-sheet v114-tools" role="dialog" aria-modal="true" aria-label="Sohbet araçları"><header className="v95-action-header"><strong>Sohbet araçları</strong><button type="button" aria-label="Kapat" onClick={()=>setChatTools(false)}><X size={20}/></button></header><div className="v95-action-buttons" onClick={()=>setChatTools(false)}>
         <button type="button" onClick={() => setShowSearch(v => !v)} title="Sohbette ara">
           <Search size={16} /> Ara
@@ -497,7 +497,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName,forwa
         <button type="button" onClick={() => { setChatSearch(''); setShowSearch(false); }} title="Aramayı kapat"><X size={17} /></button>
       </div>}
       <div className="message-list enhanced-list" aria-busy={loading132}>{loading132&&!messages.length&&<div className='v132-skeleton' role='status' aria-label='Mesajlar yükleniyor'>{[0,1,2,3,4].map(i=><span key={i}/>)}</div>}
-        {timeline.map(item => {
+        {!loading132&&!timeline.length&&!chatSearch&&<div className="neo150-empty-chat"><span>✦</span><strong>Bir merhaba ile başla</strong><small>İlk mesajını gönder.</small></div>}{timeline.map(item => {
           if(item.type==='call'){
             const c=item.data;
             const outgoing=c.caller_id===userId;
@@ -603,7 +603,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName,forwa
           onChange={e => setFile(e.target.files?.[0] || null)} />
         
         <button className="v114-add" type="button" title="Mesaj araçları" aria-label="Mesaj araçları" aria-expanded={attachments} onClick={()=>setAttachments(v=>!v)}><Plus size={22}/>{effect&&<i/>}</button>
-        <input value={draft} onChange={e => {setDraft(e.target.value); if(e.target.value.trim()&&Date.now()-typingSent.current>900){typingSent.current=Date.now();void typingChannel.current?.send({type:'broadcast',event:'typing',payload:{sender:userId}});}}}
+        <input aria-label="Mesaj yaz" value={draft} onChange={e => {setDraft(e.target.value); if(e.target.value.trim()&&Date.now()-typingSent.current>900){typingSent.current=Date.now();void typingChannel.current?.send({type:'broadcast',event:'typing',payload:{sender:userId}});}}}
           placeholder={recording ? 'Ses kaydediliyor...' : edit ? 'Mesajı düzenle…' : 'Mesaj yaz…'} />
         {!recording&&(draft.trim()||file||edit) ? <button type="submit" disabled={busy||recording||(!draft.trim()&&!file)} title="Gönder" aria-label="Gönder"><Send size={20}/></button> : <button type="button" title={recording?'Kaydı bitir':'Ses kaydı'} aria-label={recording?'Kaydı bitir':'Ses kaydı'} onClick={()=>void record()}>{recording?<Square size={19}/>:<Mic size={20}/>}</button>}
 
