@@ -1,3 +1,5 @@
+import {VideoNote130,Sticker130} from './Media130';
+import './vexa130.css';
 import './media119.css';
 import './chat114.css';
 import {useLook,MediaAI,premiumAI} from './Vexa112';
@@ -60,6 +62,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const gesture=useRef<{x:number;y:number;timer:ReturnType<typeof setTimeout>}|null>(null);
   const suppress=useRef(0);
   const [attachments,setAttachments]=useState(false);
+  const [media130,setMedia130]=useState<"video"|"sticker"|null>(null);
   const [chatTools,setChatTools]=useState(false);
   useEffect(()=>()=>{if(gesture.current)clearTimeout(gesture.current.timer)},[]);
   const plus=useLook(userId);
@@ -334,7 +337,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
           if (!allowed.includes(mime)) throw new Error(`Bu dosya türü desteklenmiyor: ${mime || 'bilinmiyor'}`);
           mediaType = mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : mime==='application/pdf' ? 'document' : 'audio';
           const ext = file.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '').slice(0, 8) || 'bin';
-          uploadedPath = `${userId}/${crypto.randomUUID()}.${ext}`;
+          uploadedPath = `${userId}/${file.name.startsWith("video-note.")?"vn130-":file.name==="sticker-note.png"?"st130-":""}${crypto.randomUUID()}.${ext}`;
           const { error: e } = await supabase.storage.from('vexa-media')
             .upload(uploadedPath, file, { contentType: mime });
           if (e) throw new Error(`Medya yüklenemedi (${mime}): ${e.message}`);
@@ -486,7 +489,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
                 {m.media_path && urls[m.media_path] && (m.media_type === 'image'
                   ? <img className="enhanced-media" src={urls[m.media_path]} alt="Gönderilen fotoğraf" loading="lazy" decoding="async" />
                   : m.media_type === 'video'
-                    ? <video className="enhanced-media" controls src={urls[m.media_path]} />
+                    ? <video className={"enhanced-media "+(m.media_path.includes("/vn130-")?"v130-note":"")} controls playsInline src={urls[m.media_path]} />
                     : m.media_type === 'document'
                       ? <a href={urls[m.media_path]} target="_blank" rel="noopener noreferrer" className="vexa-document"><FileText size={18}/> PDF dosyasını aç</a>
                       : <VoicePlayer src={urls[m.media_path]} />)}
@@ -551,9 +554,9 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
       </div>}
       {error && <div className="enhanced-error" role="alert">{error}</div>}
       {showStickers&&<div className="vexa-sticker-picker" aria-label="Çıkartmalar">{stickers.map(st=><button type="button" key={st} onClick={()=>void sendSticker(st)} disabled={busy} aria-label={`${st} çıkartması`}>{st}</button>)}</div>}
-      {attachments&&createPortal(<div className="v95-action-overlay" onClick={e=>{if(e.target===e.currentTarget)setAttachments(false)}}><section className="v95-action-sheet v114-tools" role="dialog" aria-modal="true" aria-label="Mesaj araçları"><header className="v95-action-header"><strong>Mesaj araçları</strong><button type="button" aria-label="Kapat" onClick={()=>setAttachments(false)}><X size={20}/></button></header><div className="v95-action-buttons"><button type="button" onClick={()=>{setAttachments(false);fileRef.current?.click()}}><Images size={18}/> Fotoğraf, video veya dosya</button><button type="button" onClick={()=>{setAttachments(false);setShowStickers(v=>!v)}}><Smile size={18}/> Çıkartmalar</button><button type="button" disabled={recording||aiBusy} onClick={()=>{setAttachments(false);openAI(draft)}}>✦ Vexa AI</button><button type="button" disabled={!!edit||recording} onClick={()=>{setAttachments(false);setShowEffects(v=>!v)}}>✦ Mesaj efekti</button></div></section></div>,document.body)}
+      {media130&&createPortal(<div className="v95-action-overlay"><section className="v95-action-sheet">{media130==="video"?<VideoNote130 onClose={()=>setMedia130(null)} onFile={f=>{setEdit(null);setFile(f);setMedia130(null)}}/>:<Sticker130 onClose={()=>setMedia130(null)} onFile={f=>{setEdit(null);setFile(f);setMedia130(null)}}/>}</section></div>,document.body)}{attachments&&createPortal(<div className="v95-action-overlay" onClick={e=>{if(e.target===e.currentTarget)setAttachments(false)}}><section className="v95-action-sheet v114-tools" role="dialog" aria-modal="true" aria-label="Mesaj araçları"><header className="v95-action-header"><strong>Mesaj araçları</strong><button type="button" aria-label="Kapat" onClick={()=>setAttachments(false)}><X size={20}/></button></header><div className="v95-action-buttons"><button type="button" disabled={recording||busy} onClick={()=>{setAttachments(false);setMedia130("video")}}>◉ Video notu</button><button type="button" disabled={recording||busy} onClick={()=>{setAttachments(false);setMedia130("sticker")}}>✦ Sticker Studio</button><button type="button" onClick={()=>{setAttachments(false);fileRef.current?.click()}}><Images size={18}/> Fotoğraf, video veya dosya</button><button type="button" onClick={()=>{setAttachments(false);setShowStickers(v=>!v)}}><Smile size={18}/> Çıkartmalar</button><button type="button" disabled={recording||aiBusy} onClick={()=>{setAttachments(false);openAI(draft)}}>✦ Vexa AI</button><button type="button" disabled={!!edit||recording} onClick={()=>{setAttachments(false);setShowEffects(v=>!v)}}>✦ Mesaj efekti</button></div></section></div>,document.body)}
       {recording&&<div className="v10-record" role="status"><span>{paused?'Duraklatıldı':'● Kayıt'} {callDuration(recordSeconds)}</span><div className="v10-wave">{levels.map((v,i)=><i key={i} style={{height:`${v*100}%`}}/>)}</div><button type="button" onClick={togglePause}>{paused?'Devam':'Duraklat'}</button><button type="button" onClick={()=>void record()}>Dinle</button><button type="button" onClick={()=>{if(capture.current)capture.current.cancelled=true;recorder.current?.stop()}}>İptal</button></div>}
-      {audioPreview&&!recording&&<div className="v10-preview"><VoicePlayer src={audioPreview}/><button type="button" onClick={()=>setFile(null)}>Kaydı sil</button></div>}
+      {file&&!file.type.startsWith("audio/")&&<div className="v130-file">{file.name}<button type="button" onClick={()=>setFile(null)}>Kaldır</button></div>}{audioPreview&&!recording&&<div className="v10-preview"><VoicePlayer src={audioPreview}/><button type="button" onClick={()=>setFile(null)}>Kaydı sil</button></div>}
       {showEffects&&<div className="v10-theme-picker">{[['','Normal'],['heart','♥ Kalpler'],['confetti','🎉 Konfeti'],['spark','✦ Işıltı'],...(plus?.premium?[['gold','♛ Altın yağmuru'],['aurora','♛ Aurora']]:[])].map(([id,label])=><button key={id} type="button" aria-pressed={effect===id} onClick={()=>{setEffect(id);setShowEffects(false)}}>{label}</button>)}</div>}
       {aiPanel&&createPortal(<div className="v95-action-overlay" onClick={e=>{if(e.target===e.currentTarget&&!aiBusy)setAiPanel(null)}}><section className="v95-action-sheet" role="dialog" aria-modal="true" aria-label="Vexa AI"><header className="v95-action-header"><strong>✦ Vexa AI</strong><button type="button" disabled={aiBusy} onClick={()=>setAiPanel(null)}><X size={20}/></button></header><p>Seçtiğin metin Google Gemini'ye gönderilir. Hassas bilgi paylaşma.</p><textarea aria-label="AI metni" value={aiPanel.text} maxLength={3500} disabled={aiBusy} onChange={e=>setAiPanel({...aiPanel,text:e.target.value})} rows={3} style={{width:'100%',boxSizing:'border-box'}}/><div className="v95-action-buttons">{(aiPanel.incoming?['Bu mesaja doğal bir cevap öner','Türkçeye çevir','İngilizceye çevir']:['Yazım hatalarını düzelt','Samimi bir mesaj yaz','Romantik bir mesaj yaz','Resmi bir mesaj yaz','Türkçeye çevir','İngilizceye çevir']).map(task=><button type="button" key={task} disabled={aiBusy||!aiPanel.text.trim()} onClick={()=>void askAI(task)}>{task}</button>)}</div>{aiBusy&&<p>Yanıt hazırlanıyor…</p>}{aiError&&<p role="alert">{aiError}</p>}{aiResult&&<><div style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{aiResult}</div><button type="button" onClick={()=>{setEdit(null);setDraft(aiResult);setAiPanel(null)}}>Mesaj alanına ekle</button></>}</section></div>,document.body)}
       <form className="composer enhanced-compose" onSubmit={e => { e.preventDefault(); void send(); }}>
