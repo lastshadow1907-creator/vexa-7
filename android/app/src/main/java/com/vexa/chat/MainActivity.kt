@@ -103,6 +103,60 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 27) { setShowWhenLocked(false); setTurnScreenOn(false) }
         else window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
     }
+    private var screenConsentPending = false
+    private var screenConsentSession = ""
+    private val screenConsent = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        screenConsentPending = false
+        val id = screenConsentSession
+        if (VexaScreenService.session == id && VexaScreenService.state == "consent") {
+            if (result.resultCode == RESULT_OK && result.data != null) {
+                VexaScreenService.state = "starting"
+                VexaScreenService.heartbeat = android.os.SystemClock.elapsedRealtime()
+                try { startForegroundService(Intent(this, VexaScreenService::class.java).putExtra("session", id).putExtra("consent", result.data)) }
+                catch (_: Exception) { VexaScreenService.state = "error" }
+            } else VexaScreenService.state = "denied"
+        }
+    }
+    private fun stopScreenCapture() {
+        VexaScreenService.state = "stopped"
+        VexaScreenService.frame = ""
+        stopService(Intent(this, VexaScreenService::class.java))
+    }
+    private fun installScreenBridge() {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return
+        WebViewCompat.addWebMessageListener(web, "VexaScreenNative", setOf("https://vexa-7.vercel.app")) { _, message, _, isMainFrame, reply ->
+            if (!isMainFrame) return@addWebMessageListener
+            val out = JSONObject()
+            try {
+                val req = JSONObject(message.data ?: "{}")
+                out.put("id", req.optString("id"))
+                when (req.optString("action")) {
+                    "start" -> {
+                        check(!screenConsentPending && VexaScreenService.state !in listOf("running", "starting", "consent"))
+                        VexaScreenService.session = java.util.UUID.randomUUID().toString()
+                        VexaScreenService.frame = ""; VexaScreenService.frameNumber = 0
+                        VexaScreenService.state = "consent"
+                        screenConsentSession = VexaScreenService.session
+                        screenConsentPending = true
+                        try { screenConsent.launch(getSystemService(android.media.projection.MediaProjectionManager::class.java).createScreenCaptureIntent()) }
+                        catch (e: Exception) { screenConsentPending = false; VexaScreenService.state = "error"; throw e }
+                    }
+                    "poll" -> {
+                        check(req.optString("session") == VexaScreenService.session)
+                        VexaScreenService.heartbeat = android.os.SystemClock.elapsedRealtime()
+                        val number = VexaScreenService.frameNumber
+                        if (VexaScreenService.state == "running" && number != req.optLong("last", -1)) {
+                            out.put("frame", VexaScreenService.frame).put("number", number)
+                        }
+                    }
+                    "stop" -> { if (req.optString("session") == VexaScreenService.session) stopScreenCapture() }
+                    else -> error("Unsupported screen action")
+                }
+                out.put("ok", true).put("session", VexaScreenService.session).put("state", VexaScreenService.state)
+            } catch (_: Exception) { out.put("ok", false) }
+            reply.postMessage(out.toString())
+        }
+    }
     private fun installCallBridge() {
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return
         WebViewCompat.addWebMessageListener(web, "VexaCallNative", setOf("https://vexa-7.vercel.app")) { _, message, _, isMainFrame, reply ->
@@ -183,6 +237,7 @@ class MainActivity : ComponentActivity() {
         web = WebView(this)
         setContentView(web)
         installCallBridge()
+        installScreenBridge()
         handleCallIntent(intent)
 
         WebView.setWebContentsDebuggingEnabled(false)
@@ -304,7 +359,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onPause() {
-        web.onPause()
+        if (VexaScreenService.state !in listOf("consent", "starting", "running")) web.onPause()
         super.onPause()
     }
 
@@ -315,6 +370,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        stopScreenCapture()
         pendingPermission?.deny()
         uploadCallback?.onReceiveValue(null)
         releaseAudioRoute()
