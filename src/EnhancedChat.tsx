@@ -1,3 +1,4 @@
+import {useMarket140} from './Vexa140';
 import {VideoNote130,Sticker130} from './Media130';
 import './vexa130.css';
 import './media119.css';
@@ -71,6 +72,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName,forwa
   const [chatTools,setChatTools]=useState(false);
   useEffect(()=>()=>{if(gesture.current)clearTimeout(gesture.current.timer)},[]);
   const plus=useLook(userId);
+  const market140=useMarket140();
   const [summary,setSummary]=useState(''),[summaryBusy,setSummaryBusy]=useState(false);
   const [messages, setMessages] = useState<Msg[]>(()=>get132(`${userId}:${peerId}`));
   const [loading132,setLoading132]=useState(true);
@@ -467,7 +469,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName,forwa
 
 
   return (
-    <div className={`enhanced-chat v10-theme-${(['gold','aurora'].includes(theme)&&!plus?.premium)?'default':theme}`}>
+    <div className={`enhanced-chat v10-theme-${((['gold','aurora'].includes(theme)&&!plus?.premium)||(theme.startsWith('theme-')&&!market140?.items.some(i=>i.id===theme&&i.owned)))?'default':theme}`}>
       {playingEffect&&createPortal(<div className={`v10-effect v10-effect-${playingEffect.kind}`} aria-hidden="true" key={playingEffect.id}>{Array.from({length:22},(_,i)=><span key={i} style={{left:`${(i*37)%100}%`,animationDelay:`${(i%7)*.09}s`}}>{playingEffect.kind==='heart'?'♥':playingEffect.kind==='confetti'?['●','◆','■'][i%3]:'✦'}</span>)}</div>,document.body)}
       {!online&&<div className="v101-offline" role="status">Bağlantı yok · internet gelince sohbet yenilenecek</div>}
       <div className="v114-chatbar"><button type="button" aria-label="Sohbette ara" onClick={()=>{setShowSearch(v=>!v);setChatSearch('')}}><Search size={17}/></button><button type="button" onClick={()=>setChatTools(true)}><Settings size={17}/> Sohbet araçları</button></div>
@@ -482,7 +484,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName,forwa
         <button type="button" onClick={()=>setShowGallery(v=>!v)} title="Medya galerisi"><Images size={16}/> Medya</button>
         <button type="button" onClick={()=>setShowTheme(v=>!v)}>◉ Tema</button>{plus?.premium&&<button type="button" disabled={summaryBusy} onClick={()=>{if(!confirm('Son 30 mesajın metni Google Gemini’ye gönderilecek. Devam edilsin mi?'))return;setSummaryBusy(true);void premiumAI('summary',messages.filter(m=>!m.deleted_at&&m.body).slice(-30).map(m=>(m.sender_id===userId?'Ben: ':'Arkadaş: ')+m.body).join('\n').slice(-3900)).then(setSummary).catch(e=>setSummary(e.message)).finally(()=>setSummaryBusy(false))}}>♛ {summaryBusy?'Özetleniyor…':'Sohbet özeti'}</button>}
       </div></section></div>,document.body)}
-      {summary&&<div className="v112-panel"><button onClick={()=>setSummary('')}>Kapat</button><p>{summary}</p></div>}{showTheme&&<div className="v10-theme-picker">{[['default','Vexa'],['ocean','Okyanus'],['rose','Gül'],['violet','Gece'],['sand','Kum'],...(plus?.premium?[['gold','♛ Altın'],['aurora','♛ Aurora']]:[])].map(([id,label])=><button key={id} type="button" aria-pressed={theme===id} onClick={()=>{setTheme(id);try{localStorage.setItem(themeKey,id)}catch{}setShowTheme(false)}} className={`v10-swatch-${id}`}>{label}</button>)}</div>}
+      {summary&&<div className="v112-panel"><button onClick={()=>setSummary('')}>Kapat</button><p>{summary}</p></div>}{showTheme&&<div className="v10-theme-picker">{[['default','Vexa'],['ocean','Okyanus'],['rose','Gül'],['violet','Gece'],['sand','Kum'],...(market140?.items.filter(i=>i.kind==='theme'&&i.owned).map(i=>[i.id,i.title])||[]),...(plus?.premium?[['gold','♛ Altın'],['aurora','♛ Aurora']]:[])].map(([id,label])=><button key={id} type="button" aria-pressed={theme===id} onClick={()=>{setTheme(id);try{localStorage.setItem(themeKey,id)}catch{}setShowTheme(false)}} className={`v10-swatch-${id}`}>{label}</button>)}</div>}
       {showGallery && <section className="vexa-media-gallery" aria-label="Sohbet medyası">
         <div className="vexa-gallery-heading"><strong>Paylaşılan medya</strong><button type="button" onClick={()=>setShowGallery(false)} aria-label="Galeriyi kapat"><X size={17}/></button></div>
         <div className="vexa-gallery-filters">{(['all','image','video','document'] as const).map(t=><button key={t} type="button" className={galleryFilter===t?'active':''} onClick={()=>setGalleryFilter(t)}>{({all:'Tümü',image:'Fotoğraf',video:'Video',document:'PDF'} as const)[t]}</button>)}</div>

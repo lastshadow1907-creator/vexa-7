@@ -1,12 +1,13 @@
 import {useCallback,useEffect,useMemo,useState,useRef} from 'react';
-import {ArrowLeft,Plus,Send,Users,Settings,UserPlus,LogOut,Shield,ShieldOff,UserMinus,Save,X,Search,Camera,Image,ChevronRight,Phone} from 'lucide-react';
+import {ArrowLeft,Plus,Send,Users,Settings,UserPlus,LogOut,Shield,ShieldOff,UserMinus,Save,X,Search,Camera,Image,ChevronRight,Phone,Paperclip,Mic,Square} from 'lucide-react';
 import {supabase} from './supabase';
 import './groups134.css';
+import {GroupPolls140} from './GroupPolls140';
 
 type Profile={id:string;display_name?:string|null;username?:string|null;avatar_path?:string|null};
 type Group={id:string;title:string;created_by:string;avatar_url?:string|null;description?:string|null};
 type Member={user_id:string;role:string};
-type Message={id:string;group_id:string;sender_id:string;body:string;created_at:string};
+type Message={id:string;group_id:string;sender_id:string;body:string;created_at:string;reply_to?:string|null;media_path?:string|null;media_type?:string|null};
 type Props={
  userId:string;profiles:Profile[];friendIds?:string[];onClose?:()=>void;mode?:'full'|'list'|'chat';
  activeGroupId?:string|null;onSelectGroup?:(id:string|null)=>void;
@@ -28,6 +29,12 @@ export default function Groups({userId,profiles,friendIds=[],onClose,mode='full'
  const bottom=useRef<HTMLDivElement>(null), fileInput=useRef<HTMLInputElement>(null);
  const currentGroup=useRef<string|undefined>(undefined);
  const [draft,setDraft]=useState('');
+ const [media140,setMedia140]=useState<File|null>(null),[mediaUrls140,setMediaUrls140]=useState<Record<string,string>>({}),[record140,setRecord140]=useState(false);
+ const mediaInput140=useRef<HTMLInputElement>(null),rec140=useRef<MediaRecorder|null>(null),recordStream140=useRef<MediaStream|null>(null);
+ const signed140=useRef(new Map<string,{url:string;until:number}>());
+ useEffect(()=>()=>{if(rec140.current){rec140.current.onstop=null;if(rec140.current.state!=='inactive')rec140.current.stop()}recordStream140.current?.getTracks().forEach(t=>t.stop())},[]);
+ async function recordVoice140(){if(record140){rec140.current?.stop();return}try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});recordStream140.current=stream;const recorder=new MediaRecorder(stream);rec140.current=recorder;const chunks:Blob[]=[];recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=()=>{stream.getTracks().forEach(t=>t.stop());setRecord140(false);const type=recorder.mimeType.split(';')[0]||'audio/webm';const ext=type.includes('mp4')?'m4a':type.includes('ogg')?'ogg':'webm';setMedia140(new File(chunks,'voice.'+ext,{type}))};recorder.start();setRecord140(true)}catch(e){recordStream140.current?.getTracks().forEach(t=>t.stop());setError((e as Error).message)}}
+ const [reply140,setReply140]=useState<Message|null>(null),[poll140,setPoll140]=useState(false),[mentions140,setMentions140]=useState(false);
  const [newName,setNewName]=useState('');
  const [description,setDescription]=useState('');
  const [avatar,setAvatar]=useState('');
@@ -59,12 +66,12 @@ export default function Groups({userId,profiles,friendIds=[],onClose,mode='full'
  const refreshChat=useCallback(async()=>{
   if(!groupId)return;
   const [m,u,ev]=await Promise.all([
-   supabase.from('vexa_group_messages').select('id,group_id,sender_id,body,created_at').eq('group_id',groupId).order('created_at',{ascending:false}).limit(250),
+   supabase.from('vexa_group_messages').select('id,group_id,sender_id,body,created_at,reply_to,media_path,media_type').eq('group_id',groupId).order('created_at',{ascending:false}).limit(250),
    supabase.rpc('vexa134_group_roster',{p_group_id:groupId}),
    supabase.from('vexa134_group_events').select('id,body,created_at').eq('group_id',groupId).order('created_at',{ascending:false}).limit(100)
   ]);
   if(currentGroup.current!==groupId)return;
-  if(m.error)setError(m.error.message);else setMessages((m.data||[]) as Message[]);
+  if(m.error)setError(m.error.message);else {const rows=(m.data||[]) as Message[];setMessages(rows);const paths=[...new Set(rows.flatMap(x=>x.media_path?[x.media_path]:[]))];const pairs=await Promise.all(paths.map(async path=>{const cached=signed140.current.get(path);if(cached&&cached.until>Date.now())return [path,cached.url] as const;const r=await supabase.storage.from('vexa-group-media140').createSignedUrl(path,300);const url=r.data?.signedUrl||'';if(url)signed140.current.set(path,{url,until:Date.now()+240000});return [path,url] as const}));if(currentGroup.current!==groupId)return;setMediaUrls140(Object.fromEntries(pairs));}
   setMemberLoading(false);
   if(u.error){setMemberError(u.error.message);const fallback=await supabase.from('vexa_group_members').select('user_id,role').eq('group_id',groupId);if(currentGroup.current===groupId&&!fallback.error)setMembers(fallback.data||[])}else{setMemberError('');const rows=(u.data||[]) as (Member&Profile)[];setMembers(rows);setMemberProfiles(rows.map(x=>({...x,id:x.user_id})));}
   if(!ev.error)setEvents(ev.data||[]);
@@ -72,7 +79,7 @@ export default function Groups({userId,profiles,friendIds=[],onClose,mode='full'
  useEffect(()=>{void refreshGroups();const timer=setInterval(()=>{if(document.visibilityState==='visible')void refreshGroups()},5000);return()=>clearInterval(timer)},[refreshGroups]);
  useEffect(()=>{
   if(!groupId){setMessages([]);setMembers([]);return}
-  setMessages([]);setMembers([]);setMemberProfiles([]);setEvents([]);setMemberLoading(true);setMemberError('');setSettings(false);setAdding(false);setDraft('');
+  setMessages([]);setMembers([]);setMemberProfiles([]);setEvents([]);setMemberLoading(true);setMemberError('');setSettings(false);setAdding(false);setDraft('');setReply140(null);setPoll140(false);setMentions140(false);setMedia140(null);setMediaUrls140({});signed140.current.clear();
   void refreshChat();
   const channel=supabase.channel(`vexa-groups-new-${groupId}-${++channelIndex}`)
    .on('postgres_changes',{event:'*',schema:'public',table:'vexa_group_messages',filter:`group_id=eq.${groupId}`},()=>void refreshChat())
@@ -113,11 +120,11 @@ export default function Groups({userId,profiles,friendIds=[],onClose,mode='full'
   setSettings(false);setAdding(false);setSection('info');setError('');
  }
  async function send(){
-  const body=draft.trim();if(!groupId||!body||busy)return;
-  setBusy(true);setError('');
-  const r=await supabase.from('vexa_group_messages').insert({group_id:groupId,sender_id:userId,body});
-  setBusy(false);
-  if(r.error)setError(r.error.message);else{setDraft('');await refreshChat()}
+  const body=draft.trim();if(!groupId||(!body&&!media140)||busy||record140)return;
+  setBusy(true);setError('');let path:string|null=null;
+  try{let kind:string|null=null;if(media140){const type=media140.type.split(';')[0];if(media140.size>25*1024*1024||!['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm','audio/webm','audio/mp4','audio/ogg','audio/mpeg','audio/wav','application/pdf'].includes(type))throw Error('Desteklenen medya en fazla 25 MB.');kind=type.startsWith('image/')?'image':type.startsWith('video/')?'video':type.startsWith('audio/')?'audio':'document';const ext=media140.name.split('.').pop()?.replace(/[^a-z0-9]/gi,'').slice(0,8)||'bin';path=groupId+'/'+userId+'/'+crypto.randomUUID()+'.'+ext;const r=await supabase.storage.from('vexa-group-media140').upload(path,media140,{contentType:type});if(r.error){path=null;throw Error(r.error.message)}}
+   const r=await supabase.from('vexa_group_messages').insert({group_id:groupId,sender_id:userId,body:body||'Medya',reply_to:reply140?.id||null,media_path:path,media_type:kind});if(r.error)throw Error(r.error.message);path=null;setDraft('');setReply140(null);setMedia140(null);await refreshChat()
+  }catch(e){if(path)await supabase.storage.from('vexa-group-media140').remove([path]);setError((e as Error).message)}finally{setBusy(false)}
  }
  async function leave(){
   if(!groupId||!window.confirm('Gruptan ayrılmak istiyor musun?'))return;
@@ -166,13 +173,13 @@ export default function Groups({userId,profiles,friendIds=[],onClose,mode='full'
     </section>:<>
      <div className="vexa-group-messages" style={{flex:1,overflowY:'auto',padding:16}}>
       {[...messages.map(m=>({kind:'message' as const,m,at:m.created_at})),...events.map(e=>({kind:'event' as const,e,at:e.created_at}))].sort((a,b)=>a.at.localeCompare(b.at)).map(item=>item.kind==='event'?<div className='v134-event' key={'event-'+item.e.id}>{item.e.body}</div>:((m:Message)=><div key={m.id} className={`vexa-group-message ${m.sender_id===userId?'mine':''}`} style={{marginBottom:12}}>
-       <strong>{m.sender_id!==userId&&memberAvatar(m.sender_id)}{person(m.sender_id)}</strong><p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{m.body}</p><small>{new Date(m.created_at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</small>
+       <strong>{m.sender_id!==userId&&memberAvatar(m.sender_id)}{person(m.sender_id)}</strong>{m.reply_to&&<blockquote className='v140-group-quote'>{messages.find(x=>x.id===m.reply_to)?.body||'Önceki mesaj'}</blockquote>}<p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{m.body}</p>{m.media_path&&mediaUrls140[m.media_path]&&(m.media_type==='image'?<img className='v140-group-media' src={mediaUrls140[m.media_path]} alt='Grup fotoğrafı' loading='lazy'/>:m.media_type==='video'?<video className='v140-group-media' controls playsInline src={mediaUrls140[m.media_path]}/>:m.media_type==='audio'?<audio controls src={mediaUrls140[m.media_path]}/>:<a href={mediaUrls140[m.media_path]} target='_blank' rel='noopener noreferrer'>Dosyayı aç</a>)}<small>{new Date(m.created_at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</small><button className='v140-group-reply' onClick={()=>setReply140(m)}>Yanıtla</button>
       </div>)(item.m))}<div ref={bottom}/>
       {!messages.length&&!events.length&&<p className="hint">Henüz mesaj yok.</p>}
      </div>
-     <form className="vexa-group-compose" onSubmit={e=>{e.preventDefault();void send()}} style={{display:'flex',gap:8,padding:12}}>
-      <input style={{...input,flex:1}} value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Gruba mesaj yaz..."/>
-      <button style={button} disabled={busy||!draft.trim()} title="Gönder"><Send size={19}/></button>
+     {poll140&&<GroupPolls140 groupId={group.id} userId={userId}/ >}{reply140&&<div className='v140-group-quote'>{person(reply140.sender_id)}: {reply140.body.slice(0,100)} <button onClick={()=>setReply140(null)}>×</button></div>}{mentions140&&<div className='v140-tabs'>{members.filter(m=>m.user_id!==userId).map(m=><button key={m.user_id} onClick={()=>{setDraft(v=>v+' @'+person(m.user_id)+' ');setMentions140(false)}}>{person(m.user_id)}</button>)}</div>}<div className='v140-tabs'><button onClick={()=>setPoll140(v=>!v)}>Anketler</button><button onClick={()=>setMentions140(v=>!v)}>@ Üye etiketle</button></div>{media140&&<div className='v140-group-quote'>{media140.name}<button onClick={()=>setMedia140(null)}>Kaldır</button></div>}<form className="vexa-group-compose" onSubmit={e=>{e.preventDefault();void send()}} style={{display:'flex',gap:8,padding:12}}>
+      <input ref={mediaInput140} type='file' hidden accept='image/*,video/*,audio/*,application/pdf' onChange={e=>{setMedia140(e.target.files?.[0]||null);e.target.value=''}}/><button type='button' title='Medya ekle' disabled={busy||record140} onClick={()=>mediaInput140.current?.click()}><Paperclip size={19}/></button><button type='button' title={record140?'Kaydı durdur':'Ses kaydet'} disabled={busy} onClick={()=>void recordVoice140()}>{record140?<Square size={18}/>:<Mic size={18}/>}</button><input style={{...input,flex:1}} value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Gruba mesaj yaz..."/>
+      <button style={button} disabled={busy||record140||(!draft.trim()&&!media140)} title="Gönder"><Send size={19}/></button>
      </form>
     </>}
    </>:<div className="hint" style={{padding:24}}><Search size={24}/><p>Bir grup seç.</p></div>}
