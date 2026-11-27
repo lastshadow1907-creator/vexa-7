@@ -5,7 +5,7 @@ import './chat114.css';
 import {useLook,MediaAI,premiumAI} from './Vexa112';
 import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Plus, Settings, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Sticker, Star, Forward, Images, FileText } from 'lucide-react';
+import { Play, Pause, Plus, Settings, Mic, Square, Send, CornerUpLeft, Pencil, Trash2, Smile, Pin, Download, X, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, Video, Sticker, Star, Forward, Images, FileText } from 'lucide-react';
 import { supabase } from './supabase';
 
 type Msg = {
@@ -55,6 +55,11 @@ async function voiceWav(blob:Blob):Promise<File>{
  }finally{await ctx.close().catch(()=>{})}
 }
 
+// Short-lived in-memory cache, scoped to authenticated user and peer; never persisted.
+const chat132Cache=new Map<string,{rows:Msg[];at:number}>();
+supabase.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT')chat132Cache.clear()});
+function get132(key:string){const item=chat132Cache.get(key);return item&&Date.now()-item.at<60000?item.rows:[]}
+function save132(key:string,rows:Msg[]){chat132Cache.delete(key);chat132Cache.set(key,{rows,at:Date.now()});while(chat132Cache.size>12){const k=chat132Cache.keys().next().value;if(k!==undefined)chat132Cache.delete(k);else break}}
 const emojis = ['❤️', '😂', '👍', '😮', '😢', '🔥'];
 const time = (date: string) => new Date(date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
@@ -67,7 +72,9 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   useEffect(()=>()=>{if(gesture.current)clearTimeout(gesture.current.timer)},[]);
   const plus=useLook(userId);
   const [summary,setSummary]=useState(''),[summaryBusy,setSummaryBusy]=useState(false);
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [messages, setMessages] = useState<Msg[]>(()=>get132(`${userId}:${peerId}`));
+  const [loading132,setLoading132]=useState(true);
+  const aux132=useRef(0);
   const [callRows,setCallRows]=useState<CallRow[]>([]);
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -147,7 +154,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const currentChat = useRef('');
   currentChat.current = `${userId}:${peerId}`;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (light=false) => {
     const version=++loadVersion.current;
     const chatKey = `${userId}:${peerId}`;
     const { data, error: loadError } = await supabase
@@ -157,11 +164,13 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
       .order('created_at', { ascending: false })
       .limit(250);
     if (currentChat.current !== chatKey || version!==loadVersion.current) return;
+    setLoading132(false);
     if (loadError) { setError(loadError.message); return; }
     const rows = ((data || []) as Msg[]).reverse();
     if(!firstLoad.current){const fresh=rows.filter(m=>!seenEffects.current.has(m.id)&&!m.deleted_at&&m.effect&&['heart','confetti','spark','gold','aurora'].includes(m.effect));const last=fresh[fresh.length-1];if(last)setPlayingEffect({id:last.id,kind:last.effect!});}
     seenEffects.current=new Set(rows.map(m=>m.id));firstLoad.current=false;
-    setMessages(rows);
+    save132(chatKey,rows);
+    setMessages(old=>JSON.stringify(old)===JSON.stringify(rows)?old:rows);
     // Mark only messages belonging to the authenticated recipient, via a narrow RPC.
     if (document.visibilityState === 'visible' && currentChat.current === chatKey &&
         rows.some(m => m.sender_id === peerId && m.recipient_id === userId && !m.read_at && !m.deleted_at)) {
@@ -171,6 +180,9 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
         setError('Okundu bilgisi güncellenemedi: ' + readError.message);
       }
     }
+    const pathsChanged=rows.some(m=>m.media_path&&!signedCache.current.has(m.media_path));
+    if(light&&!pathsChanged&&Date.now()-aux132.current<15000)return;
+    aux132.current=Date.now();
     const fav = await supabase.from('vexa8_starred_messages').select('message_id').eq('user_id',userId);
     if (!fav.error && currentChat.current === chatKey) setStarred((fav.data || []).map(x=>Number(x.message_id)));
 
@@ -223,7 +235,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
       .subscribe(status=>{if(status==='SUBSCRIBED')refresh()});
     window.addEventListener('online',refresh);
     let checking=false;let stopped=false;
-    const check=async()=>{if(stopped||checking||!navigator.onLine||document.visibilityState!=='visible')return;checking=true;try{await load()}finally{checking=false}};
+    const check=async()=>{if(stopped||checking||!navigator.onLine||document.visibilityState!=='visible')return;checking=true;try{await load(true)}finally{checking=false}};
     const fallback=window.setInterval(()=>void check(),2500);
     const visible=()=>{if(document.visibilityState==='visible')void check()};
     document.addEventListener('visibilitychange',visible);window.addEventListener('focus',visible);
@@ -462,7 +474,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
           onChange={e => setChatSearch(e.target.value)} />
         <button type="button" onClick={() => { setChatSearch(''); setShowSearch(false); }} title="Aramayı kapat"><X size={17} /></button>
       </div>}
-      <div className="message-list enhanced-list">
+      <div className="message-list enhanced-list" aria-busy={loading132}>{loading132&&!messages.length&&<div className='v132-skeleton' role='status' aria-label='Mesajlar yükleniyor'>{[0,1,2,3,4].map(i=><span key={i}/>)}</div>}
         {timeline.map(item => {
           if(item.type==='call'){
             const c=item.data;
@@ -507,7 +519,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
                 {rs.map((r, i) => <button type="button" key={`${r.user_id}-${r.emoji}-${i}`}
                   className={r.user_id === userId ? 'own' : ''}
                   title={r.user_id === userId ? 'Tepkini kaldır' : 'Aynı tepkiyi gönder'}
-                  onClick={() => void react(m, r.emoji)}>{r.emoji}</button>)}
+                  onClick={() => {try{navigator.vibrate?.(12)}catch{}void react(m, r.emoji)}}>{r.emoji}</button>)}
               </div>
               <div className="enhanced-actions">
                 {openActions === m.id && createPortal(
@@ -582,5 +594,5 @@ function VoicePlayer({src}:{src:string}){
  const ref=useRef<HTMLAudioElement>(null);const [speed,setSpeed]=useState(1),[duration,setDuration]=useState(0),[position,setPosition]=useState(0),[playing,setPlaying]=useState(false),[error,setError]=useState('');
  useEffect(()=>{setDuration(0);setPosition(0);setPlaying(false);setError('')},[src]);
  const sync=()=>{const a=ref.current;if(a){setDuration(Number.isFinite(a.duration)?a.duration:0);setPosition(a.currentTime)}};
- return <div className="v119-voice"><audio ref={ref} preload="metadata" src={src} onLoadedMetadata={()=>{sync();if(ref.current)ref.current.playbackRate=speed}} onDurationChange={sync} onTimeUpdate={sync} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onEnded={()=>setPlaying(false)} onError={()=>setError('Ses açılamadı. Bağlantıyı veya dosya biçimini kontrol et.')}/><div className="v119-voice-row"><button type="button" aria-label={playing?'Duraklat':'Oynat'} onClick={()=>{const a=ref.current;if(!a)return;if(playing)a.pause();else{setError('');void a.play().catch(()=>setError('Ses oynatılamadı. Tekrar dene.'))}}}>{playing?'Ⅱ':'▶'}</button><div className="v119-voice-track"><input aria-label="Ses konumu" type="range" min={0} max={duration||1} step={.1} value={Math.min(position,duration)} disabled={!duration} onChange={e=>{if(ref.current)ref.current.currentTime=Number(e.target.value);setPosition(Number(e.target.value))}}/><small>{callDuration(position)} / {duration?callDuration(Math.ceil(duration)):'--:--'}</small></div><button type="button" aria-label="Oynatma hızı" onClick={()=>{const next=speed===1?1.5:speed===1.5?2:1;setSpeed(next);if(ref.current)ref.current.playbackRate=next}}>{speed}×</button></div>{error&&<small role="alert">{error}</small>}</div>
+ return <div className={`v119-voice v132-voice ${playing?'v132-playing':''}`}><audio ref={ref} preload="metadata" src={src} onLoadedMetadata={()=>{sync();if(ref.current)ref.current.playbackRate=speed}} onDurationChange={sync} onTimeUpdate={sync} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onEnded={()=>setPlaying(false)} onError={()=>setError('Ses açılamadı. Bağlantıyı veya dosya biçimini kontrol et.')}/><div className="v119-voice-row"><button type="button" aria-label={playing?'Duraklat':'Oynat'} onClick={()=>{const a=ref.current;if(!a)return;if(playing)a.pause();else{setError('');void a.play().catch(()=>setError('Ses oynatılamadı. Tekrar dene.'))}}}>{playing?<Pause size={17}/>:<Play size={17}/>}</button><div className="v119-voice-track"><div className="v132-wave" aria-hidden="true">{Array.from({length:24},(_,i)=><i key={i} className={duration&&i/24<position/duration?"played":""} style={{height:`${9+(i*17%23)}px`,animationDelay:`${i*45}ms`}}/>)}</div><input aria-label="Ses konumu" type="range" min={0} max={duration||1} step={.1} value={Math.min(position,duration)} disabled={!duration} onChange={e=>{if(ref.current)ref.current.currentTime=Number(e.target.value);setPosition(Number(e.target.value))}}/><small>{callDuration(position)} / {duration?callDuration(Math.ceil(duration)):'--:--'}</small></div><button type="button" aria-label="Oynatma hızı" onClick={()=>{const next=speed===1?1.5:speed===1.5?2:1;setSpeed(next);if(ref.current)ref.current.playbackRate=next}}>{speed}×</button></div>{error&&<small role="alert">{error}</small>}</div>
 }
