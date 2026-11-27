@@ -1,10 +1,42 @@
-
 plugins {
-    id("com.android.application") version "8.7.3" apply false
-    id("org.jetbrains.kotlin.android") version "2.0.21" apply false
-    id("com.google.gms.google-services") version "4.4.2" apply false
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.google.gms.google-services")
 }
 
-tasks.register<Delete>("clean") {
-    delete(rootProject.layout.buildDirectory)
+android {
+    namespace = "com.vexa.chat"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "com.vexa.chat"
+        minSdk = 26
+        targetSdk = 35
+        versionCode = 13000
+        versionName = "13.0"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+dependencies {
+    implementation("com.google.firebase:firebase-messaging:24.1.0")
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.activity:activity-ktx:1.9.3")
+    implementation("androidx.webkit:webkit:1.12.1")
+
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
 }
