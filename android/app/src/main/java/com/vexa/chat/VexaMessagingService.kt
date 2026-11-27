@@ -1,44 +1,62 @@
 package com.vexa.chat
 
+import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
 class VexaMessagingService : FirebaseMessagingService() {
-    override fun onNewToken(token: String) {
-        super.onNewToken(token)
-        // MainActivity yeniden acildiginda guncel tokeni WebView'a iletir.
-    }
     override fun onMessageReceived(message: RemoteMessage) {
         val kind = message.data["type"] ?: "message"
         val title = message.data["title"] ?: message.notification?.title ?: "Vexa"
         val body = message.data["body"] ?: message.notification?.body ?: "Yeni bildirimin var"
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        val channelId = if (kind == "call" || kind == "missed_call") "vexa_calls" else "vexa_messages"
+        val callId = message.data["call_id"] ?: message.data["callId"]
+        val callNotificationId = callId?.let { ("vexa-call:" + it).hashCode() } ?: 11901
+        if (kind in listOf("call_ended", "call_cancelled", "call_accepted", "call_rejected")) {
+            manager.cancel(callNotificationId)
+            return
+        }
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
+        val incoming = kind in listOf("call", "incoming_call", "audio_call", "video_call")
+        val channelId = if (incoming) "vexa_ringing_v119" else "vexa_messages"
+        val ringtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
         if (Build.VERSION.SDK_INT >= 26) {
-            val channel = NotificationChannel(channelId,
-                if (kind == "call" || kind == "missed_call") "Gelen aramalar" else "Mesajlar ve arkadaşlık istekleri",
-                NotificationManager.IMPORTANCE_HIGH)
+            val channel = NotificationChannel(channelId, if (incoming) "Vexa gelen arama zili" else "Mesajlar ve arkadaşlık istekleri", NotificationManager.IMPORTANCE_HIGH)
+            if (incoming) {
+                channel.setSound(ringtone, AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+                channel.enableVibration(true)
+                channel.vibrationPattern = longArrayOf(0, 500, 250, 500)
+                channel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+            }
             manager.createNotificationChannel(channel)
         }
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            if (incoming) putExtra("vexa_call_id", callId)
         }
-        val pending = PendingIntent.getActivity(this, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val notification = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_email)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setAutoCancel(true)
-            .setContentIntent(pending)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-        manager.notify((System.currentTimeMillis() % Int.MAX_VALUE).toInt(), notification)
+        val id = if (incoming) callNotificationId else (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+        val pending = PendingIntent.getActivity(this, id, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val builder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(if (incoming) android.R.drawable.ic_menu_call else android.R.drawable.ic_dialog_email)
+            .setContentTitle(title).setContentText(body).setAutoCancel(true).setContentIntent(pending)
+            .setPriority(NotificationCompat.PRIORITY_HIGH).setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+        if (incoming) {
+            builder.setCategory(NotificationCompat.CATEGORY_CALL).setTimeoutAfter(45000L)
+                .addAction(android.R.drawable.ic_menu_call, "Aramayı aç", pending)
+            if (Build.VERSION.SDK_INT < 26) builder.setSound(ringtone).setVibrate(longArrayOf(0, 500, 250, 500))
+        }
+        val notification = builder.build()
+        if (incoming) notification.flags = notification.flags or Notification.FLAG_INSISTENT
+        manager.notify(id, notification)
     }
 }
