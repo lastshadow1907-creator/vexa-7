@@ -469,7 +469,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName,forwa
 
 
   return (
-    <div className={`enhanced-chat v10-theme-${(['gold','aurora'].includes(theme)&&!plus?.premium)?'default':theme}`}>
+    <div className={`enhanced-chat v10-theme-${((['gold','aurora'].includes(theme)&&!plus?.premium)||(theme.startsWith('theme-')&&!market140?.items.some(i=>i.id===theme&&i.owned)))?'default':theme}`}>
       {playingEffect&&createPortal(<div className={`v10-effect v10-effect-${playingEffect.kind}`} aria-hidden="true" key={playingEffect.id}>{Array.from({length:22},(_,i)=><span key={i} style={{left:`${(i*37)%100}%`,animationDelay:`${(i%7)*.09}s`}}>{playingEffect.kind==='heart'?'♥':playingEffect.kind==='confetti'?['●','◆','■'][i%3]:'✦'}</span>)}</div>,document.body)}
       {!online&&<div className="v101-offline" role="status">Bağlantı yok · internet gelince sohbet yenilenecek</div>}
       <div className="v114-chatbar"><button type="button" aria-label="Sohbette ara" onClick={()=>{setShowSearch(v=>!v);setChatSearch('')}}><Search size={17}/></button><button type="button" onClick={()=>setChatTools(true)}><Settings size={17}/> Sohbet araçları</button></div>

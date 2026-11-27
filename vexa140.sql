@@ -30,7 +30,8 @@ begin
  reward:=case n when 7 then 50 when 30 then 200 when 100 then 600 else 0 end;
  if reward>0 then k:='streak:'||a_id||':'||b_id||':'||n;perform public.vexa140_award(a_id,reward,n||' günlük seri',k);perform public.vexa140_award(b_id,reward,n||' günlük seri',k);end if;
  return new;
-end $$;
+exception when others then raise warning 'vexa140 streak: %',sqlstate;return new;
+end $;
 revoke all on function public.vexa140_message_streak() from public,anon,authenticated;
 drop trigger if exists vexa140_message_streak on public.messages;
 create trigger vexa140_message_streak after insert on public.messages for each row execute function public.vexa140_message_streak();
@@ -109,4 +110,26 @@ create or replace function public.vexa140_poll_vote(p_poll uuid,p_choice integer
  insert into public.vexa140_votes(poll_id,user_id,choice) values(p_poll,auth.uid(),p_choice) on conflict(poll_id,user_id) do update set choice=excluded.choice;end $;
 create or replace function public.vexa140_poll_close(p_poll uuid) returns void language plpgsql security definer set search_path='' as $ begin update public.vexa140_polls set closed=true where id=p_poll and creator=auth.uid() and public.vexa140_group_member(group_id);if not found then raise exception 'Yetki yok';end if;end $;
 do $ declare sig text;begin foreach sig in array array['vexa140_polls(uuid)','vexa140_poll_create(uuid,text,text[])','vexa140_poll_vote(uuid,integer)','vexa140_poll_close(uuid)'] loop execute 'revoke all on function public.'||sig||' from public,anon';execute 'grant execute on function public.'||sig||' to authenticated';end loop;end $;
+-- Private group media. Only current group members can read; only uploader can write/delete.
+alter table public.vexa_group_messages add column if not exists media_path text;
+alter table public.vexa_group_messages add column if not exists media_type text;
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types) values('vexa-group-media140','vexa-group-media140',false,26214400,array['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm','audio/webm','audio/mp4','audio/ogg','audio/mpeg','audio/wav','application/pdf']) on conflict(id) do nothing;
+create or replace function public.vexa140_group_media_access(p_path text,p_write boolean) returns boolean language sql stable security definer set search_path='' as $
+ select auth.uid() is not null and exists(select 1 from public.vexa_group_members m where m.group_id::text=split_part(p_path,'/',1) and m.user_id=auth.uid()) and (not p_write or split_part(p_path,'/',2)=auth.uid()::text)
+$;
+revoke all on function public.vexa140_group_media_access(text,boolean) from public,anon;
+grant execute on function public.vexa140_group_media_access(text,boolean) to authenticated;
+drop policy if exists vexa140_media_read on storage.objects;
+create policy vexa140_media_read on storage.objects for select to authenticated using(bucket_id='vexa-group-media140' and public.vexa140_group_media_access(name,false));
+drop policy if exists vexa140_media_insert on storage.objects;
+create policy vexa140_media_insert on storage.objects for insert to authenticated with check(bucket_id='vexa-group-media140' and public.vexa140_group_media_access(name,true));
+drop policy if exists vexa140_media_delete on storage.objects;
+create policy vexa140_media_delete on storage.objects for delete to authenticated using(bucket_id='vexa-group-media140' and public.vexa140_group_media_access(name,true));
+create or replace function public.vexa140_validate_group_media() returns trigger language plpgsql security definer set search_path='' as $
+begin if new.media_path is not null then
+ if split_part(new.media_path,'/',1)<>new.group_id::text or split_part(new.media_path,'/',2)<>new.sender_id::text or new.media_type is null or new.media_type not in ('image','video','audio','document') then raise exception 'Geçersiz grup medyası';end if;
+ end if;return new;end $;
+revoke all on function public.vexa140_validate_group_media() from public,anon,authenticated;
+drop trigger if exists vexa140_validate_group_media on public.vexa_group_messages;
+create trigger vexa140_validate_group_media before insert or update of media_path,media_type on public.vexa_group_messages for each row execute function public.vexa140_validate_group_media();
 commit;
