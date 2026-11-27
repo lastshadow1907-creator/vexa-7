@@ -1,3 +1,4 @@
+import './media119.css';
 import './chat114.css';
 import {useLook,MediaAI,premiumAI} from './Vexa112';
 import { createPortal } from 'react-dom';
@@ -36,6 +37,22 @@ function mediaMime(file: File) {
   return (!raw || raw === 'application/octet-stream') ? (audioExtensions[ext] || raw) : (audioAliases[raw] || raw);
 }
 
+async function voiceWav(blob:Blob):Promise<File>{
+ const ctx=new AudioContext();
+ try{
+  const decoded=await ctx.decodeAudioData(await blob.arrayBuffer());
+  const rate=16000, frames=Math.max(1,Math.round(decoded.duration*rate));
+  if(frames*2+44>25*1024*1024)throw Error('Ses kaydı çok uzun.');
+  const offline=new OfflineAudioContext(1,frames,rate), source=offline.createBufferSource();
+  source.buffer=decoded;source.connect(offline.destination);source.start();
+  const pcm=(await offline.startRendering()).getChannelData(0), buffer=new ArrayBuffer(44+pcm.length*2), view=new DataView(buffer);
+  const str=(offset:number,value:string)=>{for(let i=0;i<value.length;i++)view.setUint8(offset+i,value.charCodeAt(i))};
+  str(0,'RIFF');view.setUint32(4,36+pcm.length*2,true);str(8,'WAVE');str(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,rate,true);view.setUint32(28,rate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);str(36,'data');view.setUint32(40,pcm.length*2,true);
+  for(let i=0;i<pcm.length;i++){const v=Math.max(-1,Math.min(1,pcm[i]));view.setInt16(44+i*2,v<0?v*32768:v*32767,true)}
+  return new File([buffer],'sesli-mesaj.wav',{type:'audio/wav'});
+ }finally{await ctx.close().catch(()=>{})}
+}
+
 const emojis = ['❤️', '😂', '👍', '😮', '😢', '🔥'];
 const time = (date: string) => new Date(date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
@@ -63,6 +80,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const signedCache=useRef(new Map<string,{url:string;until:number}>());
   const loadVersion=useRef(0);
   const [recordSeconds,setRecordSeconds]=useState(0);
+  const recordClock=useRef({start:0,elapsed:0});
   const [levels,setLevels]=useState<number[]>(Array(20).fill(0.12));
   const [audioPreview,setAudioPreview]=useState('');
   const capture=useRef<{stream:MediaStream;ctx?:AudioContext;frame?:number;cancelled:boolean}|null>(null);
@@ -86,9 +104,9 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   const [online,setOnline]=useState(navigator.onLine);
   const typingSent=useRef(0);
   const sendLock=useRef(false);
-  useEffect(()=>{if(!recording||paused)return;const timer=setInterval(()=>setRecordSeconds(v=>v+1),1000);return()=>clearInterval(timer)},[recording,paused]);
+  useEffect(()=>{if(!recording||paused)return;const timer=setInterval(()=>setRecordSeconds(Math.floor((recordClock.current.elapsed+performance.now()-recordClock.current.start)/1000)),200);return()=>clearInterval(timer)},[recording,paused]);
   useEffect(()=>{const update=()=>setOnline(navigator.onLine);window.addEventListener('online',update);window.addEventListener('offline',update);return()=>{window.removeEventListener('online',update);window.removeEventListener('offline',update)}},[]);
-  function togglePause(){const r=recorder.current;if(r?.state==='recording'){r.pause();setPaused(true)}else if(r?.state==='paused'){r.resume();setPaused(false);void capture.current?.ctx?.resume().catch(()=>{})}}
+  function togglePause(){const r=recorder.current;if(r?.state==='recording'){r.pause();recordClock.current.elapsed+=performance.now()-recordClock.current.start;setPaused(true)}else if(r?.state==='paused'){r.resume();recordClock.current.start=performance.now();setPaused(false);void capture.current?.ctx?.resume().catch(()=>{})}}
   const [error, setError] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [chatSearch, setChatSearch] = useState('');
@@ -372,29 +390,27 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
 
   async function record() {
     if (recorder.current && recorder.current.state !== 'inactive') { recorder.current.stop(); return; }
-    if(requesting.current)return;requesting.current=true;
+    if(requesting.current||recording)return;requesting.current=true;
     try {
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined')
         throw new Error('Bu tarayıcıda ses kaydı desteklenmiyor.');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       if(!mounted.current){stream.getTracks().forEach(t=>t.stop());return;}
       const c:{stream:MediaStream;ctx?:AudioContext;frame?:number;cancelled:boolean}={stream,cancelled:false};capture.current=c;
-      const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find(t => MediaRecorder.isTypeSupported(t));
+      const mime = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg;codecs=opus', 'audio/webm'].find(t => MediaRecorder.isTypeSupported(t));
       const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
       recorder.current = rec; chunks.current = [];
       rec.ondataavailable = e => { if (e.data.size) chunks.current.push(e.data); };
-      rec.onstop = () => {
+      rec.onstop = async () => {
         const type = chunks.current.find(chunk=>chunk.type)?.type || rec.mimeType || mime || ''; 
         const blob = new Blob(chunks.current, { type });
-        const raw = type.split(';')[0].trim().toLowerCase();
-        const base = audioAliases[raw] || raw;
-        const ext = base === 'audio/mp4' ? 'm4a' : Object.keys(audioExtensions).find(key=>audioExtensions[key]===base) || 'bin';
-        if(mounted.current&&!c.cancelled&&blob.size)setFile(new File([blob], `sesli-mesaj.${ext}`, { type:base }));
-        if(c.frame)cancelAnimationFrame(c.frame);void c.ctx?.close();capture.current=null;
+        if(c.frame)cancelAnimationFrame(c.frame);void c.ctx?.close().catch(()=>{});
         stream.getTracks().forEach(t => t.stop());
-        recorder.current = null; if(!mounted.current)return;setPaused(false);setRecording(false); setError(!c.cancelled&&!blob.size?'Ses kaydı boş. Tekrar deneyin.':'');
+        try{if(!c.cancelled&&blob.size){const wav=await voiceWav(blob);if(mounted.current&&!c.cancelled)setFile(wav)}else if(!c.cancelled&&mounted.current)setError('Ses kaydı boş. Tekrar deneyin.');}
+        catch(e){if(mounted.current)setError('Ses kaydı hazırlanamadı: '+(e as Error).message)}
+        finally{capture.current=null;recorder.current=null;if(mounted.current){setPaused(false);setRecording(false)}}
       };
-      rec.start(); setRecordSeconds(0);setPaused(false);setLevels(Array(20).fill(.12));setRecording(true); setError('');
+      rec.start(); recordClock.current={start:performance.now(),elapsed:0};setRecordSeconds(0);setPaused(false);setLevels(Array(20).fill(.12));setRecording(true); setError('');
       try{const ctx=new AudioContext();c.ctx=ctx;void ctx.resume().catch(()=>{});const analyser=ctx.createAnalyser();analyser.fftSize=256;ctx.createMediaStreamSource(stream).connect(analyser);const samples=new Uint8Array(analyser.fftSize);let prev=0;const draw=(now:number)=>{if(c.cancelled||rec.state==='inactive')return;if(rec.state==='recording'&&document.visibilityState==='visible'&&now-prev>100){prev=now;analyser.getByteTimeDomainData(samples);const rms=Math.sqrt(samples.reduce((a,v)=>a+((v-128)/128)**2,0)/samples.length);setLevels(old=>[...old.slice(1),Math.min(1,Math.max(.12,rms*5))]);}c.frame=requestAnimationFrame(draw)};c.frame=requestAnimationFrame(draw)}catch{/* timer still works */}
     } catch (e) { capture.current?.stream.getTracks().forEach(t=>t.stop());capture.current=null;setError((e as Error).message); setRecording(false);setPaused(false); }finally{requesting.current=false;}
   }
@@ -466,6 +482,7 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
               {deleted ? <i>Bu mesaj silindi</i> : <>
                 {m.reply_to_message_id && <div className="vexa8-reply-quote">↳ {messages.find(x=>x.id===m.reply_to_message_id)?.body?.slice(0,110)||'Yanıtlanan mesaj'}</div>}
                 {m.body && <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{m.body}</div>}
+                {m.media_path && !urls[m.media_path] && <small>Medya yükleniyor veya erişim izni yok.</small>}
                 {m.media_path && urls[m.media_path] && (m.media_type === 'image'
                   ? <img className="enhanced-media" src={urls[m.media_path]} alt="Gönderilen fotoğraf" loading="lazy" decoding="async" />
                   : m.media_type === 'video'
@@ -553,4 +570,9 @@ export default function EnhancedChat({ userId, peerId, clearedAt, peerName }: { 
   );
 }
 
-function VoicePlayer({src}:{src:string}){const ref=useRef<HTMLAudioElement>(null);const [speed,setSpeed]=useState(1);return <div className="v10-audio"><audio ref={ref} controls preload="metadata" src={src} onLoadedMetadata={()=>{if(ref.current)ref.current.playbackRate=speed}}/><button type="button" aria-label="Oynatma hızını değiştir" onClick={()=>{const next=speed===1?1.5:speed===1.5?2:1;setSpeed(next);if(ref.current)ref.current.playbackRate=next}}>{speed}×</button></div>}
+function VoicePlayer({src}:{src:string}){
+ const ref=useRef<HTMLAudioElement>(null);const [speed,setSpeed]=useState(1),[duration,setDuration]=useState(0),[position,setPosition]=useState(0),[playing,setPlaying]=useState(false),[error,setError]=useState('');
+ useEffect(()=>{setDuration(0);setPosition(0);setPlaying(false);setError('')},[src]);
+ const sync=()=>{const a=ref.current;if(a){setDuration(Number.isFinite(a.duration)?a.duration:0);setPosition(a.currentTime)}};
+ return <div className="v119-voice"><audio ref={ref} preload="metadata" src={src} onLoadedMetadata={()=>{sync();if(ref.current)ref.current.playbackRate=speed}} onDurationChange={sync} onTimeUpdate={sync} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onEnded={()=>setPlaying(false)} onError={()=>setError('Ses açılamadı. Bağlantıyı veya dosya biçimini kontrol et.')}/><div className="v119-voice-row"><button type="button" aria-label={playing?'Duraklat':'Oynat'} onClick={()=>{const a=ref.current;if(!a)return;if(playing)a.pause();else{setError('');void a.play().catch(()=>setError('Ses oynatılamadı. Tekrar dene.'))}}}>{playing?'Ⅱ':'▶'}</button><div className="v119-voice-track"><input aria-label="Ses konumu" type="range" min={0} max={duration||1} step={.1} value={Math.min(position,duration)} disabled={!duration} onChange={e=>{if(ref.current)ref.current.currentTime=Number(e.target.value);setPosition(Number(e.target.value))}}/><small>{callDuration(position)} / {duration?callDuration(Math.ceil(duration)):'--:--'}</small></div><button type="button" aria-label="Oynatma hızı" onClick={()=>{const next=speed===1?1.5:speed===1.5?2:1;setSpeed(next);if(ref.current)ref.current.playbackRate=next}}>{speed}×</button></div>{error&&<small role="alert">{error}</small>}</div>
+}
