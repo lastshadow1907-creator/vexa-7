@@ -12,8 +12,8 @@ android {
         applicationId = "com.vexa.chat"
         minSdk = 26
         targetSdk = 35
-        versionCode = 13000
-        versionName = "13.0"
+        versionCode = 13300
+        versionName = "13.3"
     }
 
     buildTypes {
