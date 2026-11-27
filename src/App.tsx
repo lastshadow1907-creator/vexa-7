@@ -4,7 +4,7 @@ import {Splash130,Live130,Achievements130,Community130} from './Vexa130';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import type {CSSProperties} from 'react';
 import type {Session} from '@supabase/supabase-js';
-import {MessageCircle,Users,Search,UserRound,ArrowLeft,LogOut,Settings,Share2,Pin,Archive,ArchiveRestore,MoreVertical,Plus,Trash2,PhoneCall,ChevronRight} from 'lucide-react';
+import {MessageCircle,Users,Search,UserRound,ArrowLeft,LogOut,Settings,Share2,Pin,Archive,ArchiveRestore,MoreVertical,Trash2,PhoneCall,ChevronRight} from 'lucide-react';
 import {supabase,configured} from './supabase';
 import Calls from './Calls';
 import EnhancedChat from './EnhancedChat';

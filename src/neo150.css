@@ -128,7 +128,7 @@ input,textarea,select{border-radius:15px;max-width:100%;min-width:0}
 .neo150 .v140-shop article,.neo150 .v140-ticket{border-radius:20px;background:var(--panel2);min-width:0}
 .neo150 .v140-shop .v140-item-preview{height:100px;border-radius:16px}
 .neo150 .v140-wallet{border-radius:23px;padding:20px}
-.neo150 .vexa-groups-shell,.neo150 .vexa-groups-conversation,.neo150 .vexa-groups-chat{min-width:0;min-height:0;height:100%;overflow:hidden}
+.neo150 .vexa-groups-layout.vexa91-mode-chat,.neo150 .vexa-groups-conversation,.neo150 .vexa-groups-chat{min-width:0;min-height:0;height:100%;overflow:hidden}
 .neo150 .vexa-groups-conversation{display:flex;flex-direction:column;background:var(--panel)}
 .neo150 .vexa-groups-chat-header{flex:none;min-height:70px;padding:12px;gap:9px;background:var(--panel);border-bottom:1px solid var(--line)}
 .neo150 .vexa-group-chat-title{min-width:0;flex:1}.neo150 .vexa-group-chat-title strong,.neo150 .vexa-group-chat-title small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -174,8 +174,8 @@ input,textarea,select{border-radius:15px;max-width:100%;min-width:0}
  .neo150 .enhanced-list .message:nth-last-child(2){animation:neo150-rise .2s ease-out both}
  .neo150-welcome-orbit{animation:neo150-orbit 5s ease-in-out infinite}
 }
-@media(min-width:701px) and (max-width:900px){.neo150{grid-template-columns:70px minmax(260px,300px) minmax(0,1fr);padding:8px;gap:8px}.neo150 .neo150-profile{grid-template-columns:minmax(230px,280px) minmax(0,1fr);gap:12px}.neo150 .neo150-profile-detail{padding:14px}.neo150 .sidebar-header{padding:16px}.neo150 .vexa91-new span{display:none}}
-@media(max-width:700px){
+@media(min-width:901px) and (max-width:1080px){.neo150{grid-template-columns:70px minmax(260px,300px) minmax(0,1fr);padding:8px;gap:8px}.neo150 .neo150-profile{grid-template-columns:minmax(230px,280px) minmax(0,1fr);gap:12px}.neo150 .neo150-profile-detail{padding:14px}.neo150 .sidebar-header{padding:16px}.neo150 .vexa91-new span{display:none}}
+@media(max-width:900px){
  .neo150{display:flex;flex-direction:column;padding:0;gap:0;min-height:0;height:100dvh;width:100%;max-height:none;border-radius:0;padding-top:env(safe-area-inset-top,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);background:var(--panel)}
  .neo150-rail{display:none}.neo150 .sidebar{display:flex;flex:1 1 0;position:relative;inset:auto;width:100%;height:auto;min-height:0;border:0;border-radius:0}
  .neo150 .sidebar.chat-open{display:none}
@@ -232,3 +232,6 @@ input,textarea,select{border-radius:15px;max-width:100%;min-width:0}
 }
 @media(max-width:360px){.neo150 .vexa91-new span{display:none}.neo150 .chat-header{gap:3px;padding-inline:5px}.neo150 .neo150-call-actions button{width:31px}.neo150 .chat-header .back{width:27px;flex-basis:27px}.neo150 .chat-header>button:last-child{width:27px!important}.neo150 .v93-filters button{padding:8px 10px}.neo150 .mobile-nav button small{font-size:9px}.neo150 .vexa-group-compose>button{min-width:32px;padding:5px}.neo150 .v140-shop article{padding:9px}}
 @media(prefers-reduced-motion:reduce){.neo150 *,.v95-action-sheet,.vexa102-dialog,.v119-ring-avatar,.v10-call-avatar{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+.neo150 .vexa-groups-layout.vexa91-mode-chat{display:flex;flex:1 1 0;width:100%;padding:0;border:0;border-radius:0;background:var(--panel)}.neo150 .vexa-groups-layout.vexa91-mode-chat>.vexa-groups-conversation{flex:1 1 0;min-width:0;width:100%}.neo150 .vexa-groups-layout.vexa91-mode-list{display:block;height:auto;min-height:0;max-height:none;overflow:visible}.neo150 .vexa-groups-layout.vexa91-mode-list>.vexa-groups-sidebar{width:100%;height:auto;max-height:none;overflow:visible}.neo150 .vexa-groups-list-header{gap:8px}.neo150 .vexa-groups-list-header button{border-radius:14px}.neo150 .vexa-ai .vexa-ai-messages{min-height:0;overflow-y:auto}.neo150 .vexa-ai-compose input{min-width:0}.neo150 .vexa14-history{width:100%}.neo150 .vexa12-actions{flex-wrap:wrap}.neo150 .vexa12-actions input{flex:1 1 150px}.neo150 .vexa-group-messages~.v140-card{min-height:0}.neo150 .vexa-group-message strong{overflow-wrap:anywhere}.neo150 .vexa-group-message.mine{margin-left:auto}.neo150 .vexa-group-message:not(.mine){margin-right:auto}
+@media(max-width:900px){.neo150 .sidebar.chat-open{display:none}.neo150 .conversation.show>.enhanced-chat{height:auto;min-height:0;flex:1 1 0}.neo150 .vexa-groups-chat-header .vexa-group-back{display:grid}.neo150 .vexa-group-compose{flex-wrap:nowrap}.neo150 .vexa-group-compose input[type=file][hidden]{display:none!important}}
